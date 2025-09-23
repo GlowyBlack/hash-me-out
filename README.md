@@ -5,7 +5,6 @@ edits by natalie
 
 Edits by Al-Ameen
 
-# this is a modification (Laura)
-
+Edits by Laura
 
 
