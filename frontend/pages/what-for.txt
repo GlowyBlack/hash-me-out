@@ -1,0 +1,11 @@
+By Chat:
+Page Routers
+    Pros
+    - Stable, widely used, and fully documented.
+    - Lots of tutorials & StackOverflow answers (easier for debugging).
+    - Simple mental model: each file in /pages is a route.
+    - Less “magic” → good for beginners.
+
+    Cons
+    - Considered “legacy” now — new Next.js features are moving toward App Router.
+    - Less flexible for layouts and server-side rendering patterns.
