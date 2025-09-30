@@ -12,7 +12,7 @@ yarn-error.log*
 # Next.js build outputs
 .next/
 out/
-
+.next/cache/
 
 # Environment variables
 .env
