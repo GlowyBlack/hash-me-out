@@ -1,3 +1,5 @@
+
+
 class Rating:
     def __init__(self, user_id: int, isbn: str, rating: int):
         self.user_id = user_id
