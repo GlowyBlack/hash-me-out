@@ -6,24 +6,37 @@ def search_books(query: str):
     if not query:
         return []
     
+    query = query.lower()
     results = []
-    with open("./data/BX-Books.csv", encoding="utf-8") as file:
-        reader = csv.DictReader(file)
+    seen_isbn = set() # in case theres any duplicate rows in data
+    with open("backend/app/data/BX_Books.csv", encoding="ISO-8859-1") as file:
+        reader = csv.DictReader(file, delimiter=";")
         for row in reader:
             title = row['Book-Title'].lower()
             author = row['Book-Author'].lower()
             isbn = row['ISBN']
+
+            if isbn in seen_isbn:
+                continue
             
             if (query in title or query in author or query in isbn):
                 results.append({
+                    "isbn": row["ISBN"],
                     "title": row["Book-Title"],
                     "author": row["Book-Author"],
-                    "isbn": row["ISBN"],
                     "year": row["Year-Of-Publication"],
-                    "publisher": row["Publisher"]
-                })            
+                    "publisher": row["Publisher"],
+                    # "cover": row.get("Image-URL-M") 
+                })     
+                seen_isbn.add(isbn)
             if len(results)>=10:
                 break
         
     return results
-        
+
+# with open("backend/app/data/BX_Books.csv", encoding="utf-8") as file:
+#     for i in range(5):
+#         print(file.readline())
+
+
+print(search_books())

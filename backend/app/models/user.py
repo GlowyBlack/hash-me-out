@@ -1,15 +1,7 @@
 from typing import Optional
 from readinglist import ReadingList
+from profile import Profile
 
-class Profile:
-    def __init__(self, email: str, username: str, password: str):
-        self.__email = email
-        self.__username = username
-        self.__password = password  # in production, hash the password
-    
-    def profile(self):
-        pass
-        
 
 class User:
     def __init__(self, user_id: int, profile: Profile, location: str, age: int, role: str):
