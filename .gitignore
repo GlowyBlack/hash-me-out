@@ -23,5 +23,3 @@ out/
 
 __pycache__
 prev_*/
-# Temp while i work on stuff for front end
-frontend/ 
