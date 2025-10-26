@@ -1,2 +1,7 @@
 People: Janaki, Al-Ameen, Laura, Natalie
 
+In today’s meeting, we reviewed our UML diagram for our M2 project again and identified areas
+for improvement before the final submission. We spoke about potential methods we should add and
+how they can be implemented to improve our class. Laura fixed an issue with her Docker and it is
+now running. Finally, we increased the character limit in our code from 70 to 100 to improve
+readability. 

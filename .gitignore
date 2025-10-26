@@ -20,3 +20,8 @@ out/
 .env.development.local
 .env.test.local
 .env.production.local
+
+__pycache__
+prev_*/
+# Temp while i work on stuff for front end
+frontend/ 
