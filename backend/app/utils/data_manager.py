@@ -46,8 +46,7 @@ class CSVRepository:
 
     def append_row(self, path: str, fieldnames: List[str], row: Dict):
         """
-        Appends a single row to the CSV file safely.
-
+        Add a single row to the CSV file safely.
         - If the file does not exist, it creates the file and writes the header first.
         - Then, it appends the new row at the end.
         - Thread-safe: only one thread can write to a specific file at once.
