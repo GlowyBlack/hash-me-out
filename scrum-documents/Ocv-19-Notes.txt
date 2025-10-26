@@ -1,12 +1,12 @@
 People: Janaki, Al-Ameen, Laura, Natalie
 
-In today’s meeting, we worked together on M2 from 1:30–5:30 pm. Laura completed the sequence diagrams, 
-Natalie completed the component diagram, Janaki completed the architecture diagram and traceability table, 
+In today’s meeting, we worked together on M2 from 1:30–5:30 pm. Laura completed the sequence diagrams,
+Natalie completed the component diagram, Janaki completed the architecture diagram and traceability table,
 and Al-Ameen completed the DFD Level 1 diagram. Everyone then provided input on the remaining parts.
 
-We decided to remove the profile feature since it isn’t essential to the book review system and doesn’t add 
-validity to the project’s core purpose. The provided database only includes basic user details like age and 
-location, and while we considered adding a username field, we realized creating an entire profile section wasn’t 
-necessary. We also added restrictions on email and password, ensuring that two users can’t share the same username.
-Reviews cannot be empty, and if a review exceeds 500 characters, the user will be alerted before submitting. We also 
-removed the update review function since it’s unnecessary.
+We decided to remove the profile feature since it isn’t essential to the book review system and doesn’t 
+add validity to the project’s core purpose. The provided database only includes basic user details like 
+age and location, and while we considered adding a username field, we realized creating an entire profile 
+section wasn’t necessary. We also added restrictions on email and password, ensuring that two users can’t 
+share the same username. Reviews cannot be empty, and if a review exceeds 500 characters, the user will 
+be alerted before submitting. We also removed the update review function since it’s unnecessary.

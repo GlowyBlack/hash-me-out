@@ -115,13 +115,11 @@ class RequestService:
         rows = self.repo.read_all(self.path)
         original_count = len(rows)
         
-        # Remove the row matching the given ID
         updated_rows = [r for r in rows if int(r["RequestID"]) != request_id]
 
         if len(updated_rows) == original_count:
             return False
 
-        # ✅ Reassign new sequential IDs
         for i, row in enumerate(updated_rows, start=1):
             row["RequestID"] = str(i)
 
