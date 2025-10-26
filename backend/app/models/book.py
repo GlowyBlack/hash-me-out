@@ -1,6 +1,3 @@
-
-
-
 class Book:
     def __init__(self, isbn: str, title: str, author: str, year: int, publisher: str, img_s: str, img_m: str, img_l: str):
         self.isbn = isbn

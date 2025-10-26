@@ -9,7 +9,7 @@ def search_books(query: str):
     query = query.lower()
     results = []
     seen_isbn = set() # in case theres any duplicate rows in data
-    with open("backend/app/data/BX_Books.csv", encoding="ISO-8859-1") as file:
+    with open("app/data/BX_Books.csv", encoding="ISO-8859-1") as file:
         reader = csv.DictReader(file, delimiter=";")
         for row in reader:
             title = row['Book-Title'].lower()
@@ -34,9 +34,5 @@ def search_books(query: str):
         
     return results
 
-# with open("backend/app/data/BX_Books.csv", encoding="utf-8") as file:
-#     for i in range(5):
-#         print(file.readline())
 
 
-print(search_books())

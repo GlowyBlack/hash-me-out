@@ -67,10 +67,10 @@ class Request:
     # Logs book request into the database
     def __log_request(self):
         file_path = "backend/app/data/Request_Log.csv"
-        fieldnames = ['RequestID', 'UserID', 'Book Title', 'Author', 'ISBN', 'Time']
+        fieldnames = ['RequestID', 'UserID', 'Book Title', 'Author', 'ISBN', 'Date']
         expected_header = ",".join(fieldnames)
         
-        has_header = self.file_has_header(file_path,expected_header)
+        has_header = self.file_has_header(file_path, expected_header)
         with open(file_path, 'a', newline = '') as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             if not has_header:
@@ -94,7 +94,7 @@ class Request:
                 'Book Title': self.__book_title,
                 'Author': self.__author,
                 'ISBN': self.__isbn,
-                'Time': self.__time_stamp,
+                'Date': self.__time_stamp,
             })
         self.__update_request_total()
 
