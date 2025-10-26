@@ -1,31 +1,22 @@
 {
-  "name": "hash-me-out",
-  "version": "1.0.0",
-  "description": "edits by janaki",
-  "main": "index.js",
-  "directories": {
-    "doc": "docs"
-  },
+  "name": "frontend",
+  "version": "0.1.0",
+  "private": true,
   "scripts": {
-  "dev": "next dev",
-  "build": "next build",
-  "start": "next start"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/GlowyBlack/hash-me-out.git"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
-  "bugs": {
-    "url": "https://github.com/GlowyBlack/hash-me-out/issues"
-  },
-  "homepage": "https://github.com/GlowyBlack/hash-me-out#readme",
   "dependencies": {
-    "next": "^15.5.4",
-    "react": "^19.1.1",
-    "react-dom": "^19.1.1"
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "next": "16.0.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "tailwindcss": "^4",
+    "eslint": "^9",
+    "eslint-config-next": "16.0.0"
   }
 }
