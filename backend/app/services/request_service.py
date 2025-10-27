@@ -4,12 +4,10 @@ from app.models.request import Request
 from app.schemas.request import RequestCreate, RequestRead 
 from app.utils.data_manager import CSVRepository 
 
-DATA_PATH = Path(__file__).resolve().parents[1] / "data" / "Requests.csv"
-
 class RequestService:
     def __init__(self):
         self.repo = CSVRepository()
-        self.path = DATA_PATH
+        self.path = Path(__file__).resolve().parents[1] / "data" / "Requests.csv"
         self.fields = ["RequestID", "UserID", "Book Title", "Author", "ISBN", "Time"]
 
 
