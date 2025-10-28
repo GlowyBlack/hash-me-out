@@ -8,7 +8,7 @@ class RequestService:
     def __init__(self):
         self.repo = CSVRepository()
         self.path = Path(__file__).resolve().parents[1] / "data" / "Requests.csv"
-        self.fields = ["RequestID", "UserID", "Book Title", "Author", "ISBN", "Time"]
+        self.fields = ["RequestID", "UserID", "Book Title", "Author", "ISBN"]
 
 
     def _generate_next_id(self) -> int:
@@ -28,13 +28,6 @@ class RequestService:
         rows = self.repo.read_all(self.path)
         return any(r["UserID"] == str(user_id) and r["ISBN"] == isbn for r in rows)
 
-    def get_all_requests(self) -> list[RequestRead]:
-        """
-        Retrieve all requests from the requests.csv file.
-        """
-        rows = self.repo.read_all(self.path)
-        return [RequestRead(**Request.from_dict(r).to_api_dict()) for r in rows]
-
     def __update_total_requested(self, isbn: str):
         path = "app/data/Total_Requested.csv"
         fieldnames = ["ISBN", "Total Requested"]
@@ -51,6 +44,13 @@ class RequestService:
             rows.append({"ISBN": isbn, "Total Requested": "1"})
 
         self.repo.write_all(path, fieldnames, rows)
+        
+    def get_all_requests(self) -> list[RequestRead]:
+            """
+            Retrieve all requests from the requests.csv file.
+            """
+            rows = self.repo.read_all(self.path)
+            return [RequestRead(**Request.from_dict(r).to_api_dict()) for r in rows]    
         
     def create_request(self, user_id: int, data: RequestCreate) -> RequestRead:
         """
