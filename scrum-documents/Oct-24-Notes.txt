@@ -1,0 +1,17 @@
+October 24
+People: Janaki, Al-Ameen, Laura, Natalie
+
+Summary:
+Laura shared the draft PDF of her Kanban board. Our goal for the next meeting is to finalize the
+board in person on Sunday from 12:00–2:30 PM.
+Al-Ameen has been working on restructuring the code by incorporating schemas to better align with 
+our class structure. The concept of schemas is new to the team so each member has been assigned to
+research schemas and any other unfamiliar topics to ensure a productive discussion during our next
+meeting.
+We also decided to design the front-end alongside the back-end, rather than completing the back-end
+first. Hopefully this approach will make development smoother.
+
+Next Steps:
+- Complete the Kanban board on Sunday.
+- Continue researching schemas and related concepts.
+- Begin drawing and planning the front-end interface.

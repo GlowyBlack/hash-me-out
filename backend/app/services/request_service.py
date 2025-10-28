@@ -4,12 +4,10 @@ from app.models.request import Request
 from app.schemas.request import RequestCreate, RequestRead 
 from app.utils.data_manager import CSVRepository 
 
-DATA_PATH = Path(__file__).resolve().parents[1] / "data" / "Requests.csv"
-
 class RequestService:
     def __init__(self):
         self.repo = CSVRepository()
-        self.path = DATA_PATH
+        self.path = Path(__file__).resolve().parents[1] / "data" / "Requests.csv"
         self.fields = ["RequestID", "UserID", "Book Title", "Author", "ISBN", "Time"]
 
 
@@ -71,7 +69,7 @@ class RequestService:
 
         self.repo.write_all(path, fieldnames, rows)
         
-    def create_request(self, data: RequestCreate) -> RequestRead:
+    def create_request(self, user_id: int, data: RequestCreate) -> RequestRead:
         """
         Create a new book request and save it to the requests.csv file.
         Steps:
@@ -89,7 +87,7 @@ class RequestService:
         new_id = self._generate_next_id()
         request = Request(
             request_id=new_id,
-            user_id=data.user_id,
+            user_id=user_id,
             book_title=data.book_title,
             author=data.author,
             isbn=data.isbn,
@@ -115,13 +113,11 @@ class RequestService:
         rows = self.repo.read_all(self.path)
         original_count = len(rows)
         
-        # Remove the row matching the given ID
         updated_rows = [r for r in rows if int(r["RequestID"]) != request_id]
 
         if len(updated_rows) == original_count:
             return False
 
-        # ✅ Reassign new sequential IDs
         for i, row in enumerate(updated_rows, start=1):
             row["RequestID"] = str(i)
 

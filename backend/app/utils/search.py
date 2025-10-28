@@ -1,15 +1,17 @@
 import csv
+from pathlib import Path
 
 # Searches for books whose isbn or author or title matches the query
 # Have it so that it only finds 10 books at a time
 def search_books(query: str):
     if not query:
         return []
+    filepath = Path(__file__).resolve().parents[1] / "data" / "BX_Books.csv"
     
     query = query.lower()
     results = []
     seen_isbn = set() # in case theres any duplicate rows in data
-    with open("app/data/BX_Books.csv", encoding="ISO-8859-1") as file:
+    with open(filepath, encoding="ISO-8859-1") as file:
         reader = csv.DictReader(file, delimiter=";")
         for row in reader:
             title = row['Book-Title'].lower()
