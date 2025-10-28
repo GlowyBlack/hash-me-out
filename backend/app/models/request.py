@@ -21,7 +21,6 @@ class Request:
             "book_title": self.book_title,
             "author": self.author,
             "isbn": self.isbn,
-            "time": self.time.strftime("%Y-%m-%d"),
         }
         
     def to_csv_dict(self) -> dict:
@@ -36,7 +35,6 @@ class Request:
             "Book Title": self.book_title,
             "Author": self.author,
             "ISBN": self.isbn,
-            "Time": self.time.strftime("%Y-%m-%d"),
         }
 
     @classmethod
@@ -47,7 +45,6 @@ class Request:
             book_title=row["Book Title"],
             author=row["Author"],
             isbn=row["ISBN"],
-            time=datetime.strptime(row["Time"], "%Y-%m-%d")
         )
 
     def matches_user(self, user_id: int) -> bool:
