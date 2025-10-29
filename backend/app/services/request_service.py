@@ -9,6 +9,7 @@ class RequestService:
         self.repo = CSVRepository()
         self.path = Path(__file__).resolve().parents[1] / "data" / "Requests.csv"
         self.fields = ["RequestID", "UserID", "Book Title", "Author", "ISBN"]
+        self.total_fields = ["ISBN", "Total Requested"]
 
 
     def _generate_next_id(self) -> int:
@@ -28,9 +29,22 @@ class RequestService:
         rows = self.repo.read_all(self.path)
         return any(r["UserID"] == str(user_id) and r["ISBN"] == isbn for r in rows)
 
+    def __decrease_count(self, isbn:str):
+        path = Path(__file__).resolve().parents[1] / "data" / "Total_Requested.csv"
+        rows = self.repo.read_all(path)
+        for r in rows:
+            if r["ISBN"] == isbn:
+                new_count = int(r["Total Requested"]) - 1
+                if new_count<=0: rows.remove(r)
+                else: 
+                    r["Total Requested"] = str(new_count)
+                    break
+        
+        self.repo.write_all(path, self.total_fields, rows)
+
+    
     def __update_total_requested(self, isbn: str):
-        path = "app/data/Total_Requested.csv"
-        fieldnames = ["ISBN", "Total Requested"]
+        path = Path(__file__).resolve().parents[1] / "data" / "Total_Requested.csv"
         rows = self.repo.read_all(path)
         found = False
 
@@ -43,7 +57,7 @@ class RequestService:
         if not found:
             rows.append({"ISBN": isbn, "Total Requested": "1"})
 
-        self.repo.write_all(path, fieldnames, rows)
+        self.repo.write_all(path, self.total_fields, rows)
         
     def get_all_requests(self) -> list[RequestRead]:
             """
@@ -80,6 +94,17 @@ class RequestService:
         rows = self.repo.read_all(self.path)
         original_count = len(rows)
         
+        
+        isbn_to_decrement = None
+        for r in rows:
+            if int(r["RequestID"]) == request_id:
+                isbn_to_decrement = r["ISBN"]
+                break
+
+        # If the request ID was not found, nothing to delete
+        if isbn_to_decrement is None:
+            return False
+
         updated_rows = [r for r in rows if int(r["RequestID"]) != request_id]
 
         if len(updated_rows) == original_count:
@@ -89,4 +114,6 @@ class RequestService:
             row["RequestID"] = str(i)
 
         self.repo.write_all(self.path, self.fields, updated_rows)
+        self.__decrease_count(isbn_to_decrement)
+
         return True
