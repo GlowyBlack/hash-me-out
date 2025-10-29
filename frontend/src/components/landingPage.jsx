@@ -1,11 +1,13 @@
 "use client";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import LoginForm from "./loginForm";
 import RegisterForm from "./registerForm";
-import HomeForm from "./homeForm";
+import GuestHomeForm from "./guestHomePage";
 
 export default function LandingPage() {
   const [formType, setFormType] = useState(null);
+  const router = useRouter();
 
   return (
     <main className="min-h-screen bg-amber-100 flex flex-col items-center justify-center text-center px-6">
@@ -44,18 +46,15 @@ export default function LandingPage() {
       <div className="w-full max-w-md">
         {formType === "login" && <LoginForm setFormType={setFormType} />}
         {formType === "register" && <RegisterForm setFormType={setFormType} />}
-        {formType === "home" && <HomeForm />}
       </div>
 
       {/* Guest Option */}
-      {formType === null && (
         <button
           className="mt-4 font-medium text-yellow-700 hover:text-yellow-800 underline bg-transparent transition-transform transform hover:scale-105"
-          onClick={() => setFormType("home")}
+          onClick={() => router.push("/homepage")}
         >
           Proceed as Guest
         </button>
-      )}
     </main>
   );
 }
