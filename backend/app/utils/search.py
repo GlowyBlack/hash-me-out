@@ -2,7 +2,6 @@ import csv
 from pathlib import Path
 
 # Searches for books whose isbn or author or title matches the query
-# Have it so that it only finds 10 books at a time
 def search_books(query: str):
     if not query:
         return []
@@ -10,7 +9,7 @@ def search_books(query: str):
     
     query = query.lower()
     results = []
-    seen_isbn = set() # in case theres any duplicate rows in data
+    seen_isbn = set()
     with open(filepath, encoding="ISO-8859-1") as file:
         reader = csv.DictReader(file, delimiter=";")
         for row in reader:
@@ -36,4 +35,4 @@ def search_books(query: str):
         
     return results
 
-print(search_books("Mark P. O. Morford"))
+# print(search_books("Mark P. O. Morford"))
