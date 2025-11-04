@@ -24,7 +24,6 @@ class CSVRepository:
     def read_all(self, path: str) -> List[Dict]:
         """
         Reads all rows from a CSV file and returns them as a list of dictionaries.
-        If the file does not exist, returns an empty list instead of raising an error.
         """
         if not os.path.exists(path):
             return []
@@ -35,8 +34,6 @@ class CSVRepository:
     def write_all(self, path: str, fieldnames: List[str], rows: List[Dict]):
         """
         Overwrites the entire CSV file with the given rows.
-        This is used when we need to fully rewrite the file 
-        (e.g., after deleting or reindexing so no jump in indexes).
         """
         lock = self._get_lock(path)
         with lock, open(path, 'w', newline='', encoding='utf-8') as f:
@@ -47,9 +44,6 @@ class CSVRepository:
     def append_row(self, path: str, fieldnames: List[str], row: Dict):
         """
         Add a single row to the CSV file safely.
-        - If the file does not exist, it creates the file and writes the header first.
-        - Then, it appends the new row at the end.
-        - Thread-safe: only one thread can write to a specific file at once.
         """        
         file_exists = os.path.exists(path)
         lock = self._get_lock(path)
