@@ -15,6 +15,10 @@ class RequestService:
     def _generate_next_id(self) -> int:
         """
         Generate the next RequestID number.
+        - Reads all rows from the CSV file.
+        - Finds the highest RequestID currently in use.
+        - Returns that number + 1.
+        If the file is empty, it starts from 1.
         """
         rows = self.repo.read_all(self.path)
         if not rows:
