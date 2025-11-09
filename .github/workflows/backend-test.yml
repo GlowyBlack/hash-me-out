@@ -32,5 +32,7 @@ jobs:
       # Step 4: Run tests
       - name: Run Pytest
         working-directory: backend
+        env:
+          PYTHONPATH: ${{ github.workspace }}/backend
         run: |
           pytest --maxfail=1 --disable-warnings -q
