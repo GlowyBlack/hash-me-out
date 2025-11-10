@@ -2,16 +2,6 @@ import csv
 import os
 import threading
 from typing import List, Dict
-"""
-Thread Locking is to make sure that only one user action can read or write to a CSV file at a time.
-For example, let's say we had 2 users trying to request at the same time. The first user to reach
-the file gets a temporary "lock," allowing their request to write safely. The second user must
-wait until the lock is released, at which point their request proceeds. This prevents both users
-from writing at the same time, which could otherwise cause duplicate IDs, missing rows, or file
-corruption. Once the first write is done, the second user's write runs normally, ensuring all
-data stays consistent and in order.
-"""
-
 class CSVRepository:
     """Thread-safe CSV handler shared across all models."""
     _locks: Dict[str, threading.Lock] = {}
