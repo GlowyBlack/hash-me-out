@@ -1,9 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import LoginForm from "../../components/forms/loginForm";
+import RegisterForm from "../../components/forms/registerForm";
 
 export default function GuestHomePage() {
   const [search, setSearch] = useState("");
+  const [formType, setFormType] = useState(null);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -23,17 +26,29 @@ export default function GuestHomePage() {
           </div>
           {/* Right: Login & Register */}
           <div className= " space-x-4 flex justify-between items-center">
-            <button className="bg-white border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-100">
+            <button className="bg-white border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-100"
+            onClick={() => setFormType("login")}
+            >  
             Login
             </button>
-            <button className="bg-amber-200 hover:bg-yellow-400 px-4 py-2 rounded-lg font-semibold">
-              Register
+            <button className="bg-amber-200 hover:bg-yellow-400 px-4 py-2 rounded-lg font-semibold"
+            onClick={() => setFormType("register")}
+            >
+            Register
             </button>
           </div>
-        </div>
+         </div>
       </header>
 
+      {/* Show Forms Conditionally */}
+      <div className="w-full max-w-md">
+        {formType === "login" && <LoginForm setFormType={setFormType} />}
+        {formType === "register" && <RegisterForm setFormType={setFormType} />}
+      </div>
+
       {/* Main content */}
+      {formType === null && (
+         <>
       <main className="max-w-7xl mx-auto px-6 py-12 flex justify-center">
         <div className="flex-col justify-center">
           <div className="flex justify-center">
@@ -65,9 +80,8 @@ export default function GuestHomePage() {
           </form>
         </div>
       </div>
-
-
-      
+    </>
+    )}
     </div>
   );
 }

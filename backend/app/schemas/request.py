@@ -12,4 +12,3 @@ class RequestRead(BaseModel):
     book_title: str
     author: str
     isbn: str
-    time: datetime
