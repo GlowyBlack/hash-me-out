@@ -5,7 +5,7 @@ from app.utils.validators import validate_isbn
 class RequestCreate(BaseModel):
     book_title: str = Field(..., min_length=1)
     author: str = Field(..., min_length=1)
-    isbn: str
+    isbn: str 
 
     @field_validator("isbn")
     @classmethod
