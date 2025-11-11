@@ -4,7 +4,7 @@ from app.utils.validators import validate_isbn
 
 class BookCreate(BaseModel):
     isbn: str  =Field(..., description="ISBN must be 10 or 13 digits")
-    title: str = Field(..., min_length=1, description="Title of the book")
+    book_title: str = Field(..., min_length=1, description="Title of the book")
     author: str = Field(..., min_length=1, description="Author of the book")
     year_of_publication: Optional[str] = Field(None, description="Year the book was published")
     publisher: Optional[str] = Field(None, description="Publisher of the book")
@@ -19,7 +19,7 @@ class BookCreate(BaseModel):
 
 class BookRead(BaseModel):
     isbn: str  
-    title: str 
+    book_title: str 
     author: str 
     year_of_publication: Optional[str] 
     publisher: Optional[str] 
@@ -29,7 +29,7 @@ class BookRead(BaseModel):
 
 class BookUpdate(BaseModel):
     isbn: str  
-    title: str 
+    book_title: str 
     author: str 
     year_of_publication: Optional[str] 
     publisher: Optional[str] 
@@ -38,6 +38,6 @@ class BookUpdate(BaseModel):
     image_url_l: Optional[str] 
 
 class BookItem(BaseModel):
-    title: str
+    book_title: str
     author: str
     isbn: str
