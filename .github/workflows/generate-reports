@@ -1,0 +1,52 @@
+
+name: Backend Test & Coverage Reports
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend  # All commands run from /backend
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov pytest-html
+
+      - name: Run tests and save reports
+        run: |
+          # Determine next report number based on existing files
+          REPORT_NUM=$(ls testing-documents/pytest-reports | grep -Eo '[0-9]+' | sort -n | tail -1)
+          if [ -z "$REPORT_NUM" ]; then
+            REPORT_NUM=1
+          else
+            REPORT_NUM=$((REPORT_NUM + 1))
+          fi
+
+          echo "📘 Generating report number: $REPORT_NUM"
+
+          # Run pytest and generate both HTML and coverage reports
+          pytest --html="testing-documents/pytest-reports/Pytest Report $(printf '%02d' $REPORT_NUM).html" \
+                 --self-contained-html \
+                 --cov=app \
+                 --cov-report=html:"testing-documents/coverage-reports/Coverage Report $(printf '%02d' $REPORT_NUM)"
+
+      - name: Upload test and coverage reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-testing-documents
+          path: backend/testing-documents
