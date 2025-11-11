@@ -28,6 +28,9 @@ jobs:
           pip install pytest pytest-cov pytest-html
 
       - name: Run tests and save reports
+        working-directory: backend
+        env:
+          PYTHONPATH: ${{ github.workspace }}/backend
         run: |
           # Determine next report number based on existing files
           REPORT_NUM=$(ls testing-documents/pytest-reports | grep -Eo '[0-9]+' | sort -n | tail -1)
