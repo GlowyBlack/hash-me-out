@@ -8,11 +8,9 @@ from app.schemas.rating import RatingCreate, RatingRead, AvgRatingRead
 class RatingService:
     def __init__(self):
         self.repo = CSVRepository()
-        base = Path(__file__).resolve().parents[1] / "data" # current file, gets the absolute path, go one folder up and append the data folder
-        self.ratings_path = base / "BX-Book-Ratings.csv"
-        self.fields = ["User-ID", "ISBN", "Book-Rating"]
-        
-        
+        self.ratings_path = str(Path(__file__).resolve().parents[1] / "data" / "Ratings.csv")
+        self.fields = ["UserID", "ISBN", "Book-Rating"]
+            
     '''
     This method checks if a user has already rated a specific book.
     
@@ -24,8 +22,8 @@ class RatingService:
     
     ''' 
     def already_rated(self, user_id: int, isbn: str) -> bool:
-        rows = self.repo.read_all(self.ratings_path, self.fields) # read all rows (user id, isbn, rating) from the CSV file
-        return any(r["User-ID"] == str(user_id) and r["ISBN"] == isbn for r in rows) # user id and book already in row in file? rating must already exist, return false
+        rows = self.repo.read_all(self.ratings_path) # read all rows (user id, isbn, rating) from the CSV file
+        return any(r["UserID"] == str(user_id) and r["ISBN"] == isbn for r in rows) # user id and book already in row in file? rating must already exist, return false
     
     '''
     This method creates a new rating for a book by a user.
@@ -37,22 +35,15 @@ class RatingService:
         RatingRead: The created rating data.    
     '''  
     def create_rating(self, user_id: int, rating_data: RatingCreate) -> RatingRead:
-       
-       if self.already_rated(user_id, rating_data.isbn):
-           raise ValueError("This user has already rated this book.")
-        
-       rating = Rating( # takes vals from schema, creates rating model instance (internal object for formating/saving data)
-            user_id=user_id,
-            isbn=rating_data.isbn,
-            rating=rating_data.rating,
-        )
-       
-       self.repo.append(self.ratings_path, rating.to_csv_dict(), self.fields)
-       return RatingRead( # not internal object, but schema for output (FastAPI friendly)
-            user_id=rating.user_id,
-            isbn=rating.isbn,
-            rating=rating.rating,
-        )  
+        if self.already_rated(user_id, rating_data.isbn):
+            raise ValueError("This user has already rated this book.")
+
+        rating = Rating(user_id=user_id, isbn=rating_data.isbn, rating=rating_data.rating)
+
+        self.repo.append_row(self.ratings_path, self.fields, rating.to_csv_dict())
+
+        return RatingRead(user_id=rating.user_id, isbn=rating.isbn, rating=rating.rating)
+
         
     '''
     This method calculates the average rating for a book based on its ISBN.
@@ -80,9 +71,9 @@ class RatingService:
     
     '''
     def get_user_rating(self, user_id: int, isbn: str) -> RatingRead | None:
-        rows = self.repo.read_all(self.ratings_path, self.fields)
+        rows = self.repo.read_all(self.ratings_path)
         for row in rows:
-            if row["User-ID"] == str(user_id) and row["ISBN"] == isbn:
+            if row["UserID"] == str(user_id) and row["ISBN"] == isbn:
                 rating = Rating.from_dict(row)
                 return RatingRead(
                     user_id=rating.user_id,
@@ -99,7 +90,7 @@ class RatingService:
         
     '''
     def get_all_ratings(self) -> list[RatingRead]:
-        rows = self.repo.read_all(self.ratings_path, self.fields)
+        rows = self.repo.read_all(self.ratings_path)
         ratings = []
         for row in rows:
             rating = Rating.from_dict(row)
@@ -121,14 +112,14 @@ class RatingService:
     '''
     
     def delete_rating(self, user_id: int, isbn: str) -> bool:
-        rows = self.repo.read_all(self.ratings_path, self.fields)
+        rows = self.repo.read_all(self.ratings_path)
         og_length = len(rows)
-        filtered_rows = [r for r in rows if not (r["User-ID"] == str(user_id) and r["ISBN"] == isbn)] # filter out the rating to delete
-        if len(filtered_rows) == og_length: # no change in length, rating not found
+        filtered_rows = [r for r in rows if not (r["UserID"] == str(user_id) and r["ISBN"] == isbn)]
+        if len(filtered_rows) == og_length:
             return False
-        self.repo.write_all(self.ratings_path, self.fields, filtered_rows) # rewrite csv without deleted rating
-        return True 
-    
+
+        self.repo.write_all(self.ratings_path, self.fields, filtered_rows)
+        return True
     
     '''
     This method retrieves all ratings for a specific book based on its ISBN.
@@ -138,7 +129,7 @@ class RatingService:
         list[RatingRead]: A list of rating data for the specified book.
     '''
     def get_ratings_by_isbn(self, isbn: str) -> list[RatingRead]:
-        rows = self.repo.read_all(self.ratings_path, self.fields)
+        rows = self.repo.read_all(self.ratings_path)
         ratings = []
         for row in rows:
             if row["ISBN"] == isbn: # filter by isbn
