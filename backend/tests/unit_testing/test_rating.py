@@ -9,9 +9,11 @@ def test_create_rating_success():
     result = service.create_rating(1, RatingCreate(isbn="034545104X", rating=8))
     assert result == expected
 
-def test_prevent_duplicate_rating():
-    with pytest.raises(ValueError):
-        service.create_rating(1, RatingCreate(isbn="034545104X", rating=9))
+def test_update_rating_overwrites_value():
+    service.create_rating(1, RatingCreate(isbn="034545104X", rating=6))
+    service.create_rating(1, RatingCreate(isbn="034545104X", rating=8))
+    r = service.get_user_rating(1, "034545104X")
+    assert r and r.rating == 8
 
 def test_get_all_and_delete():
     service.create_rating(2, RatingCreate(isbn="1111111111", rating=6))
