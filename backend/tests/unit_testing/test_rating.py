@@ -11,7 +11,7 @@ def test_create_rating_success():
 
 def test_update_rating_overwrites_value():
     service.create_rating(1, "034545104X", 6)
-    service.create_rating(1, "034545104X", 8)  # upsert/update
+    service.create_rating(1, "034545104X", 8)
     r = service.get_user_rating(1, "034545104X")
     assert r and r.rating == 8
 

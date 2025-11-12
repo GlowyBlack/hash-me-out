@@ -3,7 +3,7 @@ from pathlib import Path
 from statistics import mean
 from app.models.rating import Rating
 from app.utils.data_manager import CSVRepository
-from app.schemas.rating import RatingCreate, RatingRead, AvgRatingRead
+from app.schemas.rating import RatingRead, AvgRatingRead
 
 
 class RatingService:
@@ -12,10 +12,10 @@ class RatingService:
         self.ratings_path = str(Path(__file__).resolve().parents[1] / "data" / "Ratings.csv")
         self.fields = ["UserID", "ISBN", "Book-Rating"]
 
-    def _read_rows(self):
+    def __read_rows(self):
         return self.repo.read_all(self.ratings_path)
 
-    def _write_rows(self, rows):
+    def __write_rows(self, rows):
         self.repo.write_all(self.ratings_path, self.fields, rows)
         
     '''
@@ -29,7 +29,7 @@ class RatingService:
     '''
 
     def create_rating(self, user_id: int, isbn: str, rating_value: int) -> RatingRead:
-        rows = self._read_rows()
+        rows = self.__read_rows()
         uid = str(user_id)
         updated = False
 
@@ -40,7 +40,7 @@ class RatingService:
                 break
 
         if updated:
-            self._write_rows(rows)
+            self.__write_rows(rows)
         else:
             rating = Rating(user_id=user_id, isbn=isbn, rating=rating_value)
             self.repo.append_row(self.ratings_path, self.fields, rating.to_csv_dict())
@@ -57,7 +57,7 @@ class RatingService:
         
     '''
     def get_user_rating(self, user_id: int, isbn: str) -> RatingRead | None:
-        for row in self._read_rows():
+        for row in self.__read_rows():
             if row["UserID"] == str(user_id) and row["ISBN"] == isbn:
                 return RatingRead(user_id=int(row["UserID"]), isbn=row["ISBN"], rating=int(row["Book-Rating"]))
         return None
@@ -70,7 +70,7 @@ class RatingService:
     def get_all_ratings(self) -> list[RatingRead]:
         return [
             RatingRead(user_id=int(r["UserID"]), isbn=r["ISBN"], rating=int(r["Book-Rating"]))
-            for r in self._read_rows()
+            for r in self.__read_rows()
         ]
 
     '''
@@ -82,11 +82,11 @@ class RatingService:
         bool: True if the rating was deleted, False if not found.
     '''
     def delete_rating(self, user_id: int, isbn: str) -> bool:
-        rows = self._read_rows()
+        rows = self.__read_rows()
         filtered = [r for r in rows if not (r["UserID"] == str(user_id) and r["ISBN"] == isbn)]
         if len(filtered) == len(rows):
             return False
-        self._write_rows(filtered)
+        self.__write_rows(filtered)
         return True
     
     '''
@@ -99,7 +99,7 @@ class RatingService:
     def get_ratings_by_isbn(self, isbn: str) -> list[RatingRead]:
         return [
             RatingRead(user_id=int(r["UserID"]), isbn=r["ISBN"], rating=int(r["Book-Rating"]))
-            for r in self._read_rows() if r["ISBN"] == isbn
+            for r in self.__read_rows() if r["ISBN"] == isbn
         ]
 
     '''
