@@ -22,32 +22,31 @@ class RatingService:
     This method creates or updates a rating for a given user and book.
     Args:
         user_id (int): The ID of the user creating the rating.
-        rating_data (RatingCreate): The data for the rating, including ISBN and rating value.
+        isbn (str): The ISBN of the book being rated.
+        rating_value (int): The rating value to be assigned.  
     Returns:    
         RatingRead: The created or updated rating.
     '''
 
-    def create_rating(self, user_id: int, rating_data: RatingCreate) -> RatingRead:
-        """Upsert: update if (user_id, isbn) exists; else create."""
+    def create_rating(self, user_id: int, isbn: str, rating_value: int) -> RatingRead:
         rows = self._read_rows()
         uid = str(user_id)
-        isbn = rating_data.isbn
-
         updated = False
+
         for r in rows:
             if r["UserID"] == uid and r["ISBN"] == isbn:
-                r["Book-Rating"] = str(rating_data.rating)
+                r["Book-Rating"] = str(rating_value)
                 updated = True
                 break
 
         if updated:
             self._write_rows(rows)
         else:
-            rating = Rating(user_id=user_id, isbn=isbn, rating=rating_data.rating)
+            rating = Rating(user_id=user_id, isbn=isbn, rating=rating_value)
             self.repo.append_row(self.ratings_path, self.fields, rating.to_csv_dict())
 
-        return RatingRead(user_id=user_id, isbn=isbn, rating=rating_data.rating)
-    
+        return RatingRead(user_id=user_id, isbn=isbn, rating=rating_value)
+
     '''
     This method retrieves a user's rating for a specific book.
     Args:

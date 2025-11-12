@@ -6,11 +6,9 @@ router = APIRouter(prefix="/ratings", tags=["Ratings"])
 service = RatingService()
 
 
-@router.post("/", response_model=RatingRead)
-def add_rating(payload: RatingCreate, user_id: int):
-    # keeps your method name; behavior is upsert
-    return service.add_rating(user_id, payload)
-
+@router.post("/books/{isbn}", response_model=RatingRead)
+def add_rating(isbn: str, payload: RatingCreate, user_id: int):
+    return service.create_rating(user_id, isbn, payload.rating)
 
 @router.get("/", response_model=list[RatingRead])
 def get_all_ratings():
