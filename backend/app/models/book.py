@@ -1,4 +1,4 @@
-class Request:
+class Book:
     def __init__(self, isbn: str, book_title: str, author: str, year_of_publication: str | None = None, publisher: str | None = None, image_url_s: str | None = None, image_url_m: str | None = None, image_url_l: str | None = None):
         self.isbn = isbn
         self.book_title = book_title

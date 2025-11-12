@@ -29,13 +29,13 @@ class BookRead(BaseModel):
 
 class BookUpdate(BaseModel):
     isbn: str  
-    book_title: str 
-    author: str 
-    year_of_publication: Optional[str] 
-    publisher: Optional[str] 
-    image_url_s: Optional[str] 
-    image_url_m: Optional[str] 
-    image_url_l: Optional[str] 
+    book_title: Optional[str] = None
+    author: Optional[str] = None
+    year_of_publication: Optional[str] = None
+    publisher: Optional[str] = None
+    image_url_s: Optional[str] = None
+    image_url_m: Optional[str] = None
+    image_url_l: Optional[str] = None
 
 class BookItem(BaseModel):
     book_title: str

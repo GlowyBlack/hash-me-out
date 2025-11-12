@@ -8,7 +8,7 @@ class BookService:
     def __init__(self):
         self.repo = CSVRepository()
         self.path = Path(__file__).resolve().parents[1] / "data" / "Books.csv"
-        self.fields = ["ISBN", "Book-Title", "Book-Author", "Year-of-Publication", "Publisher", "Image-URL-S", "Image-URL-M", "Image-URL-L"]
+        self.fields = ["ISBN", "Book-Title", "Book-Author", "Year-Of-Publication", "Publisher", "Image-URL-S", "Image-URL-M", "Image-URL-L"]
         
 
     def _book_exists(self, isbn: str) -> bool:
@@ -48,7 +48,7 @@ class BookService:
             isbn=data.isbn,
             book_title=data.book_title,
             author=data.author,
-            year=data.year_of_publication,
+            year_of_publication=data.year_of_publication,
             publisher=data.publisher,
             image_url_s=data.image_url_s,
             image_url_m=data.image_url_m,
@@ -70,12 +70,12 @@ class BookService:
                 # Only update provided fields
                 update_data = data.model_dump(exclude_unset=True)
 
-                if "title" in update_data:
-                    r["Title"] = update_data["title"]
+                if "book_title" in update_data:
+                    r["Book-Title"] = update_data["book_title"]
                 if "author" in update_data:
-                    r["Author"] = update_data["author"]
+                    r["Book-Author"] = update_data["author"]
                 if "year_of_publication" in update_data:
-                    r["Year"] = update_data["year_of_publication"]
+                    r["Year-Of-Publication"] = update_data["year_of_publication"]
                 if "publisher" in update_data:
                     r["Publisher"] = update_data["publisher"]
                 if "image_url_s" in update_data:

@@ -1,26 +1,55 @@
 import pytest
-from app.models.book import Book
+from app.services.book_service import BookService
+from app.schemas.book import BookCreate, BookRead, BookUpdate
 
-@pytest.fixture
-def sample_book():
-    """Fixture providing a sample Book instance."""
-    return Book(
-        isbn="0195153448",
-        book_title="Classical Mythology",
-        author="Mark P. O. Morford",
-        year_of_publication="2002",
-        publisher="Oxford University Press",
-        image_url_s="http://images.amazon.com/images/P/0195153448.01.THUMBZZZ.jpg",
-        image_url_m="http://images.amazon.com/images/P/0195153448.01.MZZZZZZZ.jpg",
-        image_url_l="http://images.amazon.com/images/P/0195153448.01.LZZZZZZZ.jpg",
+service = BookService()
+
+def test_create_book_success():
+    expected_result = BookRead(
+                        isbn = "9780307245304",
+                        book_title = "Percy Jackson and the Lightning Thief",
+                        author = "Rick Riordan",
+                        year_of_publication = None,
+                        publisher = None,
+                        image_url_s=None,
+                        image_url_m=None,
+                        image_url_l=None)
+    
+    
+    test_data = BookCreate(
+                    isbn = "9780307245304",
+                    book_title = "Percy Jackson and the Lightning Thief",
+                    author = "Rick Riordan")
+    
+    result = service.create_book(test_data)
+    assert result == expected_result
+
+
+def test_prevent_duplicate_book():
+    duplicate_data = BookCreate(
+        isbn = "9780307245304",
+        book_title = "Percy Jackson and the Lightning Thief",
+        author = "Rick Riordan"
+    )
+    with pytest.raises(ValueError, match = "Book already exists in the database."):
+        service.create_book(duplicate_data)
+    
+def test_get_all_books_returns_list():
+    result = service.get_all_books()
+    assert isinstance(result, list)
+    assert any(book.isbn == "9780307245304" for book in result)
+
+def test_update_book_success():
+    update_data = BookUpdate(
+        isbn = "9780307245304",
+        book_title = "Updated Book",
+        author = "Updated Author"
     )
 
-def test_to_api_dict(sample_book):
-    """Check API dict conversion."""
-    api_dict = sample_book.to_api_dict()
+    updated_book = service.update_book("9780307245304", update_data)
+    assert updated_book.book_title == "Updated Book"
+    assert updated_book.author == "Updated Author"
 
-    assert api_dict["isbn"] == "0195153448"
-    assert api_dict["book_title"] == "Classical Mythology"
-    assert api_dict["author"] == "Mark P. O. Morford"
-    assert "image_url_m" in api_dict
-    assert api_dict["publisher"] == "Oxford University Press"
+def test_delete_book_success():
+    result = service.delete_book("9780307245304")
+    assert result is True
