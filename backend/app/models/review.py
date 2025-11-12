@@ -11,7 +11,6 @@ class Review:
     def to_api_dict(self) -> dict:
         """
         Convert this Review object into a dictionary formatted for API responses.
-        Returns: dict containing all the Review information in API-friendly key names.
         """
         return {
             "review_id": self.review_id,
@@ -24,7 +23,6 @@ class Review:
     def to_csv_dict(self) -> dict:
         """
         Convert this Review object into a dictionary formatted for CSV storage.
-        Returns: dict containing all Review information ready to be written to the CSV file.
         """
         return {
             "ReviewID": self.review_id,

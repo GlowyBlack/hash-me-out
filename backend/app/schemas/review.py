@@ -2,7 +2,7 @@ from pydantic import BaseModel, Field
 from datetime import datetime
 
 class ReviewCreate(BaseModel):
-    isbn: str = Field(..., min_length=10, max_length=13)
+    isbn: str = Field(..., min_length=10, max_length=13) # Will come back to: Dont think i need this
     comment: str = Field(..., min_length=8)
 
 class ReviewRead(BaseModel):
