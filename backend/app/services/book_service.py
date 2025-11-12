@@ -11,12 +11,12 @@ class BookService:
         self.fields = ["ISBN", "Book-Title", "Book-Author", "Year-Of-Publication", "Publisher", "Image-URL-S", "Image-URL-M", "Image-URL-L"]
         
 
-    def _book_exists(self, isbn: str) -> bool:
+    def __book_exists(self, isbn: str) -> bool:
         """Check if a book with this ISBN already exists."""
         rows = self.repo.read_all(self.path)
         return any(r["ISBN"] == isbn for r in rows)
 
-    def _load_book_or_none(self, isbn: str):
+    def __load_book_or_none(self, isbn: str):
         """Return the row dict for a book if found."""
         rows = self.repo.read_all(self.path)
         for row in rows:
@@ -33,7 +33,7 @@ class BookService:
 
     def get_book(self, isbn: str):
         """Return a single book or None."""
-        row = self._load_book_or_none(isbn)
+        row = self.__load_book_or_none(isbn)
         if not row:
             return None
         return BookRead(**Book.from_dict(row).to_api_dict())
@@ -41,7 +41,7 @@ class BookService:
     def create_book(self, data: BookCreate) -> BookRead:
         """Add a new book to Books.csv."""
 
-        if self._book_exists(data.isbn):
+        if self.__book_exists(data.isbn):
             raise ValueError("Book already exists in the database.")
 
         book = Book(
@@ -93,7 +93,7 @@ class BookService:
 
         self.repo.write_all(self.path, self.fields, rows)
 
-        row = self._load_book_or_none(isbn)
+        row = self.__load_book_or_none(isbn)
         return BookRead(**Book.from_dict(row).to_api_dict())
 
     def delete_book(self, isbn: str) -> bool:
