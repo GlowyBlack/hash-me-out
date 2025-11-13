@@ -46,5 +46,4 @@ class Book:
             image_url_l=row.get("Image-URL-L"),
         )
 
-    def matches_isbn(self, isbn: str) -> bool:
-        return self.isbn == isbn
+
