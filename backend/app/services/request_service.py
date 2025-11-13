@@ -12,7 +12,7 @@ class RequestService:
         self.total_fields = ["ISBN", "Total Requested"]
 
 
-    def _generate_next_id(self) -> int:
+    def __generate_next_id(self) -> int:
         """
         Generate the next RequestID number.
         """
@@ -22,7 +22,7 @@ class RequestService:
         ids = [int(r["RequestID"]) for r in rows if r["RequestID"].isdigit()]
         return max(ids, default=0) + 1
 
-    def _already_requested(self, user_id: int, isbn: str) -> bool:
+    def __already_requested(self, user_id: int, isbn: str) -> bool:
         """
         Checks if this user has already requested the same book 
         """
@@ -70,10 +70,10 @@ class RequestService:
         """
         Create a new book request and save it to the requests.csv file.
         """
-        if self._already_requested(user_id, data.isbn):
+        if self.__already_requested(user_id, data.isbn):
             raise ValueError("This user has already requested this book.")
 
-        new_id = self._generate_next_id()
+        new_id = self.__generate_next_id()
         request = Request(
             request_id=new_id,
             user_id=user_id,
