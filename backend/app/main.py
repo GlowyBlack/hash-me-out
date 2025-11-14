@@ -19,7 +19,6 @@ app.add_middleware(
 def health_check():
     return {"status": "ok"}
 
-# Routers
 app.include_router(request_router)
 app.include_router(auth_router.router, prefix="/auth", tags=["auth"])
 app.include_router(review_router)
@@ -31,4 +30,3 @@ def search(q: str):
     if not result:
         return {"result": [], "message": "No matching books found"}
     return {"results": result}
-
