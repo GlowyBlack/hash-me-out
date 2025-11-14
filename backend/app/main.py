@@ -1,9 +1,11 @@
 from fastapi import FastAPI
 from app.utils.search import search_books
 from app.routers.request_router import router as request_router
+from app.routers.rating_router import router as rating_router
 
 app = FastAPI()
 app.include_router(request_router)
+app.include_router(rating_router)
 
 
 @app.get("/search/{q}")
