@@ -1,8 +1,20 @@
 import pytest
 from app.services.request_service import RequestService
 from app.schemas.request import RequestCreate, RequestRead
+from pydantic import ValidationError
 
 service = RequestService()
+
+def test_create_request_fail():
+    with pytest.raises(ValidationError) as exc_info:
+        RequestCreate(
+            book_title="Percy Jackson and the Lightning Thief",
+            author="Rick Riordan",
+            isbn="123456"  
+        )
+
+    assert "ISBN" in str(exc_info.value)
+    
 
 def test_create_request_success():
     expected_result = RequestRead(

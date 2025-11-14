@@ -13,5 +13,7 @@ class ReadingListSummary(BaseModel):
     total_books: int = Field(..., description="Number of books in the list")
 
 class ReadingListDetail(BaseModel):
+    list_id: int
+    user_id: int
     name: str = Field(..., min_length=1)
     books: List[BookItem] = Field(default_factory=list, description="Books inside the list")
