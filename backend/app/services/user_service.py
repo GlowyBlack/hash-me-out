@@ -16,11 +16,14 @@ class CSVUserService:
         if not os.path.exists(self.path):
             with open(self.path, "w", newline="", encoding="utf-8") as f:
                 csv.DictWriter(f, fieldnames=FIELDNAMES).writeheader()
+                
+    def _norm(self, s: str) -> str:
+        return s.strip().lower()
 
     def get_by_username(self, username: str) -> Optional[Dict]:
-        rows = self.repo.read_all(self.path)
-        for row in rows:
-            if row["username"] == username:  
+        username = self._norm(username)
+        for row in self.repo.read_all(self.path):
+            if self._norm(row["username"]) == username:
                 row["id"] = int(row["id"])
                 return row
         return None
@@ -28,21 +31,22 @@ class CSVUserService:
     def create_user(self, *, username: str, email: str, password_hash: str) -> Dict:
         rows = self.repo.read_all(self.path)
 
-      
-        if any(r["username"] == username for r in rows):
+        username = self._norm(username)
+        email = self._norm(email)
+        rows = self.repo.read_all(self.path)
+
+        if any(self._norm(r["username"]) == username for r in rows):
             raise ValueError("username_taken")
-        if any(r["email"] == email for r in rows):
+        if any(self._norm(r["email"]) == email for r in rows):
             raise ValueError("email_taken")
 
         new_id = 1 if not rows else max(int(r["id"]) for r in rows) + 1
-
         rec = {
             "id": str(new_id),
             "username": username,
             "email": email,
             "password_hash": password_hash,
         }
-
         rows.append(rec)
         self.repo.write_all(self.path, FIELDNAMES, rows)
         rec["id"] = new_id
