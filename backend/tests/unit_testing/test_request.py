@@ -13,17 +13,15 @@ def test_create_request_fail():
             isbn="123456"  
         )
 
-    assert "ISBN" in str(exc_info.value)
+    assert "ISBN must contain exactly 10 or 13 digits" in str(exc_info.value)
     
-
 def test_create_request_success():
     expected_result = RequestRead(
                         request_id = 1,
                         user_id= 1,
                         book_title= "Percy Jackson and the Lightning Thief",
                         author = "Rick Riordan",
-                        isbn= "9780307245304",
-                        time= 2025-10-28)
+                        isbn= "9780307245304")
     
     test_data = RequestCreate(book_title="Percy Jackson and the Lightning Thief", 
                               author = "Rick Riordan", 
