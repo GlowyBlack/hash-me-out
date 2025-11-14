@@ -23,6 +23,7 @@ class BookService:
             if row["ISBN"] == isbn:
                 return row
         return None
+    
     def get_all_books(self) -> list[BookRead]:
         """Return all books as BookRead schemas."""
         rows = self.repo.read_all(self.path)
