@@ -8,7 +8,6 @@ service = RequestService()
 @router.post("/")
 def create_request(
     request: RequestCreate, user_id: int):
-    """Submit a new book request."""
     try:
         return service.create_request(user_id,request)
     except ValueError as e:
