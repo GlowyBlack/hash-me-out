@@ -1,0 +1,49 @@
+import csv
+import os
+from typing import Optional, Dict, List
+
+USER_CSV = os.path.join(os.path.dirname(__file__), "users.csv")
+FIELDNAMES = ["id", "username", "email", "password_hash"]
+
+class CSVUserService:
+    def __init__(self, path: str = USER_CSV):
+        self.path = path
+        if not os.path.exists(self.path):
+            with open(self.path, "w", newline="", encoding="utf-8") as f:
+                writer = csv.DictWriter(f, fieldnames=FIELDNAMES)
+                writer.writeheader()
+
+    def _read_all(self) -> List[Dict[str, str]]:
+        with open(self.path, "r", newline="", encoding="utf-8") as f:
+            return list(csv.DictReader(f))
+
+    def _write_all(self, rows: List[Dict[str, str]]) -> None:
+        tmp = self.path + ".tmp"
+        with open(tmp, "w", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=FIELDNAMES)
+            writer.writeheader()
+            writer.writerows(rows)
+        os.replace(tmp, self.path)
+
+    def get_by_username(self, username: str) -> Optional[Dict]:
+        for row in self._read_all():
+            if row["username"] == username:
+                row["id"] = int(row["id"])
+                return row
+        return None
+
+    def create_user(self, *, username: str, email: str, password_hash: str) -> Dict:
+        rows = self._read_all()
+        if any(r["username"] == username for r in rows):
+            raise ValueError("username_taken")
+        new_id = 1 if not rows else max(int(r["id"]) for r in rows) + 1
+        rec = {
+            "id": str(new_id),
+            "username": username,
+            "email": email,
+            "password_hash": password_hash,
+        }
+        rows.append(rec)
+        self._write_all(rows)
+        rec["id"] = new_id 
+        return rec
