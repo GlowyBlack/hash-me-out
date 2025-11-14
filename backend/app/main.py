@@ -4,6 +4,9 @@ from app.routers.request_router import router as request_router
 from app.routers.review_router import router as review_router
 from app.routers.readinglist_router import router as readinglist_router
 from app.routers.book_router import router as book_router
+from app.schemas.readinglist import ReadingListCreate
+
+
 
 app = FastAPI()
 app.include_router(request_router)
@@ -27,5 +30,7 @@ def search(q):
 #     if not result:
 #         return {"result": [], "message": "No matching books found"}
 #     return {"results":result}
+
+# result = ReadingListCreate(name = " ")
 
 

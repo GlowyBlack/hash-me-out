@@ -51,13 +51,13 @@ class ReadingList:
             if book_data:
                 returned_books.append({
                     "isbn": isbn,
-                    "title": book_data.get("Book-Title", "Unknown Title"),
+                    "book_title": book_data.get("Book-Title", "Unknown Title"),
                     "author": book_data.get("Book-Author", "Unknown Author")
                 })
             else:
                 returned_books.append({
                     "isbn": isbn,
-                    "title": "Unknown Title",
+                    "book_title": "Unknown Title",
                     "author": "Unknown Author"
                 })
         return returned_books
