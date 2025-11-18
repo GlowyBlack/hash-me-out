@@ -1,3 +1,4 @@
+from pydantic import ValidationError
 import pytest
 from app.services.book_service import BookService
 from app.schemas.book import BookCreate, BookRead, BookUpdate
@@ -8,6 +9,8 @@ service = BookService()
 # create book with short isbn
 # create book with too long isbn
 # test validator with these
+
+
 
 def test_create_book_success():
     expected_result = BookRead(
@@ -28,7 +31,6 @@ def test_create_book_success():
     
     result = service.create_book(test_data)
     assert result == expected_result
-
 
 def test_prevent_duplicate_book():
     duplicate_data = BookCreate(
@@ -79,3 +81,14 @@ def test_get_book_returns_none_when_not_found():
     result = service.get_book("0000000000000")
     assert result is None
 
+def test_empty_isbn_fail():
+    with pytest.raises(ValidationError) as exc_info:
+    # This will trigger the Pydantic validator
+        test_data = BookCreate(
+            isbn="",  
+            book_title="Percy Jackson and the Lightning Thief",
+            author="Rick Riordan"
+        )
+        service.create_book(test_data)  #it won't get here
+
+    assert "ISBN must contain exactly 10 or 13 digits" in str(exc_info.value)
