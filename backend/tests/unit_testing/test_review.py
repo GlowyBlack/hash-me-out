@@ -54,3 +54,13 @@ def test_edit_review_updates_comment():
     assert len(found) == 1
     assert found[0].comment == "Updated comment!"
 
+def test_create_review_twice_same_user_and_book_raises():
+    content = ReviewCreate(
+        isbn="034545104X",
+        comment="Amazing book!"
+    )
+
+    service.create_review(1, content)
+
+    with pytest.raises(ValueError):
+        service.create_review(1, content)
