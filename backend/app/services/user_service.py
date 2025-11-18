@@ -51,3 +51,20 @@ class CSVUserService:
         self.repo.write_all(self.path, FIELDNAMES, rows)
         rec["id"] = new_id
         return rec
+    
+    def get_all_users(self) -> list[Dict]:
+        rows = self.repo.read_all(self.path)
+        for r in rows:
+            r["id"] = int(r["id"])
+        return rows
+    
+    def delete_user(self, user_id: int) -> bool:
+        rows = self.repo.read_all(self.path)
+        filtered = [r for r in rows if int(r["id"]) != user_id]
+
+        if len(filtered) == len(rows):
+            return False 
+
+        self.repo.write_all(self.path, FIELDNAMES, filtered)
+        return True
+    

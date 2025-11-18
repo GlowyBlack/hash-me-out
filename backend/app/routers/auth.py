@@ -3,8 +3,9 @@ from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel, EmailStr
 from app.services.user_service import CSVUserService
 from app.deps import get_user_service, pwd_context, create_access_token, get_current_user
+from typing import List
 
-router = APIRouter(prefix="/auth", tags=["auth"])
+router = APIRouter(tags=["auth"])
 
 class UserCreateRequest(BaseModel):
     username: str
@@ -43,3 +44,18 @@ def login(form: OAuth2PasswordRequestForm = Depends(), svc: CSVUserService = Dep
 @router.get("/me", response_model=UserOut)
 def me(curr=Depends(get_current_user)):
     return UserOut(id=curr["id"], username=curr["username"], email=curr["email"])
+
+@router.get("/users", response_model=List[UserOut])
+def get_all_users(svc: CSVUserService = Depends(get_user_service)):
+    users = svc.get_all_users()
+    return [UserOut(id=u["id"], username=u["username"], email=u["email"]) for u in users]
+
+@router.delete("/users/{user_id}")
+def delete_user(user_id: int, svc: CSVUserService = Depends(get_user_service)):
+    ok = svc.delete_user(user_id)
+    if not ok:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="user_not_found",
+        )
+    return {"message": "user_deleted"}
