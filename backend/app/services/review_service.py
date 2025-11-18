@@ -1,5 +1,3 @@
-# app/services/review_service.py
-
 from pathlib import Path
 from app.models.review import Review
 from app.utils.data_manager import CSVRepository
