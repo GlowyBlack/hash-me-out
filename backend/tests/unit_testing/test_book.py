@@ -4,6 +4,11 @@ from app.schemas.book import BookCreate, BookRead, BookUpdate
 
 service = BookService()
 
+# create book with empty isbn
+# create book with short isbn
+# create book with too long isbn
+# test validator with these
+
 def test_create_book_success():
     expected_result = BookRead(
                         isbn = "9780307245304",
