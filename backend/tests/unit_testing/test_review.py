@@ -30,3 +30,23 @@ def test_create_review_success():
     assert result.isbn == "034545104X"
     assert result.comment == "This is great!"
     assert result.review_id >= 1
+
+
+def test_get_all_and_delete():
+    isbn = "1111111111"
+    content = ReviewCreate(
+        isbn=isbn,
+        comment="Interesting read"
+    )
+
+    r = service.create_review(2, content)
+
+    rows = service.get_all_reviews(isbn)
+    assert len(rows) >= 1
+    match = [rev for rev in rows if rev.review_id == r.review_id]
+    assert len(match) == 1
+    assert match[0].user_id == 2
+
+    ok = service.delete_review(r.review_id)
+    assert ok is True
+
