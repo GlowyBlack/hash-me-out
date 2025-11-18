@@ -97,4 +97,17 @@ def test_short_isbn_fail():
         service.create_book(test_data)  #it won't get here
 
     assert "ISBN must contain exactly 10 or 13 digits" in str(exc_info.value)
+
+def test_long_isbn_fail():
+    with pytest.raises(ValidationError) as exc_info:
+    # This will trigger the Pydantic validator
+        test_data = BookCreate(
+            isbn="11111111111111111111111111111111111",  
+            book_title="Percy Jackson and the Lightning Thief",
+            author="Rick Riordan"
+        )
+        service.create_book(test_data)  #it won't get here
+
+    assert "ISBN must contain exactly 10 or 13 digits" in str(exc_info.value)
+   
    
