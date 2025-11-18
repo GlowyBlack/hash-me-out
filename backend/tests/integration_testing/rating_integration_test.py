@@ -68,3 +68,10 @@ def test_delete_rating(client):
     r2 = client.delete("/ratings/?user_id=3&isbn=ABC")
     assert r2.status_code == 404
     assert r2.json() == {"detail": "Rating not found"}
+
+def test_create_rating_invalid_value_returns_422(client):
+    r = client.post("/ratings/books/123?user_id=1", json={"rating": 11})
+    assert r.status_code == 422
+
+    r2 = client.post("/ratings/books/123?user_id=1", json={"rating": -1})
+    assert r2.status_code == 422
