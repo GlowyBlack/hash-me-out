@@ -30,3 +30,14 @@ def test_create_review_success():
     assert result.isbn == "034545104X"
     assert result.comment == "This is great!"
     assert result.review_id >= 1
+
+def test_create_review_twice_same_user_and_book_raises():
+    content = ReviewCreate(
+        isbn="034545104X",
+        comment="Amazing book!"
+    )
+
+    service.create_review(1, content)
+
+    with pytest.raises(ValueError):
+        service.create_review(1, content)
