@@ -30,3 +30,27 @@ def test_create_review_success():
     assert result.isbn == "034545104X"
     assert result.comment == "This is great!"
     assert result.review_id >= 1
+
+
+def test_edit_review_updates_comment():
+    isbn = "2222222222"
+    original = ReviewCreate(
+        isbn=isbn,
+        comment="Old comment here"
+    )
+
+    created = service.create_review(3, original)
+
+    updated = service.edit_review(
+        review_id=created.review_id,
+        data=ReviewUpdate(comment="Updated comment!")
+    )
+
+    assert updated.review_id == created.review_id
+    assert updated.comment == "Updated comment!"
+
+    rows = service.get_all_reviews(isbn)
+    found = [rev for rev in rows if rev.review_id == created.review_id]
+    assert len(found) == 1
+    assert found[0].comment == "Updated comment!"
+
