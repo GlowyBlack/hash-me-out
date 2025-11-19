@@ -78,3 +78,28 @@ def test_get_book(client):
 
 # update, delete
 
+def test_update_book(client):
+
+    create_response = client.post("/books/", json={
+        "isbn": "9780307245304",
+        "book_title": "Percy Jackson",
+        "author": "Rick Riordan"
+    })
+
+    assert create_response.status_code == 200
+    
+    update_response = client.put("/books/9780307245304", json={
+        "isbn": "9780307245304",
+        "book_title": "Updated Title",
+        "author": "Updated Author"
+    })
+
+    get_response = client.get("/books/9780307245304")
+    data = get_response.json()
+
+    assert get_response.status_code == 200
+    assert data["isbn"] == "9780307245304"
+    assert data["book_title"] == "Updated Title"
+    assert data["author"] == "Updated Author"
+
+   
