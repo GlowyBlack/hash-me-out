@@ -127,3 +127,21 @@ def test_create_book_fail_missing_fields(client):
     })
     assert r.status_code == 422
 
+def test_get_book_fail_not_found(client):
+    r = client.get("/books/DOES_NOT_EXIST")
+    assert r.status_code == 404
+    assert r.json() == {"detail": "Book not found"}
+
+def test_update_book_fail_not_found(client):
+    update_response = client.put("/books/NOPE", json={
+        "isbn": "NOPE",
+        "book_title": "No Title",
+        "author": "No Author"
+    })
+    assert update_response.status_code == 404
+    assert update_response.json() == {"detail": "Book not found"}
+
+def test_delete_book_fail_not_found(client):
+    r = client.delete("/books/IDONTEXIST")
+    assert r.status_code == 404
+    assert r.json() == {"detail": "Book not found"}
