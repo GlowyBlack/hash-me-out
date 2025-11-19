@@ -8,15 +8,15 @@ service = ReadingListService()
 
 @router.post("/")
 def create_list(
-    request: ReadingListCreate, user_id: int):
+    list: ReadingListCreate, user_id: int):
     try:
-        return service.create_list(user_id,request)
+        return service.create_list(user_id=user_id,data=list)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     
 @router.delete("/{list_id}")
 def delete_request( list_id: int, user_id: int):
     """Delete a specific request by ID."""
-    if not service.delete_list(list_id):
+    if not service.delete_list(list_id=list_id, user_id=user_id):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="ReadingList not found")
     return {"message": "ReadingList deleted successfully"}
