@@ -4,7 +4,6 @@ from fastapi.testclient import TestClient
 from app.main import app
 from app.routers import rating_router
 
-
 @pytest.fixture(autouse=True)
 def prepare_csv_for_testing():
     path = rating_router.service.ratings_path
