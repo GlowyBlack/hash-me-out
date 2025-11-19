@@ -6,7 +6,7 @@ router = APIRouter(prefix="/reviews", tags=["Reviews"])
 service = ReviewService()
 
 
-@router.post("/", response_model=ReviewRead)
+@router.post("/")
 def create_review(review: ReviewCreate, user_id: int):
     try:
         return service.create_review(user_id, review)
@@ -14,12 +14,12 @@ def create_review(review: ReviewCreate, user_id: int):
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/{isbn}", response_model=list[ReviewRead])
+@router.get("/{isbn}")
 def get_all_reviews(isbn: str):
     return service.get_all_reviews(isbn)
 
 
-@router.put("/{review_id}", response_model=ReviewRead)
+@router.put("/{review_id}")
 def edit_review(review_id: int, review: ReviewUpdate):
     try:
         return service.edit_review(review_id, review)

@@ -50,3 +50,13 @@ def test_get_all_and_delete():
     ok = service.delete_review(r.review_id)
     assert ok is True
 
+def test_create_review_twice_same_user_and_book_raises():
+    content = ReviewCreate(
+        isbn="034545104X",
+        comment="Amazing book!"
+    )
+
+    service.create_review(1, content)
+
+    with pytest.raises(ValueError):
+        service.create_review(1, content)

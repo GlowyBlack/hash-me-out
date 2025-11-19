@@ -1,3 +1,9 @@
 October 16
 People: Janaki, Al-Ameen, Laura, Natalie
-In today’s meeting, we discussed our plan for M2 and delegated tasks so that everyone had at least one thing to work on. We decided not to implement the email service feature since we can’t validate whether confirmation emails are actually sent. We also won’t include a password reset function because it’s not essential for a book review site. Instead, we’ll just check whether the login credentials are valid. 
+
+In today’s meeting, we discussed our plan for M2 and delegated tasks so that everyone 
+had at least one thing to work on. We decided not to implement the email service feature 
+since we can’t validate whether confirmation emails are actually sent. We also won’t include 
+a password reset function because it’s not essential for a book review site. Instead, we’ll 
+just check whether the login credentials are valid. 
+ 

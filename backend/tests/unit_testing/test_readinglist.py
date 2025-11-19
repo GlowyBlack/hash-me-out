@@ -5,6 +5,12 @@ from app.services.readinglist_service import ReadingListService
 from app.schemas.readinglist import ReadingListDetail, ReadingListCreate
 
 service = ReadingListService()
+
+def test_readinglistcreate_invalid_name_empty():
+    with pytest.raises(ValidationError) as exc_info:
+        ReadingListCreate(name=" ")
+    assert "Readinglist Name must be at least 1 letter" in str(exc_info.value)
+    
 @mock.patch("app.services.readinglist_service.CSVRepository.append_row")
 @mock.patch("app.services.readinglist_service.CSVRepository.read_all")
 def test_create_list_success(mock_read_all, mock_append_row):
@@ -24,8 +30,40 @@ def test_create_list_success(mock_read_all, mock_append_row):
     assert result.user_id == expected_result.user_id
     assert result.list_id == expected_result.list_id
     mock_append_row.assert_called_once()
+    
+@mock.patch("app.services.readinglist_service.CSVRepository.write_all")
+@mock.patch("app.services.readinglist_service.CSVRepository.read_all")
+def test_delete_readinglist_success(mock_read_all, mock_write_all):
+    mock_read_all.return_value = [
+        {"ListID": "1", "UserID": "1", "Name": "List A", "Books": "[]"},
+        {"ListID": "2", "UserID": "1", "Name": "List B", "Books": "[]"},
+        {"ListID": "3", "UserID": "2", "Name": "List A", "Books": "[]"},
+    ]
 
-def test_readinglistcreate_invalid_name_empty():
-    with pytest.raises(ValidationError) as exc_info:
-        ReadingListCreate(name=" ")
-    assert "Readinglist Name must be at least 1 letter" in str(exc_info.value)
+    result = service.delete_list(list_id=2, user_id=1)
+    assert result is True
+
+    expected_rows = [
+        {"ListID": "1", "UserID": "1", "Name": "List A", "Books": "[]"},
+        {"ListID": "2", "UserID": "2", "Name": "List A", "Books": "[]"},
+    ]
+
+    mock_write_all.assert_called_once_with(
+        service.path,
+        service.fields,
+        expected_rows
+    )
+
+@mock.patch("app.services.readinglist_service.CSVRepository.write_all")
+@mock.patch("app.services.readinglist_service.CSVRepository.read_all")
+def test_delete_readinglist_failure(mock_read_all, mock_write_all):
+    mock_read_all.return_value = [
+        {"ListID": "1", "UserID": "1", "Name": "List A", "Books": "[]"},
+        {"ListID": "2", "UserID": "1", "Name": "List B", "Books": "[]"},
+        {"ListID": "3", "UserID": "2", "Name": "List A", "Books": "[]"},
+    ]
+
+    result = service.delete_list(list_id=2, user_id=2)
+    assert result is False
+
+    mock_write_all.assert_not_called()

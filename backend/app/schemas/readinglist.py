@@ -12,7 +12,13 @@ class ReadingListCreate(BaseModel):
         return validate_list_name(v)
 
 class ReadingListRename(BaseModel):
-    new_name: str = Field(..., min_length=1, description="New name of the Reading List")
+    new_name: str = Field(..., description="New name of the Reading List")
+    
+    @field_validator("new_name")
+    @classmethod
+    def valid_name(cls, v: str) -> str:
+        return validate_list_name(v)
+    
 
 class ReadingListSummary(BaseModel):
     name: str

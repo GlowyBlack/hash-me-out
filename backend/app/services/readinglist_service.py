@@ -54,7 +54,7 @@ class ReadingListService:
         
         rows = self.get_all_readinglist(user_id=user_id)
         for r in rows:
-            if r["Name"].strip().lower() == data.name.strip().lower():
+            if r["Name"].lower() == data.name.lower():
                 raise ValueError(f'A reading list named "{data.name}" already exists.')
         
         readinglist = ReadingList(list_id=next_id,
@@ -63,3 +63,19 @@ class ReadingListService:
         
         self.repo.append_row(self.path, self.fields, readinglist.to_csv_dict())
         return ReadingListDetail(**readinglist.to_api_dict())
+    
+    def delete_list(self, list_id: int, user_id: int):
+        
+        rows = self.repo.read_all(self.path)
+        original_count = len(rows)
+        
+        updated_rows = [
+            r for r in rows if not (int(r["ListID"]) == list_id and int(r["UserID"]) == user_id)
+        ]
+        if len(updated_rows) == original_count:
+            return False
+
+        for i, row in enumerate(updated_rows, start=1):
+            row["ListID"] = str(i)
+        self.repo.write_all(self.path, self.fields, updated_rows)
+        return True
