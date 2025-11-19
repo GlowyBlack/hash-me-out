@@ -34,4 +34,3 @@ def test_create_book_fail_duplicate():
         assert r.status_code == 400
         assert r.json() == {"detail": "Book already exists in the database."}
 
-

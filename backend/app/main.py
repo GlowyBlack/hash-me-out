@@ -3,9 +3,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.utils.search import search_books
 from app.routers.request_router import router as request_router
 from app.routers import auth as auth_router
+from app.routers.rating_router import router as rating_router
 from app.routers.review_router import router as review_router
 from app.routers.readinglist_router import router as readinglist_router
 from app.routers.book_router import router as book_router
+
+
 
 app = FastAPI()
 
@@ -26,6 +29,7 @@ app.include_router(auth_router.router, prefix="/auth", tags=["auth"])
 app.include_router(review_router)
 app.include_router(book_router)
 app.include_router(readinglist_router)
+app.include_router(rating_router)
 
 @app.get("/search/{q}")
 def search(q: str):
@@ -43,5 +47,6 @@ def search(q: str):
 #     if not result:
 #         return {"result": [], "message": "No matching books found"}
 #     return {"results":result}
+
 
 
