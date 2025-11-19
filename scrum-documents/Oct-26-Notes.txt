@@ -1,0 +1,15 @@
+October 26
+People: Janaki, Al-Ameen, Laura, Natalie
+
+We looked into the databases available to us and realized the book ratings actually 
+range from 0–10, so we need to update that condition from what we had before.
+We created a Kanban board to clearly define what we need to do to meet the project 
+requirements and what the TA’s are expecting. We also reviewed our planned transactions. 
+These transactions include public/private lists, book requesting, deleting books/users, 
+and renaming lists. We designed our sprints, and Janaki added a few more actions to the backlog. 
+Al and Natalie started on the frontend. Even though M3 focuses on backend, we want to try 
+connecting the frontend and backend earlier so it’s easier later on. Natalie and Al set 
+up Next.js, and as a team we sketched a prototype for the frontend on a whiteboard. 
+Natalie finalized the drawings on her iPad to show what each view would look like for different users.
+
+
