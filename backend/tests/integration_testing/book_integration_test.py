@@ -44,7 +44,7 @@ def prepare_csv_for_testing(tmp_path):
 def client():
     return TestClient(app)
 
-def test_create_book(client):
+def test_create_book_successful(client):
 
     r = client.post("/books/", json={
         "isbn": "9780307245304",
@@ -61,7 +61,7 @@ def test_create_book(client):
     assert data["author"] == "Rick Riordan"
     
     
-def test_get_book(client):
+def test_get_book_successful(client):
     # first, create the book
     client.post("/books/", json={
         "isbn": "9780307245304",
@@ -78,7 +78,7 @@ def test_get_book(client):
 
 # update, delete
 
-def test_update_book(client):
+def test_update_book_successful(client):
 
     create_response = client.post("/books/", json={
         "isbn": "9780307245304",
@@ -104,7 +104,7 @@ def test_update_book(client):
     assert data["book_title"] == "Updated Title"
     assert data["author"] == "Updated Author"
 
-def test_delete_book(client):
+def test_delete_book_successful(client):
 
     client.post("/books/", json={
         "isbn": "9780307245304",
@@ -118,7 +118,12 @@ def test_delete_book(client):
     # Try deleting again (book no longer exists)
     delete_again_response = client.delete("/books/9780307245304")
     assert delete_again_response.status_code == 404
-    assert delete_again_response.json() == {"detail": "Book not found"}
-   
-    
-   
+    assert delete_again_response.json() == {"detail": "Book not found"} 
+
+def test_create_book_fail_missing_fields(client):
+    r = client.post("/books/", json={
+        "isbn": "9780307245304",
+        # missing book_title + author
+    })
+    assert r.status_code == 422
+
