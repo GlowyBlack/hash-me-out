@@ -93,6 +93,8 @@ def test_update_book(client):
         "book_title": "Updated Title",
         "author": "Updated Author"
     })
+    
+    assert update_response.status_code == 200
 
     get_response = client.get("/books/9780307245304")
     data = get_response.json()
@@ -102,4 +104,21 @@ def test_update_book(client):
     assert data["book_title"] == "Updated Title"
     assert data["author"] == "Updated Author"
 
+def test_delete_book(client):
+
+    client.post("/books/", json={
+        "isbn": "9780307245304",
+        "book_title": "Percy Jackson",
+        "author": "Rick Riordan"
+    })
+
+    delete_response = client.delete("/books/9780307245304")
+    assert delete_response.status_code == 204 # no content
+
+    # Try deleting again (book no longer exists)
+    delete_again_response = client.delete("/books/9780307245304")
+    assert delete_again_response.status_code == 404
+    assert delete_again_response.json() == {"detail": "Book not found"}
+   
+    
    
