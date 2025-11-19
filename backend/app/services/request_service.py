@@ -105,7 +105,7 @@ class RequestService:
         if isbn_to_decrement is None:
             return False
 
-        updated_rows = [r for r in rows if int(r["RequestID"]) != request_id]
+        updated_rows = [r for r in rows if r["RequestID"] != str(request_id)]
 
         if len(updated_rows) == original_count:
             return False
