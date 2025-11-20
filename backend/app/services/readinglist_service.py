@@ -49,7 +49,7 @@ class ReadingListService:
     def create_list(self, data: ReadingListCreate, user_id: int) -> ReadingListDetail:
         next_id = self.__generate_next_id()
         num_readinglist = self.__number_of_readinglist(user_id=user_id)
-        if num_readinglist > 10:
+        if num_readinglist >= 10:
             raise ValueError("You can only have 10 reading lists")
         
         rows = self.get_all_readinglist(user_id=user_id)
@@ -78,4 +78,26 @@ class ReadingListService:
         for i, row in enumerate(updated_rows, start=1):
             row["ListID"] = str(i)
         self.repo.write_all(self.path, self.fields, updated_rows)
+        return True
+
+    def rename(self, list_id: int, user_id: int, new_name: str) -> bool:
+        rows = self.repo.read_all(self.path)
+        all_names = [r["Name"].lower() for r in rows 
+                     if r["UserID"] == str(user_id) and r["ListID"] != str(list_id)]
+        
+        if new_name.lower() in all_names:
+            raise ValueError(f'A reading list named "{new_name}" already exists.')
+        
+        renamed = False
+        for r in rows:
+            if r["UserID"] == str(user_id) and r["ListID"] == str(list_id):
+                readinglist = ReadingList.from_dict(r)
+                readinglist.rename(new_name)
+                r.update(readinglist.to_csv_dict())
+                renamed = True
+                break
+            
+        if not renamed:
+            return False
+        self.repo.write_all(self.path, self.fields, rows)
         return True

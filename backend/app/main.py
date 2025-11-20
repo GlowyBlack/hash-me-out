@@ -31,6 +31,13 @@ app.include_router(book_router)
 app.include_router(readinglist_router)
 app.include_router(rating_router)
 
+
+
+
+@app.get("/")
+def read_root():
+    return {"message": "Welcome to my API!"}
+
 @app.get("/search/{q}")
 def search(q: str):
     query = q.lower()

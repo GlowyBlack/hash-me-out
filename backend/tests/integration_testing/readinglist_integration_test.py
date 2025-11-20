@@ -64,6 +64,24 @@ def test_create_readinglist_route_success(client):
     assert data["name"] == "My New ReadingList"
     assert data["books"] == []
 
+def test_user_cannot_create_more_than_10_readinglists(client):
+    for i in range(10):
+        r = client.post(
+            "/readinglist/",
+            params={"user_id": 1},
+            json={"name": f"List {i}"}
+        )
+        assert r.status_code == 200
+
+    r = client.post(
+        "/readinglist/",
+        params={"user_id": 1},
+        json={"name": "List 10"}
+    )
+
+    assert r.status_code == 400
+    assert r.json()["detail"] == "You can only have 10 reading lists"
+
 def test_delete_readinglist_route_failure(client):
     r = client.delete(
         "/readinglist/999", 
@@ -95,3 +113,38 @@ def test_delete_readinglist_route_success(client):
     )
     assert delete_again.status_code == 404
     assert delete_again.json()["detail"] == "ReadingList not found"
+
+def test_rename_readinglist_success(client):
+    r = client.post("/readinglist/", params={"user_id": 1}, json={"name": "Original"})
+    list_id = r.json()["list_id"]
+
+    r = client.put(
+        f"/readinglist/{list_id}",
+        params={"user_id": 1},
+        json={"new_name": "Renamed"}
+    )
+    assert r.status_code == 200
+    assert r.json()["message"] == "ReadingList renamed successfully"
+
+def test_rename_readinglist_not_found(client):
+    r = client.put(
+        "/readinglist/999",
+        params={"user_id": 1},
+        json={"new_name": "DoesNotExist"}
+    )
+    assert r.status_code == 404
+    assert r.json()["detail"] == "ReadingList not found"
+
+def test_rename_readinglist_duplicate_name(client):
+    r1 = client.post("/readinglist/", params={"user_id": 1}, json={"name": "List1"})
+    r2 = client.post("/readinglist/", params={"user_id": 1}, json={"name": "List2"})
+    list_id = r2.json()["list_id"]
+
+    r = client.put(
+        f"/readinglist/{list_id}",
+        params={"user_id": 1},
+        json={"new_name": "List1"}
+    )
+    assert r.status_code == 400
+    assert r.json()["detail"] == 'A reading list named "List1" already exists.'
+
