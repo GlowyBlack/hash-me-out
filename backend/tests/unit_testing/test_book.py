@@ -116,7 +116,7 @@ def test_get_book_success(percy):
     assert result.author == percy.author
 
 
-def test_get_book_returns_none_when_not_found(service):
+def test_get_book_returns_none_when_not_found():
     result = service.get_book("0000000000000")
     assert result is None
 
