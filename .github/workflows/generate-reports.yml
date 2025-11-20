@@ -9,6 +9,8 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      TZ: America/Vancouver
     defaults:
       run:
         working-directory: backend  # All commands run from /backend
