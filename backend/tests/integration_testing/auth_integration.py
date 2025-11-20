@@ -137,3 +137,79 @@ def test_register_route_email_taken(client, tmp_path):
     finally:
         _restore_pwd_context(old_deps_ctx, old_auth_ctx)
         app.dependency_overrides.pop(get_user_service, None)
+
+
+def test_login_route_success_returns_token(client, tmp_path):
+    svc = make_temp_user_service(tmp_path)
+    app.dependency_overrides[get_user_service] = lambda: svc
+
+    dummy, old_deps_ctx, old_auth_ctx = _patch_pwd_context()
+
+    try:
+        svc.create_user(
+            username="alice",
+            email="alice@example.com",
+            password_hash=dummy.hash("pw1"),
+        )
+
+        response = client.post(
+            "/token",
+            data={"username": "alice", "password": "pw1"},
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert "access_token" in data
+        assert data["token_type"] == "bearer"
+
+    finally:
+        _restore_pwd_context(old_deps_ctx, old_auth_ctx)
+        app.dependency_overrides.pop(get_user_service, None)
+
+
+def test_login_route_wrong_password_401(client, tmp_path):
+    svc = make_temp_user_service(tmp_path)
+    app.dependency_overrides[get_user_service] = lambda: svc
+
+    dummy, old_deps_ctx, old_auth_ctx = _patch_pwd_context()
+
+    try:
+        svc.create_user(
+            username="alice",
+            email="alice@example.com",
+            password_hash=dummy.hash("correctpw"),
+        )
+
+        response = client.post(
+            "/token",
+            data={"username": "alice", "password": "wrongpw"},
+        )
+
+        assert response.status_code == 401
+        body = response.json()
+        assert body["detail"] == "invalid_credentials"
+
+    finally:
+        _restore_pwd_context(old_deps_ctx, old_auth_ctx)
+        app.dependency_overrides.pop(get_user_service, None)
+
+
+def test_login_route_unknown_user_401(client, tmp_path):
+    svc = make_temp_user_service(tmp_path)
+    app.dependency_overrides[get_user_service] = lambda: svc
+
+    dummy, old_deps_ctx, old_auth_ctx = _patch_pwd_context()
+
+    try:
+        response = client.post(
+            "/token",
+            data={"username": "ghost", "password": "whatever"},
+        )
+
+        assert response.status_code == 401
+        body = response.json()
+        assert body["detail"] == "invalid_credentials"
+
+    finally:
+        _restore_pwd_context(old_deps_ctx, old_auth_ctx)
+        app.dependency_overrides.pop(get_user_service, None)
