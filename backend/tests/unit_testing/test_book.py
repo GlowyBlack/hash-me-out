@@ -10,10 +10,6 @@ service = BookService()
 
 @pytest.fixture(autouse=True)
 def clean_books_csv(tmp_path):
-    """
-    For every test, point BookService at a fresh temporary BX_Books-style CSV
-    and initialize it with the correct header, encoding, and delimiter.
-    """
     service.path = str(tmp_path / "BX_Books.csv")
 
     with open(service.path, "w", encoding="latin-1", newline="") as f:
