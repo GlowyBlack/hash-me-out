@@ -5,13 +5,6 @@ from app.schemas.book import BookCreate, BookRead, BookUpdate
 
 service = BookService()
 
-# create book with empty isbn
-# create book with short isbn
-# create book with too long isbn
-# test validator with these
-
-
-
 def test_create_book_success():
     expected_result = BookRead(
                         isbn = "9780307245304",
@@ -92,3 +85,29 @@ def test_empty_isbn_fail():
         service.create_book(test_data)  #it won't get here
 
     assert "ISBN must contain exactly 10 or 13 digits" in str(exc_info.value)
+
+def test_short_isbn_fail():
+    with pytest.raises(ValidationError) as exc_info:
+    # This will trigger the Pydantic validator
+        test_data = BookCreate(
+            isbn="11",  
+            book_title="Percy Jackson and the Lightning Thief",
+            author="Rick Riordan"
+        )
+        service.create_book(test_data)  #it won't get here
+
+    assert "ISBN must contain exactly 10 or 13 digits" in str(exc_info.value)
+
+def test_long_isbn_fail():
+    with pytest.raises(ValidationError) as exc_info:
+    # This will trigger the Pydantic validator
+        test_data = BookCreate(
+            isbn="11111111111111111111111111111111111",  
+            book_title="Percy Jackson and the Lightning Thief",
+            author="Rick Riordan"
+        )
+        service.create_book(test_data)  #it won't get here
+
+    assert "ISBN must contain exactly 10 or 13 digits" in str(exc_info.value)
+   
+   

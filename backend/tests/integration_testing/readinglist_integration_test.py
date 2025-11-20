@@ -65,7 +65,6 @@ def test_create_readinglist_route_success(client):
     assert data["books"] == []
 
 def test_user_cannot_create_more_than_10_readinglists(client):
-    # Create 10 reading lists successfully
     for i in range(10):
         r = client.post(
             "/readinglist/",
@@ -74,7 +73,6 @@ def test_user_cannot_create_more_than_10_readinglists(client):
         )
         assert r.status_code == 200
 
-    # Attempt to create the 11th reading list (should fail)
     r = client.post(
         "/readinglist/",
         params={"user_id": 1},
@@ -149,3 +147,4 @@ def test_rename_readinglist_duplicate_name(client):
     )
     assert r.status_code == 400
     assert r.json()["detail"] == 'A reading list named "List1" already exists.'
+

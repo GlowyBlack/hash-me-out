@@ -17,7 +17,7 @@ def create_list(
 @router.delete("/{list_id}")
 def delete_request( list_id: int, user_id: int):
     """Delete a specific request by ID."""
-    if not service.delete_list(list_id):
+    if not service.delete_list(list_id=list_id, user_id=user_id):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="ReadingList not found")
     return {"message": "ReadingList deleted successfully"}
 
