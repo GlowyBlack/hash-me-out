@@ -51,80 +51,80 @@ def test_prevent_duplicate_book(service, book_data):
         service.create_book(book_data)
 
 
-# def test_get_all_books_returns_list():
-#     result = service.get_all_books()
-#     assert isinstance(result, list)
-#     assert any(book.isbn == "9780307245304" for book in result)
+def test_get_all_books_returns_list(service, book_data):
+    # create one book first
+    service.create_book(book_data)
 
-# def test_update_book_success():
-#     update_data = BookUpdate(
-#         isbn = "9780307245304",
-#         book_title = "Updated Book",
-#         author = "Updated Author"
-#     )
+    result = service.get_all_books()
+    assert isinstance(result, list)
+    assert any(book.isbn == "9780307245304" for book in result)
 
-#     updated_book = service.update_book("9780307245304", update_data)
-#     assert updated_book.book_title == "Updated Book"
-#     assert updated_book.author == "Updated Author"
+def test_update_book_success(service, book_data):
+    service.create_book(book_data)
 
-# def test_delete_book_success():
-#     result = service.delete_book("9780307245304")
-#     assert result is True
+    update_data = BookUpdate(
+        isbn="9780307245304",
+        book_title="Updated Book",
+        author="Updated Author",
+    )
 
-# def test_update_book_fail_not_found():
-#     update_data = BookUpdate(
-#         isbn = "0000000000000",
-#         book_title="Should Not Update"
-#     )
-#     result = service.update_book("0000000000000", update_data)
-#     assert result is None
+    updated = service.update_book("9780307245304", update_data)
 
-# def test_delete_book_fail():
-#     result = service.delete_book("0000000000000")
-#     assert result is False
+    assert updated.book_title == "Updated Book"
+    assert updated.author == "Updated Author"
 
-# def test_get_book_success():
-#     result = service.get_book("9780307245304")
-#     assert result is None
+def test_delete_book_success(service, book_data):
+    service.create_book(book_data)
 
-# def test_get_book_returns_none_when_not_found():
-#     result = service.get_book("0000000000000")
-#     assert result is None
+    result = service.delete_book("9780307245304")
+    assert result is True
 
-# def test_empty_isbn_fail():
-#     with pytest.raises(ValidationError) as exc_info:
-#     # This will trigger the Pydantic validator
-#         test_data = BookCreate(
-#             isbn="",  
-#             book_title="Percy Jackson and the Lightning Thief",
-#             author="Rick Riordan"
-#         )
-#         service.create_book(test_data)  #it won't get here
 
-#     assert "ISBN must contain exactly 10 or 13 digits" in str(exc_info.value)
+def test_update_book_fail_not_found(service):
+    update_data = BookUpdate(
+        isbn="0000000000000",
+        book_title="Should Not Update"
+    )
+    result = service.update_book("0000000000000", update_data)
+    assert result is None
 
-# def test_short_isbn_fail():
-#     with pytest.raises(ValidationError) as exc_info:
-#     # This will trigger the Pydantic validator
-#         test_data = BookCreate(
-#             isbn="11",  
-#             book_title="Percy Jackson and the Lightning Thief",
-#             author="Rick Riordan"
-#         )
-#         service.create_book(test_data)  #it won't get here
+def test_delete_book_fail(service):
+    result = service.delete_book("0000000000000")
+    assert result is False
 
-#     assert "ISBN must contain exactly 10 or 13 digits" in str(exc_info.value)
 
-# def test_long_isbn_fail():
-#     with pytest.raises(ValidationError) as exc_info:
-#     # This will trigger the Pydantic validator
-#         test_data = BookCreate(
-#             isbn="11111111111111111111111111111111111",  
-#             book_title="Percy Jackson and the Lightning Thief",
-#             author="Rick Riordan"
-#         )
-#         service.create_book(test_data)  #it won't get here
+def test_get_book_success(service, book_data):
+    # book must exist to be found
+    created = service.create_book(book_data)
 
-#     assert "ISBN must contain exactly 10 or 13 digits" in str(exc_info.value)
-   
-   
+    result = service.get_book("9780307245304")
+    assert result is not None
+    assert result.isbn == created.isbn
+    assert result.book_title == created.book_title
+    assert result.author == created.author
+
+def test_get_book_returns_none_when_not_found(service):
+    result = service.get_book("0000000000000")
+    assert result is None
+
+
+def test_empty_isbn_fail(service):
+    with pytest.raises(ValidationError) as exc_info:
+        invalid = BookCreate(
+            isbn="",
+            book_title="Percy Jackson",
+            author="Rick Riordan"
+        )
+        service.create_book(invalid)
+    assert "ISBN must contain exactly 10 or 13 digits" in str(exc_info.value)
+
+def test_long_isbn_fail(service):
+    with pytest.raises(ValidationError) as exc_info:
+        invalid = BookCreate(
+            isbn="1" * 40,
+            book_title="Percy Jackson",
+            author="Rick Riordan"
+        )
+        service.create_book(invalid)
+
+    assert "ISBN must contain exactly 10 or 13 digits" in str(exc_info.value)
