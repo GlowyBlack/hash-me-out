@@ -22,7 +22,8 @@ def test_create_list_success(mock_read_all, mock_append_row):
         user_id=1,
         list_id=1,
         name="My Test Reading List",
-        books=[]
+        books=[],
+        is_public= False
     )
     assert isinstance(result, ReadingListDetail)
     assert result.name == "My Test Reading List"
@@ -35,17 +36,17 @@ def test_create_list_success(mock_read_all, mock_append_row):
 @mock.patch("app.services.readinglist_service.CSVRepository.read_all")
 def test_delete_readinglist_success(mock_read_all, mock_write_all):
     mock_read_all.return_value = [
-        {"ListID": "1", "UserID": "1", "Name": "List A", "Books": "[]"},
-        {"ListID": "2", "UserID": "1", "Name": "List B", "Books": "[]"},
-        {"ListID": "3", "UserID": "2", "Name": "List A", "Books": "[]"},
+        {"ListID": "1", "UserID": "1", "Name": "List A", "Books": "[]", "IsPublic": False },
+        {"ListID": "2", "UserID": "1", "Name": "List B", "Books": "[]", "IsPublic": False},
+        {"ListID": "3", "UserID": "2", "Name": "List A", "Books": "[]", "IsPublic": True},
     ]
 
     result = service.delete_list(list_id=2, user_id=1)
     assert result is True
 
     expected_rows = [
-        {"ListID": "1", "UserID": "1", "Name": "List A", "Books": "[]"},
-        {"ListID": "2", "UserID": "2", "Name": "List A", "Books": "[]"},
+        {"ListID": "1", "UserID": "1", "Name": "List A", "Books": "[]", "IsPublic": False},
+        {"ListID": "2", "UserID": "2", "Name": "List A", "Books": "[]",  "IsPublic": True},
     ]
 
     mock_write_all.assert_called_once_with(
@@ -58,9 +59,9 @@ def test_delete_readinglist_success(mock_read_all, mock_write_all):
 @mock.patch("app.services.readinglist_service.CSVRepository.read_all")
 def test_delete_readinglist_failure(mock_read_all, mock_write_all):
     mock_read_all.return_value = [
-        {"ListID": "1", "UserID": "1", "Name": "List A", "Books": "[]"},
-        {"ListID": "2", "UserID": "1", "Name": "List B", "Books": "[]"},
-        {"ListID": "3", "UserID": "2", "Name": "List A", "Books": "[]"},
+        {"ListID": "1", "UserID": "1", "Name": "List A", "Books": "[]", "IsPublic": False},
+        {"ListID": "2", "UserID": "1", "Name": "List B", "Books": "[]", "IsPublic": False},
+        {"ListID": "3", "UserID": "2", "Name": "List A", "Books": "[]", "IsPublic": False},
     ]
 
     result = service.delete_list(list_id=2, user_id=2)
@@ -71,9 +72,9 @@ def test_delete_readinglist_failure(mock_read_all, mock_write_all):
 @mock.patch("app.services.readinglist_service.CSVRepository.read_all")
 def test_rename_readinglist_success(mock_read_all, mock_write_all):
     mock_read_all.return_value = [
-        {"ListID": "1", "UserID": "1", "Name": "List A", "Books": "[]"},
-        {"ListID": "2", "UserID": "1", "Name": "List B", "Books": "[]"},
-        {"ListID": "3", "UserID": "2", "Name": "List A", "Books": "[]"},
+        {"ListID": "1", "UserID": "1", "Name": "List A", "Books": "[]", "IsPublic": False},
+        {"ListID": "2", "UserID": "1", "Name": "List B", "Books": "[]", "IsPublic": False},
+        {"ListID": "3", "UserID": "2", "Name": "List A", "Books": "[]", "IsPublic": False},
     ]
 
     result = service.rename(list_id=1, user_id=1, new_name="New Name")
@@ -86,8 +87,8 @@ def test_rename_readinglist_success(mock_read_all, mock_write_all):
 @mock.patch("app.services.readinglist_service.CSVRepository.read_all")
 def test_rename_readinglist_conflict(mock_read_all, mock_write_all):
     mock_read_all.return_value = [
-        {"ListID": "1", "UserID": "1", "Name": "Old Name", "Books": "[]"},
-        {"ListID": "2", "UserID": "1", "Name": "Another List", "Books": "[]"}
+        {"ListID": "1", "UserID": "1", "Name": "Old Name", "Books": "[]", "IsPublic": False},
+        {"ListID": "2", "UserID": "1", "Name": "Another List", "Books": "[]", "IsPublic": False}
     ]
 
     with pytest.raises(ValueError) as e:
@@ -100,9 +101,9 @@ def test_rename_readinglist_conflict(mock_read_all, mock_write_all):
 @mock.patch("app.services.readinglist_service.CSVRepository.read_all")
 def test_rename_readinglist_not_found(mock_read_all, mock_write_all):
     mock_read_all.return_value = [
-        {"ListID": "1", "UserID": "1", "Name": "List A", "Books": "[]"},
-        {"ListID": "2", "UserID": "1", "Name": "List B", "Books": "[]"},
-        {"ListID": "3", "UserID": "1", "Name": "List C", "Books": "[]"},
+        {"ListID": "1", "UserID": "1", "Name": "List A", "Books": "[]", "IsPublic": False},
+        {"ListID": "2", "UserID": "1", "Name": "List B", "Books": "[]", "IsPublic": False},
+        {"ListID": "3", "UserID": "1", "Name": "List C", "Books": "[]", "IsPublic": False},
     ]
 
     result = service.rename(list_id=4, user_id=1, new_name="New Name")
