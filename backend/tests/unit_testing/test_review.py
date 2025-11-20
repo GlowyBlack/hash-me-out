@@ -30,6 +30,42 @@ def test_create_review_success():
     assert result.isbn == "034545104X"
     assert result.comment == "This is great!"
     assert result.review_id >= 1
+    
+    
+def test_get_all_reviews():
+    isbn = "1111111111"
+    content = ReviewCreate(
+        isbn=isbn,
+        comment="Garbage book. Didn't like."
+    )
+
+    created = service.create_review(2, content)
+
+    rows = service.get_all_reviews(isbn)
+
+    assert len(rows) == 1
+    assert rows[0].review_id == created.review_id
+    assert rows[0].user_id == 2
+    assert rows[0].isbn == isbn
+    assert rows[0].comment == "Garbage book. Didn't like."
+
+
+def test_delete_review():
+    isbn = "1111111111"
+    content = ReviewCreate(
+        isbn=isbn,
+        comment="To be deleted"
+    )
+
+    created = service.create_review(2, content)
+
+    ok = service.delete_review(created.review_id)
+    assert ok is True
+
+    rows_after = service.get_all_reviews(isbn)
+
+    assert all(rev.review_id != created.review_id for rev in rows_after)
+
 
 def test_create_review_twice_same_user_and_book_raises():
     content = ReviewCreate(
