@@ -33,3 +33,10 @@ def rename_readinglist(
         return {"message": "ReadingList renamed successfully"}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+@router.put("/{list_id}/visibility")
+def toggle_visibility(list_id: int, user_id: int):
+    result = service.toggle_visibility(list_id=list_id, user_id=user_id)
+    if result is False:
+        raise HTTPException(status_code=404, detail="ReadingList not found")
+    return result

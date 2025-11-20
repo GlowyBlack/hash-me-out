@@ -8,7 +8,7 @@ class ReadingListService:
     def __init__(self):
         self.repo = CSVRepository()
         self.path = Path(__file__).resolve().parents[1] / "data" / "ReadingLists.csv"
-        self.fields = ["ListID", "UserID", "Name", "ISBNs"]
+        self.fields = ["ListID", "UserID", "Name", "ISBNs", "IsPublic"]
         
     def __generate_next_id(self) -> int:
         rows = self.repo.read_all(self.path)
@@ -43,7 +43,16 @@ class ReadingListService:
         result = []
         for r in rows:
             if r["UserID"] == str(user_id):
-                result.append(r)
+                rl = ReadingList.from_dict(r)
+                result.append(
+                    ReadingListSummary(
+                        list_id=rl.list_id,
+                        name=rl.name,
+                        total_books=len(rl.books),
+                        is_public=rl.is_public
+                    )
+                )
+
         return result
     
     def create_list(self, data: ReadingListCreate, user_id: int) -> ReadingListDetail:
@@ -77,7 +86,9 @@ class ReadingListService:
 
         for i, row in enumerate(updated_rows, start=1):
             row["ListID"] = str(i)
+        
         self.repo.write_all(self.path, self.fields, updated_rows)
+        
         return True
 
     def rename(self, list_id: int, user_id: int, new_name: str) -> bool:
@@ -101,3 +112,20 @@ class ReadingListService:
             return False
         self.repo.write_all(self.path, self.fields, rows)
         return True
+
+    def toggle_visibility(self, list_id: int, user_id: int):
+        rows = self.repo.read_all(self.path)
+
+        for r in rows:
+            if r["ListID"] == str(list_id) and r["UserID"] == str(user_id):
+                rl = ReadingList.from_dict(r)
+                rl.is_public = not rl.is_public
+                r.update(rl.to_csv_dict())
+                self.repo.write_all(self.path, self.fields, rows)
+                return {
+                    "list_id": list_id,
+                    "is_public": rl.is_public,
+                    "message": "Visibility toggled successfully",
+                }
+        return False
+
