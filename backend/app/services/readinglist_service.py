@@ -61,9 +61,9 @@ class ReadingListService:
         if num_readinglist >= 10:
             raise ValueError("You can only have 10 reading lists")
         
-        rows = self.get_all_readinglist(user_id=user_id)
+        rows = self.repo.read_all(self.path)
         for r in rows:
-            if r["Name"].lower() == data.name.lower():
+            if r["UserID"] == str(user_id) and r["Name"].lower() == data.name.lower():
                 raise ValueError(f'A reading list named "{data.name}" already exists.')
         
         readinglist = ReadingList(list_id=next_id,
