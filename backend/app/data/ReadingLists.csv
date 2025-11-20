@@ -1,3 +1,1 @@
-ListID,UserID,Name,ISBNs
-
-1,1,Test Reading List,
+ListID,UserID,Name,ISBNs,IsPublic

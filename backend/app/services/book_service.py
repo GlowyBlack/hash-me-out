@@ -42,7 +42,7 @@ class BookService:
 
     def create_book(self, data: BookCreate) -> BookRead:
         """Add a new book to Books.csv."""
-    
+
         if self.__book_exists(data.isbn):
             raise ValueError("Book already exists in the database.")
 

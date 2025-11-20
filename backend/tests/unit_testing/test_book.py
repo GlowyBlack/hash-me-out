@@ -35,9 +35,9 @@ def clean_books_csv(tmp_path):
 @pytest.fixture
 def percy() -> BookCreate:
     return BookCreate(
-        isbn="9780307245304",
-        book_title="Percy Jackson and the Lightning Thief",
-        author="Rick Riordan",
+        isbn = "9780307245304",
+        book_title = "Percy Jackson and the Lightning Thief",
+        author = "Rick Riordan",
     )
 
 
