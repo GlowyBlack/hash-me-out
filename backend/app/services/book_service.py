@@ -41,7 +41,7 @@ class BookService:
 
     def create_book(self, data: BookCreate) -> BookRead:
         """Add a new book to Books.csv."""
-    
+
         if self.__book_exists(data.isbn):
             raise ValueError("Book already exists in the database.")
 
@@ -80,11 +80,11 @@ class BookService:
                 if "publisher" in update_data:
                     r["Publisher"] = update_data["publisher"]
                 if "image_url_s" in update_data:
-                    r["Image_S"] = update_data["image_url_s"]
+                    r["Image-URL-S"] = update_data["image_url_s"]
                 if "image_url_m" in update_data:
-                    r["Image_M"] = update_data["image_url_m"]
+                    r["Image-URL-M"] = update_data["image_url_m"]
                 if "image_url_l" in update_data:
-                    r["Image_L"] = update_data["image_url_l"]
+                    r["Image-URL-L"] = update_data["image_url_l"]
 
                 updated = True
                 break
