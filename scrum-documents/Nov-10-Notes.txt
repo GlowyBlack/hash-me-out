@@ -1,0 +1,18 @@
+Nov 10
+People: Janaki, Al-Ameen, Laura, Natalie
+
+Last week was busy for all of us because of midterms, so we postponed our meetings. 
+Our next meeting is scheduled for Wednesday, November 12. Until then, we will focus on 
+completing our backend. Laura is fixing her tests for ratings and finishing the review classes. 
+Janaki is working on fixing the user token for the user class so that each user has their own 
+session when using the site. Her current tests haven’t been passing, but we’ve been supporting 
+her through our reviews on her PR. Natalie is working on the book class and plans to finish the 
+code and start testing by Wednesday. Al has been an incredible support throughout this project. 
+Last week, he put in a lot of work on the Reading List feature by ironing out issues. Along the 
+way, he learned new techniques and insights that he was able to share with the team during our meeting. 
+This helped us all better understand the implementation and avoid potential pitfalls when it was time 
+to complete our own code. Our next and most challenging focus will be the admin. Since our admin 
+extends the user, once we figure out the core functionality of the user, we can use that to guide 
+the admin. We also need to implement the Observer Design Pattern. Again, these tasks will be addressed 
+after we finalize the core functionality.
+

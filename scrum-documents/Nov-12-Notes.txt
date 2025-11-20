@@ -1,0 +1,20 @@
+Nov 12
+People: Janaki, Al-Ameen, Laura, Natalie
+
+On this day, we met to discuss our progress so far with testing. 
+Al completed the run-backend.yml workflow so that every time we submit a PR, 
+the system automatically runs our integration and unit tests. He has made a lot 
+of progress on the Reading List, including adding the create_list functionality and 
+the associated tests. His next steps include implementing delete_list, rename_list, 
+add_books, toggle_visibility, and any other features related to the Reading List, along 
+with the associated tests for each. Natalie finished the code for the Book class and its 
+unit tests, and she is now working on integration tests. Laura completed her Rating unit 
+and integration tests, and she is also working on login, profile display, book page display, 
+reading lists display on profiles, filtering books, requesting books, admin views for requests, 
+and low-priority admin functionality like suspending users. Janaki finished a portion of user 
+authentication, which includes writing login details to Users.csv, storing hashed passwords, 
+and adding login and registration endpoints. Her PR has been reviewed, and she is now working 
+on the suggested edits. For M3, the team plans to have each class implemented, tested, and have 
+basic page displays for books, profiles, and reading lists, along with search functionality.
+
+

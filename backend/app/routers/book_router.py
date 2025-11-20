@@ -36,7 +36,7 @@ def update_book(isbn: str, book: BookUpdate):
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     
-@router.delete("/{isbn}")
+@router.delete("/{isbn}", status_code=204)
 def delete_book(isbn: str):
     if not service.delete_book(isbn):
         raise HTTPException(status_code=404, detail="Book not found")
