@@ -194,3 +194,27 @@ def test_toggle_visibility_wrong_user(client):
     )
     assert r.status_code == 404
     assert r.json()["detail"] == "ReadingList not found"
+
+
+def test_add_book_success(client):
+    create = client.post("/readinglist/", params={"user_id": 1}, json={"name": "RL"})
+    list_id = create.json()["list_id"]
+
+    r = client.post(f"/readinglist/{list_id}/books/12345", params={"user_id": 1})
+    assert r.status_code == 200
+    assert r.json()["message"] == "Book added successfully"
+
+def test_add_book_duplicate(client):
+    create = client.post("/readinglist/", params={"user_id": 1}, json={"name": "RL"})
+    list_id = create.json()["list_id"]
+
+    client.post(f"/readinglist/{list_id}/books/12345", params={"user_id": 1})
+    r = client.post(f"/readinglist/{list_id}/books/12345", params={"user_id": 1})
+
+    assert r.status_code == 400
+    assert "already in the reading list" in r.json()["detail"]
+    
+def test_add_book_list_not_found(client):
+    r = client.post("/readinglist/999/books/12345", params={"user_id": 1})
+    assert r.status_code == 404
+
