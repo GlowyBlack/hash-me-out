@@ -3,10 +3,6 @@ import pytest
 from fastapi.testclient import TestClient
 from app.main import app
 from app.routers import readinglist_router
-from fastapi import HTTPException
-from unittest.mock import patch
-
-client = TestClient(app)
 
 @pytest.fixture(autouse=True)
 def prepare_csv_for_testing(tmp_path):
@@ -25,6 +21,7 @@ def prepare_csv_for_testing(tmp_path):
                 "UserID",
                 "Name",
                 "ISBNs",
+                "IsPublic"
             ]
         )
         writer.writeheader()
@@ -42,6 +39,7 @@ def prepare_csv_for_testing(tmp_path):
 @pytest.fixture
 def client():
     return TestClient(app)
+ 
         
 def test_create_readinglist_route_failure(client):
     request = {"name": " "}
@@ -82,6 +80,7 @@ def test_user_cannot_create_more_than_10_readinglists(client):
     assert r.status_code == 400
     assert r.json()["detail"] == "You can only have 10 reading lists"
 
+
 def test_delete_readinglist_route_failure(client):
     r = client.delete(
         "/readinglist/999", 
@@ -113,6 +112,7 @@ def test_delete_readinglist_route_success(client):
     )
     assert delete_again.status_code == 404
     assert delete_again.json()["detail"] == "ReadingList not found"
+
 
 def test_rename_readinglist_success(client):
     r = client.post("/readinglist/", params={"user_id": 1}, json={"name": "Original"})
@@ -147,4 +147,50 @@ def test_rename_readinglist_duplicate_name(client):
     )
     assert r.status_code == 400
     assert r.json()["detail"] == 'A reading list named "List1" already exists.'
+    
+    
+def test_toggle_visibility_success(client):
+    create_res = client.post(
+        "/readinglist/",
+        params={"user_id": 1},
+        json={"name": "My List"}
+    )
+    assert create_res.status_code == 200
+    list_id = create_res.json()["list_id"]
 
+    toggle_1 = client.put(
+        f"/readinglist/{list_id}/visibility",
+        params={"user_id": 1},
+    )
+    assert toggle_1.status_code == 200
+    assert toggle_1.json()["is_public"] is True
+
+    toggle_2 = client.put(
+        f"/readinglist/{list_id}/visibility",
+        params={"user_id": 1},
+    )
+    assert toggle_2.status_code == 200
+    assert toggle_2.json()["is_public"] is False
+
+def test_toggle_visibility_list_not_found(client):
+    r = client.put(
+        "/readinglist/999/visibility",
+        params={"user_id": 1},
+    )
+    assert r.status_code == 404
+    assert r.json()["detail"] == "ReadingList not found"
+
+def test_toggle_visibility_wrong_user(client):
+    create_res = client.post(
+        "/readinglist/",
+        params={"user_id": 1},
+        json={"name": "User One List"}
+    )
+    list_id = create_res.json()["list_id"]
+
+    r = client.put(
+        f"/readinglist/{list_id}/visibility",
+        params={"user_id": 2},
+    )
+    assert r.status_code == 404
+    assert r.json()["detail"] == "ReadingList not found"
