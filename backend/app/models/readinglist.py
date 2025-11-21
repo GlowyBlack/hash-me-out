@@ -69,8 +69,6 @@ class ReadingList:
         self.name = new_name
         
     def add_book(self, isbn: str):
-        if isbn in self.books:
-            return ValueError(f"Book {isbn} already in reading list.")
         self.books.append(isbn)
         
     def remove_book(self, isbn: str):

@@ -40,3 +40,13 @@ def toggle_visibility(list_id: int, user_id: int):
     if result is False:
         raise HTTPException(status_code=404, detail="ReadingList not found")
     return result
+
+@router.post("/{list_id}/books/{isbn}")
+def add_book_to_readinglist(list_id: int, isbn: str, user_id: int):
+    try:
+        result = service.add_book(list_id, user_id, isbn)
+        if not result:
+            raise HTTPException(status_code=404, detail="ReadingList not found")
+        return {"message": "Book added successfully"}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
