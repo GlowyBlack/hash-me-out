@@ -57,7 +57,7 @@ def test_delete_list_success():
     r1 = service.create_list(user_id=1, data=ReadingListCreate(name="A"))
     r2 = service.create_list(user_id=1, data=ReadingListCreate(name="B"))
 
-    ok = service.delete_list(r2.list_id, 1)
+    ok = service.delete_list(list_id=r2.list_id, user_id=1)
     assert ok is True
 
     all_lists = service.get_all_readinglist(1)
@@ -65,26 +65,26 @@ def test_delete_list_success():
     assert all_lists[0].name == "A"
 
 def test_delete_list_not_found():
-    ok = service.delete_list(999, 1)
+    ok = service.delete_list(list_id=999, user_id=1)
     assert ok is False
 
 def test_rename_success():
-    r = service.create_list(1, ReadingListCreate(name="Old Name"))
+    r = service.create_list(user_id=1, data=ReadingListCreate(name="Old Name"))
 
-    ok = service.rename(r.list_id, 1, "New Name")
+    ok = service.rename(list_id=r.list_id, user_id=1, new_name="New Name")
     assert ok is True
 
     detail = service.get_list_detail(r.list_id, 1)
     assert detail.name == "New Name"
 
 def test_rename_conflict():
-    service.create_list(1, ReadingListCreate(name="List A"))
-    r2 = service.create_list(1, ReadingListCreate(name="List B"))
+    service.create_list(user_id=1, data=ReadingListCreate(name="List A"))
+    r2 = service.create_list(user_id=1, data=ReadingListCreate(name="List B"))
 
     with pytest.raises(ValueError):
-        service.rename(r2.list_id, 1, "List A")
+        service.rename(list_id=r2.list_id, user_id=1, new_name="List A")
 
-def test_rename_not_found():
-    ok = service.rename(999, 1, "New Name")
+def test_rename_list_not_found():
+    ok = service.rename(list_id=999, user_id=1, new_name="New Name")
     assert ok is False
 
