@@ -9,7 +9,8 @@ DATA_DIR = os.path.join(BASE_DIR, "data")
 os.makedirs(DATA_DIR, exist_ok=True)
 
 USER_CSV = os.path.join(DATA_DIR, "Users.csv")
-FIELDNAMES = ["id", "username", "email", "password_hash"]
+FIELDNAMES = ["id", "username", "email", "password_hash", "is_admin"]
+
 
 
 class CSVUserService:
@@ -23,16 +24,31 @@ class CSVUserService:
 
     def _norm(self, s: str) -> str:
         return s.strip().lower()
+    
+    def _convert_row(self, row: dict) -> dict:
+        r = dict(row)
+        r["id"] = int(r["id"])
 
+        raw_flag = r.get("is_admin", "False")
+
+        if isinstance(raw_flag, bool):
+            r["is_admin"] = raw_flag
+        else:
+            r["is_admin"] = (raw_flag == "True")
+
+        return r
+    
+    
     def get_by_username(self, username: str) -> Optional[Dict]:
         username_norm = self._norm(username)
+
         for row in self.repo.read_all(self.path):
             if self._norm(row["username"]) == username_norm:
-                row["id"] = int(row["id"])
-                return row
+                return self._convert_row(row)
+
         return None
 
-    def create_user(self, *, username: str, email: str, password_hash: str) -> Dict:
+    def create_user(self, *, username: str, email: str, password_hash: str, is_admin: bool = False,) -> Dict:
         rows = self.repo.read_all(self.path)
 
         username_norm = self._norm(username)
@@ -49,18 +65,18 @@ class CSVUserService:
             "username": username_norm,
             "email": email_norm,
             "password_hash": password_hash,
+            "is_admin": "True" if is_admin else "False",
         }
         rows.append(rec)
         self.repo.write_all(self.path, FIELDNAMES, rows)
 
         rec["id"] = new_id
-        return rec
+        rec["is_admin"] = is_admin
+        return self._convert_row(rec)
 
     def get_all_users(self) -> List[Dict]:
         rows = self.repo.read_all(self.path)
-        for r in rows:
-            r["id"] = int(r["id"])
-        return rows
+        return [self._convert_row(r) for r in rows]
 
     def delete_user(self, user_id: int) -> bool:
         rows = self.repo.read_all(self.path)
@@ -79,9 +95,9 @@ class CSVUserService:
         username: str | None = None,
         email: str | None = None,
         password_hash: str | None = None,
+        is_admin: bool | None = None,
     ) -> Dict:
         rows = self.repo.read_all(self.path)
-
 
         target_idx = None
         for i, r in enumerate(rows):
@@ -113,12 +129,12 @@ class CSVUserService:
             rec["email"] = new_email
         if password_hash is not None:
             rec["password_hash"] = password_hash
+        if is_admin is not None:
+            rec["is_admin"] = "True" if is_admin else "False"
 
         self.repo.write_all(self.path, FIELDNAMES, rows)
 
-        return {
-            "id": int(rec["id"]),
-            "username": rec["username"],
-            "email": rec["email"],
-            "password_hash": rec["password_hash"],
-        }
+        return self._convert_row(rec)
+    
+    def set_admin(self, user_id: int, is_admin: bool) -> Dict:
+        return self.update_user(user_id, is_admin=is_admin)

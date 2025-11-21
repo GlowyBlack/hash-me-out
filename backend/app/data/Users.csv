@@ -1,5 +1,6 @@
-id,username,email,password_hash
-2,string,user@example.com,$2b$12$uwwuSmqD6q1Mz.91JSDu0OmgVMI4x4uDLBxsFsf/wDWhp7yamefEu
-3,jan,user@example.com,$2b$12$FT/Z/OhSoBD9lDZJXafYNOmJjaVzN9jzsDBIDmpfJNTKvvR244f6u
-4,janu123,user@example.com,$2b$12$RAaAmnk4jRAfPlwDP2wO3eVYrWszF13moBE1UQzkE6F61wuH2bSI2
-5,kels,user1@example.com,$2b$12$r9jo83b8BSqeg6eoAQPoDOwJ/Wz1Jhv05tqoaGCWtTSkErc4CTd/S
+id,username,email,password_hash,is_admin
+3,jan,user@example.com,$2b$12$FT/Z/OhSoBD9lDZJXafYNOmJjaVzN9jzsDBIDmpfJNTKvvR244f6u,False
+4,janu123,user@example.com,$2b$12$RAaAmnk4jRAfPlwDP2wO3eVYrWszF13moBE1UQzkE6F61wuH2bSI2,False
+5,kels,user1@example.com,$2b$12$r9jo83b8BSqeg6eoAQPoDOwJ/Wz1Jhv05tqoaGCWtTSkErc4CTd/S,False
+6,sara,user123@example.com,$2b$12$61BojMRHXe3jMeUTgyvunOKToiZb7zO3nK8yP.E5Wsg6HvM9Wryjm,False
+7,sara1,user12@example.com,$2b$12$ZfSFCFWTbDWcBd/09Llz3O4XGzurvHyjBE5TtegncoqWG08Aeaqhu,True
