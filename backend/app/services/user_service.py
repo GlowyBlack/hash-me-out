@@ -66,7 +66,6 @@ class CSVUserService:
     ) -> Dict:
         rows = self.repo.read_all(self.path)
 
-
         target_idx = None
         for i, r in enumerate(rows):
             if int(r["id"]) == user_id:
@@ -106,4 +105,4 @@ class CSVUserService:
             "email": rec["email"],
             "password_hash": rec["password_hash"],
         }
-    
+  
