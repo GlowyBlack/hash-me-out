@@ -318,3 +318,42 @@ def test_get_user_public_does_not_include_other_users_lists(client):
     
     assert len(data) == 1
     assert data[0]["name"] == "U1List"
+
+
+def test_get_readinglist_detail_success(client):
+    res = client.post(
+        "/readinglist/",
+        params={"user_id": 1},
+        json={"name": "MyList"}
+    )
+    assert res.status_code == 200
+    list_id = res.json()["list_id"]
+
+    client.post(f"/readinglist/{list_id}/books/ABC123", params={"user_id": 1})
+
+    r = client.get(f"/readinglist/{list_id}", params={"user_id": 1})
+    assert r.status_code == 200
+
+    data = r.json()
+    assert data["name"] == "MyList"
+    assert data["list_id"] == list_id
+    assert data["user_id"] == 1
+    assert isinstance(data["books"], list)
+    assert len(data["books"]) == 1
+    assert data["books"][0]["isbn"] == "ABC123"
+
+def test_get_readinglist_detail_not_found(client):
+    r = client.get("/readinglist/999", params={"user_id": 1})
+    assert r.status_code == 404
+    assert r.json()["detail"] == "ReadingList not found"
+
+def test_get_readinglist_detail_wrong_user(client):
+    res = client.post(
+        "/readinglist/",
+        params={"user_id": 1},
+        json={"name": "Hidden"}
+    )
+    list_id = res.json()["list_id"]
+
+    r = client.get(f"/readinglist/{list_id}", params={"user_id": 2})
+    assert r.status_code == 404 

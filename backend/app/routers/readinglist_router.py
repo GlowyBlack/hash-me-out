@@ -64,3 +64,10 @@ def remove_book_from_readinglist(list_id: int, isbn: str, user_id: int):
 @router.get("/public/{user_id}")
 def get_user_public(user_id: int):
     return service.get_user_public_readinglists(user_id)
+
+@router.get("/{list_id}")
+def get_readinglist_detail(list_id: int, user_id: int):
+    detail = service.get_list_detail(list_id, user_id)
+    if not detail:
+        raise HTTPException(404, "ReadingList not found")
+    return detail
