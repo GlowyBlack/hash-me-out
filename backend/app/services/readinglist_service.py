@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import List
 from app.models.request import Request
 from app.schemas.readinglist import ReadingListCreate, ReadingListDetail, ReadingListSummary 
 from app.models.readinglist import ReadingList 
@@ -167,4 +168,28 @@ class ReadingListService:
                 return True
 
         return False
+
+    def get_user_public_readinglists(self, user_id: int):
+        rows = self.repo.read_all(self.path)
+        result = []
+
+        for r in rows:
+            if (
+                r["UserID"] == str(user_id) and 
+                r.get("IsPublic", "false") == "true"
+            ):
+                rl = ReadingList.from_dict(r)
+                result.append(
+                    ReadingListSummary(
+                        list_id=rl.list_id,
+                        name=rl.name,
+                        total_books=len(rl.books),
+                        is_public=rl.is_public
+                    )
+                )
+
+        if not result:
+            return {"message": "User has no public reading lists"}
+
+        return result
 

@@ -15,8 +15,8 @@ def create_list(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 @router.delete("/{list_id}")
-def delete_request( list_id: int, user_id: int):
-    """Delete a specific request by ID."""
+def delete_list( list_id: int, user_id: int):
+    """Delete a specific readinglist by ID."""
     if not service.delete_list(list_id=list_id, user_id=user_id):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="ReadingList not found")
     return {"message": "ReadingList deleted successfully"}
@@ -60,3 +60,7 @@ def remove_book_from_readinglist(list_id: int, isbn: str, user_id: int):
         return {"message": "Book removed successfully"}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+@router.get("/public/{user_id}")
+def get_user_public(user_id: int):
+    return service.get_user_public_readinglists(user_id)
