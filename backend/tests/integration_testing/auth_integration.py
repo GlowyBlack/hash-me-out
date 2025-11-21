@@ -1,7 +1,7 @@
 import pytest
 from fastapi.testclient import TestClient
 from app.main import app
-from app.deps import get_user_service
+from app.deps import get_user_service, get_current_user
 from app.services.user_service import CSVUserService
 from app.utils.data_manager import CSVRepository
 import app.deps as deps_module
@@ -9,7 +9,6 @@ import app.routers.auth as auth_module
 
 
 class DummyPwdContext:
-    
     def hash(self, password: str) -> str:
         return "hashed:" + password
 
@@ -50,7 +49,7 @@ def test_register_route_success(client, tmp_path):
 
     try:
         response = client.post(
-            "/register",
+            "/auth/register",
             json={
                 "username": "alice",
                 "email": "alice@example.com",
@@ -79,7 +78,7 @@ def test_register_route_username_taken(client, tmp_path):
 
     try:
         r1 = client.post(
-            "/register",
+            "/auth/register",
             json={
                 "username": "alice",
                 "email": "alice@example.com",
@@ -89,7 +88,7 @@ def test_register_route_username_taken(client, tmp_path):
         assert r1.status_code in (200, 201)
 
         r2 = client.post(
-            "/register",
+            "/auth/register",
             json={
                 "username": "alice",
                 "email": "different@example.com",
@@ -113,7 +112,7 @@ def test_register_route_email_taken(client, tmp_path):
 
     try:
         r1 = client.post(
-            "/register",
+            "/auth/register",
             json={
                 "username": "alice",
                 "email": "alice@example.com",
@@ -123,7 +122,7 @@ def test_register_route_email_taken(client, tmp_path):
         assert r1.status_code in (200, 201)
 
         r2 = client.post(
-            "/register",
+            "/auth/register",
             json={
                 "username": "bob",
                 "email": "alice@example.com",
@@ -153,7 +152,7 @@ def test_login_route_success_returns_token(client, tmp_path):
         )
 
         response = client.post(
-            "/token",
+            "/auth/token",
             data={"username": "alice", "password": "pw1"},
         )
 
@@ -181,7 +180,7 @@ def test_login_route_wrong_password_401(client, tmp_path):
         )
 
         response = client.post(
-            "/token",
+            "/auth/token",
             data={"username": "alice", "password": "wrongpw"},
         )
 
@@ -202,7 +201,7 @@ def test_login_route_unknown_user_401(client, tmp_path):
 
     try:
         response = client.post(
-            "/token",
+            "/auth/token",
             data={"username": "ghost", "password": "whatever"},
         )
 
@@ -213,3 +212,39 @@ def test_login_route_unknown_user_401(client, tmp_path):
     finally:
         _restore_pwd_context(old_deps_ctx, old_auth_ctx)
         app.dependency_overrides.pop(get_user_service, None)
+
+
+def test_me_with_valid_token_returns_user(client):
+    def override_current_user():
+        return {"id": 1, "username": "alice", "email": "alice@example.com"}
+
+    app.dependency_overrides[get_current_user] = override_current_user
+
+    try:
+        response = client.get(
+            "/auth/me",
+            headers={"Authorization": "Bearer faketoken"},
+        )
+    finally:
+        app.dependency_overrides.pop(get_current_user, None)
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["id"] == 1
+    assert data["username"] == "alice"
+    assert data["email"] == "alice@example.com"
+
+
+def test_me_with_no_token_401(client):
+    app.dependency_overrides.pop(get_current_user, None)
+    response = client.get("/auth/me")
+    assert response.status_code == 401
+
+
+def test_me_with_invalid_token_401(client):
+    app.dependency_overrides.pop(get_current_user, None)
+    response = client.get(
+        "/auth/me",
+        headers={"Authorization": "Bearer invalid"},
+    )
+    assert response.status_code == 401
