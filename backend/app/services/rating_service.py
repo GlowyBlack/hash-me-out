@@ -26,9 +26,9 @@ class RatingService:
 
     def __to_read_model(self, row):
         return RatingRead(
-            user_id=int(row["UserID"]),
-            isbn=row["ISBN"],
-            rating=int(row["Book-Rating"]),
+            user_id = int(row["UserID"]),
+            isbn = row["ISBN"],
+            rating = int(row["Book-Rating"]),
         )
 
     # -----------------------------------------------------------------------
@@ -88,7 +88,7 @@ class RatingService:
         ratings = self.get_ratings_by_isbn(isbn)
 
         if not ratings:
-            return AvgRatingRead(isbn=isbn, avg_rating=0.0, count=0)
+            return AvgRatingRead(isbn = isbn, avg_rating = 0.0, count = 0)
 
         avg = mean(r.rating for r in ratings)
-        return AvgRatingRead(isbn=isbn, avg_rating=round(avg, 2), count=len(ratings))
+        return AvgRatingRead(isbn = isbn, avg_rating = round(avg, 2), count = len(ratings))
