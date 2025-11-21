@@ -69,6 +69,15 @@ def test_delete_rating(client):
     assert r2.status_code == 404
     assert r2.json() == {"detail": "Rating not found"}
 
+def test_avg_rating_multiple_users(client):
+    client.post("/ratings/books/555?user_id=1", json={"rating": 4})
+    client.post("/ratings/books/555?user_id=2", json={"rating": 8})
+    client.post("/ratings/books/555?user_id=3", json={"rating": 6})
+
+    r = client.get("/ratings/books/555/average")
+    assert r.status_code == 200
+    data = r.json()
+    assert data == {"isbn": "555", "avg_rating": 6.0, "count": 3}
 def test_create_rating_invalid_value_returns_422(client):
     r = client.post("/ratings/books/123?user_id=1", json={"rating": 11})
     assert r.status_code == 422
@@ -93,3 +102,14 @@ def test_get_all_and_get_by_isbn(client):
     assert len(isbn_data) == 2
     user_ids = {d["user_id"] for d in isbn_data}
     assert user_ids == {1, 2}
+
+def test_avg_rating_when_no_ratings(client):
+    r = client.get("/ratings/books/NO_RATINGS/average")
+    assert r.status_code == 200
+    data = r.json()
+    assert data == {"isbn": "NO_RATINGS", "avg_rating": 0.0, "count": 0}
+
+def test_get_user_rating_not_found_returns_null(client):
+    r = client.get("/ratings/users/999/books/UNKNOWN")
+    assert r.status_code == 200
+    assert r.json() is None
