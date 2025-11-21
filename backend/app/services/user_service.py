@@ -80,17 +80,10 @@ class CSVUserService:
         email: str | None = None,
         password_hash: str | None = None,
     ) -> Dict:
-        """
-        Update selected fields of a user:
-        - Find the user by id
-        - If not found: raise ValueError("user_not_found")
-        - If username is provided and taken by another user: ValueError("username_taken")
-        - If email is provided and taken by another user: ValueError("email_taken")
-        - Only overwrite fields that are not None
-        """
         rows = self.repo.read_all(self.path)
 
-        # find target row
+
+
         target_idx = None
         for i, r in enumerate(rows):
             if int(r["id"]) == user_id:
