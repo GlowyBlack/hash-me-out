@@ -4,7 +4,6 @@ from fastapi.testclient import TestClient
 from app.main import app
 from app.routers import rating_router
 
-
 @pytest.fixture(autouse=True)
 def prepare_csv_for_testing():
     path = rating_router.service.ratings_path
@@ -79,3 +78,9 @@ def test_avg_rating_multiple_users(client):
     assert r.status_code == 200
     data = r.json()
     assert data == {"isbn": "555", "avg_rating": 6.0, "count": 3}
+def test_create_rating_invalid_value_returns_422(client):
+    r = client.post("/ratings/books/123?user_id=1", json={"rating": 11})
+    assert r.status_code == 422
+
+    r2 = client.post("/ratings/books/123?user_id=1", json={"rating": -1})
+    assert r2.status_code == 422

@@ -23,6 +23,7 @@ class BookService:
             if row["ISBN"] == isbn:
                 return row
         return None
+    
     def get_all_books(self) -> list[BookRead]:
         """Return all books as BookRead schemas."""
         rows = self.repo.read_all(self.path)
@@ -79,11 +80,11 @@ class BookService:
                 if "publisher" in update_data:
                     r["Publisher"] = update_data["publisher"]
                 if "image_url_s" in update_data:
-                    r["Image_S"] = update_data["image_url_s"]
+                    r["Image-URL-S"] = update_data["image_url_s"]
                 if "image_url_m" in update_data:
-                    r["Image_M"] = update_data["image_url_m"]
+                    r["Image-URL-M"] = update_data["image_url_m"]
                 if "image_url_l" in update_data:
-                    r["Image_L"] = update_data["image_url_l"]
+                    r["Image-URL-L"] = update_data["image_url_l"]
 
                 updated = True
                 break

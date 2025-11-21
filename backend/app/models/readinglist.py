@@ -4,11 +4,12 @@ from app.schemas.book import BookItem
 from app.utils.data_manager import CSVRepository
 
 class ReadingList:
-    def __init__(self, list_id: int, user_id: int, name: str, books: List[BookItem] = None):
+    def __init__(self, list_id: int, user_id: int, name: str, books: List[BookItem] = None, is_public: bool = False):
         self.list_id = list_id
         self.user_id = user_id
         self.name = name
         self.books = books or []
+        self.is_public = is_public
         
     def to_csv_dict(self) -> dict:
 
@@ -17,6 +18,7 @@ class ReadingList:
             "UserID": self.user_id,
             "Name": self.name,
             "ISBNs": "|".join(self.books) if self.books else "",
+            "IsPublic": "true" if self.is_public else "false",
         }
         
         
@@ -27,7 +29,7 @@ class ReadingList:
             user_id = int(row["UserID"]),
             name = row["Name"],
             books = row.get("ISBNs", "").split("|") if row.get("ISBNs") else [],
-
+            is_public=row.get("IsPublic", "false") == "true"
         )
 
     def to_api_dict(self) -> dict:
@@ -37,6 +39,7 @@ class ReadingList:
             "user_id": self.user_id,
             "name": self.name,
             "books": book_info_list,
+            "is_public": self.is_public,
         }
                 
     def __get_book_info(self):
@@ -51,13 +54,13 @@ class ReadingList:
             if book_data:
                 returned_books.append({
                     "isbn": isbn,
-                    "title": book_data.get("Book-Title", "Unknown Title"),
+                    "book_title": book_data.get("Book-Title", "Unknown Title"),
                     "author": book_data.get("Book-Author", "Unknown Author")
                 })
             else:
                 returned_books.append({
                     "isbn": isbn,
-                    "title": "Unknown Title",
+                    "book_title": "Unknown Title",
                     "author": "Unknown Author"
                 })
         return returned_books
@@ -66,8 +69,6 @@ class ReadingList:
         self.name = new_name
         
     def add_book(self, isbn: str):
-        if isbn in self.books:
-            return ValueError(f"Book {isbn} already in reading list.")
         self.books.append(isbn)
         
     def remove_book(self, isbn: str):
