@@ -261,3 +261,59 @@ def test_remove_book_list_not_found(client):
 
     assert r.status_code == 404
     assert r.json()["detail"] == "ReadingList not found"
+
+def test_get_user_public_empty(client):
+    r = client.get("/readinglist/public/1")
+
+    assert r.status_code == 200
+    assert r.json()["message"] == "User has no public reading lists"
+
+def test_get_user_public_single(client):
+    res = client.post("/readinglist/", params={"user_id": 1}, json={"name": "L1"})
+    list_id = res.json()["list_id"]
+
+    client.put(f"/readinglist/{list_id}/visibility", params={"user_id": 1})
+
+    r = client.get("/readinglist/public/1")
+    assert r.status_code == 200
+
+    data = r.json()
+    assert len(data) == 1
+    assert data[0]["name"] == "L1"
+    assert data[0]["is_public"] is True
+
+def test_get_user_public_excludes_private(client):
+    client.post("/readinglist/", params={"user_id": 1}, json={"name": "PrivateList"})
+
+    r = client.get("/readinglist/public/1")
+
+    assert r.status_code == 200
+    assert r.json()["message"] == "User has no public reading lists"
+
+def test_get_user_public_mixed(client):
+    client.post("/readinglist/", params={"user_id": 1}, json={"name": "PrivateL"})
+
+    res = client.post("/readinglist/", params={"user_id": 1}, json={"name": "PublicL"})
+    list_id = res.json()["list_id"]
+    client.put(f"/readinglist/{list_id}/visibility", params={"user_id": 1})
+
+    r = client.get("/readinglist/public/1")
+    data = r.json()
+
+    assert len(data) == 1
+    assert data[0]["name"] == "PublicL"
+
+def test_get_user_public_does_not_include_other_users_lists(client):
+    r1 = client.post("/readinglist/", params={"user_id": 1}, json={"name": "U1List"})
+    id1 = r1.json()["list_id"]
+    client.put(f"/readinglist/{id1}/visibility", params={"user_id": 1})
+
+    r2 = client.post("/readinglist/", params={"user_id": 2}, json={"name": "U2List"})
+    id2 = r2.json()["list_id"]
+    client.put(f"/readinglist/{id2}/visibility", params={"user_id": 2})
+
+    r = client.get("/readinglist/public/1")
+    data = r.json()
+    
+    assert len(data) == 1
+    assert data[0]["name"] == "U1List"
