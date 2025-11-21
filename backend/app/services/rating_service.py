@@ -1,4 +1,3 @@
-# app/services/rating_service.py
 from pathlib import Path
 from statistics import mean
 from app.models.rating import Rating
@@ -12,106 +11,84 @@ class RatingService:
         self.ratings_path = str(Path(__file__).resolve().parents[1] / "data" / "Ratings.csv")
         self.fields = ["UserID", "ISBN", "Book-Rating"]
 
-    def __read_rows(self):
+    # -----------------------------------------------------------------------
+    # Internal helpers
+    # -----------------------------------------------------------------------
+
+    def __read(self):
         return self.repo.read_all(self.ratings_path)
 
-    def __write_rows(self, rows):
+    def __write(self, rows):
         self.repo.write_all(self.ratings_path, self.fields, rows)
-        
-    '''
-    This method creates or updates a rating for a given user and book.
-    Args:
-        user_id (int): The ID of the user creating the rating.
-        isbn (str): The ISBN of the book being rated.
-        rating_value (int): The rating value to be assigned.  
-    Returns:    
-        RatingRead: The created or updated rating.
-    '''
+
+    def __match(self, row, user_id, isbn):
+        return row["UserID"] == str(user_id) and row["ISBN"] == isbn
+
+    def __to_read_model(self, row):
+        return RatingRead(
+            user_id=int(row["UserID"]),
+            isbn=row["ISBN"],
+            rating=int(row["Book-Rating"]),
+        )
+
+    # -----------------------------------------------------------------------
+    # Public API 
+    # -----------------------------------------------------------------------
 
     def create_rating(self, user_id: int, isbn: str, rating_value: int) -> RatingRead:
-        rows = self.__read_rows()
-        uid = str(user_id)
-        updated = False
+        """
+        Create or update a rating for the specified user/book.
+        """
+        rows = self.__read()
 
-        for r in rows:
-            if r["UserID"] == uid and r["ISBN"] == isbn:
-                r["Book-Rating"] = str(rating_value)
-                updated = True
-                break
+        for row in rows:
+            if self.__match(row, user_id, isbn):
+                row["Book-Rating"] = str(rating_value)
+                self.__write(rows)
+                return self.__to_read_model(row)
 
-        if updated:
-            self.__write_rows(rows)
-        else:
-            rating = Rating(user_id=user_id, isbn=isbn, rating=rating_value)
-            self.repo.append_row(self.ratings_path, self.fields, rating.to_csv_dict())
+        rating = Rating(user_id, isbn, rating_value)
+        self.repo.append_row(self.ratings_path, self.fields, rating.to_csv_dict())
+        return self.__to_read_model(rating.to_csv_dict())
 
-        return RatingRead(user_id=user_id, isbn=isbn, rating=rating_value)
-
-    '''
-    This method retrieves a user's rating for a specific book.
-    Args:
-        user_id (int): The ID of the user.
-        isbn (str): The ISBN of the book.
-    Returns:  
-        RatingRead | None: The user's rating for the book, or None if not found.   
-        
-    '''
     def get_user_rating(self, user_id: int, isbn: str) -> RatingRead | None:
-        for row in self.__read_rows():
-            if row["UserID"] == str(user_id) and row["ISBN"] == isbn:
-                return RatingRead(user_id=int(row["UserID"]), isbn=row["ISBN"], rating=int(row["Book-Rating"]))
+        """
+        Return a user's rating for a specific book, or None if not found.
+        """
+        for row in self.__read():
+            if self.__match(row, user_id, isbn):
+                return self.__to_read_model(row)
         return None
-    
-    '''
-    This method retrieves all ratings in the system.
-    Returns:    
-        list[RatingRead]: A list of all ratings.
-    '''
-    def get_all_ratings(self) -> list[RatingRead]:
-        return [
-            RatingRead(user_id=int(r["UserID"]), isbn=r["ISBN"], rating=int(r["Book-Rating"]))
-            for r in self.__read_rows()
-        ]
 
-    '''
-    This method deletes a user's rating for a specific book.
-    Args:
-        user_id (int): The ID of the user.
-        isbn (str): The ISBN of the book.
-    Returns:
-        bool: True if the rating was deleted, False if not found.
-    '''
+    def get_all_ratings(self) -> list[RatingRead]:
+        return [self.__to_read_model(r) for r in self.__read()]
+
     def delete_rating(self, user_id: int, isbn: str) -> bool:
-        rows = self.__read_rows()
-        filtered = [r for r in rows if not (r["UserID"] == str(user_id) and r["ISBN"] == isbn)]
+        rows = self.__read()
+        filtered = [r for r in rows if not self.__match(r, user_id, isbn)]
+
         if len(filtered) == len(rows):
             return False
-        self.__write_rows(filtered)
+
+        self.__write(filtered)
         return True
-    
-    '''
-    This method retrieves all ratings for a specific book.  
-    Args:
-        isbn (str): The ISBN of the book.
-    Returns:
-        list[RatingRead]: A list of ratings for the specified book.
-    '''
+
     def get_ratings_by_isbn(self, isbn: str) -> list[RatingRead]:
         return [
-            RatingRead(user_id=int(r["UserID"]), isbn=r["ISBN"], rating=int(r["Book-Rating"]))
-            for r in self.__read_rows() if r["ISBN"] == isbn
+            self.__to_read_model(r)
+            for r in self.__read()
+            if r["ISBN"] == isbn
         ]
 
-    '''
-    This method calculates the average rating for a specific book.
-    Args:
-        isbn (str): The ISBN of the book.
-    Returns:
-        AvgRatingRead: The average rating and count of ratings for the book.
-    '''
     def get_avg_rating(self, isbn: str) -> AvgRatingRead:
-        book_ratings = self.get_ratings_by_isbn(isbn)
-        if not book_ratings:
+        """
+        Compute the average rating for a book.
+        If no ratings exist, return 0.0 and count 0.
+        """
+        ratings = self.get_ratings_by_isbn(isbn)
+
+        if not ratings:
             return AvgRatingRead(isbn=isbn, avg_rating=0.0, count=0)
-        avg = mean(r.rating for r in book_ratings)
-        return AvgRatingRead(isbn=isbn, avg_rating=round(avg, 2), count=len(book_ratings))
+
+        avg = mean(r.rating for r in ratings)
+        return AvgRatingRead(isbn=isbn, avg_rating=round(avg, 2), count=len(ratings))
