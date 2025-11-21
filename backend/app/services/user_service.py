@@ -55,3 +55,54 @@ class CSVUserService:
 
         rec["id"] = new_id
         return rec
+    
+    def update_user(
+        self,
+        user_id: int,
+        *,
+        username: str | None = None,
+        email: str | None = None,
+        password_hash: str | None = None,
+    ) -> Dict:
+        rows = self.repo.read_all(self.path)
+
+        target_idx = None
+        for i, r in enumerate(rows):
+            if int(r["id"]) == user_id:
+                target_idx = i
+                break
+
+        if target_idx is None:
+            raise ValueError("user_not_found")
+
+        rec = rows[target_idx]
+
+        new_username = self._norm(username) if username is not None else None
+        new_email = self._norm(email) if email is not None else None
+
+        if new_username is not None:
+            for r in rows:
+                if int(r["id"]) != user_id and self._norm(r["username"]) == new_username:
+                    raise ValueError("username_taken")
+
+        if new_email is not None:
+            for r in rows:
+                if int(r["id"]) != user_id and self._norm(r["email"]) == new_email:
+                    raise ValueError("email_taken")
+
+        if new_username is not None:
+            rec["username"] = new_username
+        if new_email is not None:
+            rec["email"] = new_email
+        if password_hash is not None:
+            rec["password_hash"] = password_hash
+
+        self.repo.write_all(self.path, FIELDNAMES, rows)
+
+        return {
+            "id": int(rec["id"]),
+            "username": rec["username"],
+            "email": rec["email"],
+            "password_hash": rec["password_hash"],
+        }
+  
