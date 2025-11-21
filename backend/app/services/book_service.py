@@ -1,13 +1,14 @@
 from pathlib import Path
 from app.models.book import Book
+from app.utils.books_adapter import BXBooksCSVAdapter
 from app.utils.data_manager import CSVRepository
 from app.schemas.book import BookCreate, BookRead, BookUpdate
 
 
 class BookService:
     def __init__(self):
-        self.repo = CSVRepository()
-        self.path = Path(__file__).resolve().parents[1] / "data" / "Books.csv"
+        self.repo = BXBooksCSVAdapter()
+        self.path = str(Path(__file__).resolve().parents[1] / "data" / "BX_Books.csv")
         self.fields = ["ISBN", "Book-Title", "Book-Author", "Year-Of-Publication", "Publisher", "Image-URL-S", "Image-URL-M", "Image-URL-L"]
         
 
@@ -80,11 +81,11 @@ class BookService:
                 if "publisher" in update_data:
                     r["Publisher"] = update_data["publisher"]
                 if "image_url_s" in update_data:
-                    r["Image_S"] = update_data["image_url_s"]
+                    r["Image-URL-S"] = update_data["image_url_s"]
                 if "image_url_m" in update_data:
-                    r["Image_M"] = update_data["image_url_m"]
+                    r["Image-URL-M"] = update_data["image_url_m"]
                 if "image_url_l" in update_data:
-                    r["Image_L"] = update_data["image_url_l"]
+                    r["Image-URL-L"] = update_data["image_url_l"]
 
                 updated = True
                 break
