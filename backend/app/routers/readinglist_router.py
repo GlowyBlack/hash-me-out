@@ -44,7 +44,7 @@ def toggle_visibility(list_id: int, user_id: int):
 @router.post("/{list_id}/books/{isbn}")
 def add_book_to_readinglist(list_id: int, isbn: str, user_id: int):
     try:
-        result = service.add_book(list_id, user_id, isbn)
+        result = service.add_book(list_id=list_id, user_id=user_id, isbn=isbn)
         if not result:
             raise HTTPException(status_code=404, detail="ReadingList not found")
         return {"message": "Book added successfully"}
@@ -54,7 +54,7 @@ def add_book_to_readinglist(list_id: int, isbn: str, user_id: int):
 @router.delete("/{list_id}/books/{isbn}")
 def remove_book_from_readinglist(list_id: int, isbn: str, user_id: int):
     try:
-        result = service.remove_book(list_id, user_id, isbn)
+        result = service.remove_book(list_id=list_id, user_id=user_id, isbn=isbn)
         if not result:
             raise HTTPException(status_code=404, detail="ReadingList not found")
         return {"message": "Book removed successfully"}
