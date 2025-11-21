@@ -75,3 +75,14 @@ def test_create_rating_invalid_value_returns_422(client):
 
     r2 = client.post("/ratings/books/123?user_id=1", json={"rating": -1})
     assert r2.status_code == 422
+
+def test_avg_rating_when_no_ratings(client):
+    r = client.get("/ratings/books/NO_RATINGS/average")
+    assert r.status_code == 200
+    data = r.json()
+    assert data == {"isbn": "NO_RATINGS", "avg_rating": 0.0, "count": 0}
+
+def test_get_user_rating_not_found_returns_null(client):
+    r = client.get("/ratings/users/999/books/UNKNOWN")
+    assert r.status_code == 200
+    assert r.json() is None
