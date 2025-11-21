@@ -148,3 +148,23 @@ class ReadingListService:
                 return True
 
         return False
+
+    def remove_book(self, list_id: int, user_id: int, isbn: str) -> bool:
+        rows = self.repo.read_all(self.path)
+
+        for r in rows:
+            if r["ListID"] == str(list_id) and r["UserID"] == str(user_id):
+                rl = ReadingList.from_dict(r)
+
+                if isbn not in rl.books:
+                    raise ValueError(f"Book {isbn} not found in the reading list.")
+
+                rl.remove_book(isbn)
+
+                r.update(rl.to_csv_dict())
+
+                self.repo.write_all(self.path, self.fields, rows)
+                return True
+
+        return False
+

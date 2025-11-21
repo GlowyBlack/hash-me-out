@@ -50,3 +50,13 @@ def add_book_to_readinglist(list_id: int, isbn: str, user_id: int):
         return {"message": "Book added successfully"}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+@router.delete("/{list_id}/books/{isbn}")
+def remove_book_from_readinglist(list_id: int, isbn: str, user_id: int):
+    try:
+        result = service.remove_book(list_id, user_id, isbn)
+        if not result:
+            raise HTTPException(status_code=404, detail="ReadingList not found")
+        return {"message": "Book removed successfully"}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
