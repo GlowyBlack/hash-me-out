@@ -262,6 +262,7 @@ def test_remove_book_list_not_found(client):
     assert r.status_code == 404
     assert r.json()["detail"] == "ReadingList not found"
 
+
 def test_get_user_public_empty(client):
     r = client.get("/readinglist/public/1")
 
