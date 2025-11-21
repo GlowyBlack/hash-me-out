@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 from app.models.request import Request
 from app.schemas.readinglist import ReadingListCreate, ReadingListDetail, ReadingListSummary 
 from app.models.readinglist import ReadingList 
@@ -39,7 +39,7 @@ class ReadingListService:
         
         return count
     
-    def get_all_readinglist(self, user_id: int):
+    def get_all_readinglist(self, user_id: int) -> List[ReadingListSummary]:
         rows = self.repo.read_all(self.path)
         result = []
         for r in rows:
@@ -74,7 +74,7 @@ class ReadingListService:
         self.repo.append_row(self.path, self.fields, readinglist.to_csv_dict())
         return ReadingListDetail(**readinglist.to_api_dict())
     
-    def delete_list(self, list_id: int, user_id: int):
+    def delete_list(self, list_id: int, user_id: int) -> bool:
         
         rows = self.repo.read_all(self.path)
         original_count = len(rows)
@@ -169,7 +169,7 @@ class ReadingListService:
 
         return False
 
-    def get_user_public_readinglists(self, user_id: int):
+    def get_user_public_readinglists(self, user_id: int) -> Optional[ReadingListSummary]:
         rows = self.repo.read_all(self.path)
         result = []
 
@@ -193,3 +193,12 @@ class ReadingListService:
 
         return result
 
+    def get_list_detail(self, list_id: int, user_id: int) -> Optional[ReadingListDetail]:
+        rows = self.repo.read_all(self.path)
+
+        for r in rows:
+            if r["ListID"] == str(list_id) and r["UserID"] == str(user_id):
+                rl = ReadingList.from_dict(r)
+                return ReadingListDetail(**rl.to_api_dict())
+
+        return None
