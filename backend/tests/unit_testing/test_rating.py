@@ -39,3 +39,23 @@ def test_get_all_and_delete(service):
 
     ok = service.delete_rating(2, "1111111111")
     assert ok is True
+
+
+def test_get_user_rating_returns_none_when_missing(service):
+    result = service.get_user_rating(99, "UNKNOWN_ISBN")
+    assert result is None
+
+
+def test_delete_rating_returns_false_when_missing(service):
+    ok = service.delete_rating(123, "NOPE")
+    assert ok is False
+
+
+def test_get_ratings_by_isbn_empty_for_unknown(service):
+    rows = service.get_ratings_by_isbn("UNKNOWN_ISBN")
+    assert rows == []
+
+
+def test_get_all_ratings_initially_empty(service):
+    all_ratings = service.get_all_ratings()
+    assert all_ratings == []
