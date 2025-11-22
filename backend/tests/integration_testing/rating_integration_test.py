@@ -95,6 +95,26 @@ def test_avg_rating_multiple_users(client):
     assert r.status_code == 200
     assert r.json() == {"isbn": "555", "avg_rating": 6.0, "count": 3}
 
+    r2 = client.post("/ratings/books/123?user_id=1", json={"rating": -1})
+    assert r2.status_code == 422
+    
+def test_get_all_and_get_by_isbn(client):
+    client.post("/ratings/books/111?user_id=1", json={"rating": 3})
+    client.post("/ratings/books/111?user_id=2", json={"rating": 7})
+    client.post("/ratings/books/222?user_id=1", json={"rating": 5})
+
+    r_all = client.get("/ratings/")
+    assert r_all.status_code == 200
+    data = r_all.json()
+    assert len(data) == 3
+    assert {d["isbn"] for d in data} == {"111", "222"}
+
+    r_isbn = client.get("/ratings/books/111")
+    assert r_isbn.status_code == 200
+    isbn_data = r_isbn.json()
+    assert len(isbn_data) == 2
+    user_ids = {d["user_id"] for d in isbn_data}
+    assert user_ids == {1, 2}
 
 def test_avg_rating_when_no_ratings(client):
     r = client.get("/ratings/books/NO_RATINGS/average")
