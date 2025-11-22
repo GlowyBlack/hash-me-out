@@ -60,7 +60,7 @@ def test_delete_list_success():
     ok = service.delete_list(list_id=r2.list_id, user_id=1)
     assert ok is True
 
-    all_lists = service.get_all_readinglist(1)
+    all_lists = service.get_all_readinglist(user_id=1)
     assert len(all_lists) == 1
     assert all_lists[0].name == "A"
 
@@ -88,3 +88,63 @@ def test_rename_list_not_found():
     ok = service.rename(list_id=999, user_id=1, new_name="New Name")
     assert ok is False
 
+def test_toggle_visibility():
+    r = service.create_list(user_id=1, data=ReadingListCreate(name="VisTest"))
+
+    res1 = service.toggle_visibility(list_id=r.list_id, user_id=1)
+    assert res1["is_public"] is True
+
+    detail = service.get_list_detail(list_id=r.list_id, user_id=1)
+    assert detail.is_public is True
+
+    res2 = service.toggle_visibility(list_id=r.list_id, user_id=1)
+    assert res2["is_public"] is False
+
+    detail = service.get_list_detail(list_id=r.list_id, user_id=1)
+    assert detail.is_public is False
+
+def test_add_book_success():
+    r = service.create_list(user_id=1, data=ReadingListCreate(name="Books"))
+
+    ok = service.add_book(list_id=r.list_id, user_id=1, isbn="9780307245304")
+    assert ok is True
+
+    detail = service.get_list_detail(list_id=r.list_id, user_id=1)
+    assert len(detail.books) == 1
+    assert detail.books[0].isbn == "9780307245304"
+
+def test_add_book_duplicate():
+    r = service.create_list(user_id=1, data=ReadingListCreate(name="Books"))
+    service.add_book(list_id=r.list_id, user_id=1, isbn="9780307245304")
+
+    with pytest.raises(ValueError):
+        service.add_book(list_id=r.list_id, user_id=1, isbn="9780307245304")
+
+def test_remove_book_success():
+    r = service.create_list(user_id=1, data=ReadingListCreate(name="Books"))
+    service.add_book(list_id=r.list_id, user_id=1, isbn="9780307245304")
+
+    ok = service.remove_book(list_id=r.list_id, user_id=1, isbn="9780307245304")
+    assert ok is True
+
+    detail = service.get_list_detail(list_id=r.list_id, user_id=1)
+    assert len(detail.books) == 0
+
+def test_remove_book_not_in_list():
+    r = service.create_list(user_id=1, data=ReadingListCreate(name="Books"))
+
+    with pytest.raises(ValueError):
+        service.remove_book(list_id=r.list_id, user_id=1, isbn="9780307245304")
+
+def test_get_user_public_readinglists():
+    r = service.create_list(user_id=1, data=ReadingListCreate(name="PublicList"))
+    service.toggle_visibility(list_id=r.list_id, user_id=1)  
+
+    res = service.get_user_public_readinglists(user_id=1)
+    assert len(res) == 1
+    assert res[0].name == "PublicList"
+    assert res[0].is_public is True
+
+def test_get_user_public_empty():
+    res = service.get_user_public_readinglists(user_id=1)
+    assert res == {"message": "User has no public reading lists"}
