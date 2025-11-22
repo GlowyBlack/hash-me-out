@@ -230,3 +230,22 @@ def test_admin_can_access_users(client, temp_user_service, dummy_pwd_context):
     )
 
     assert login_resp.status_code == 200
+    
+def test_register_creates_user_and_returns_userout(client):
+    payload = {
+        "username": "janaki_test_user",
+        "email": "janaki_test@example.com",
+        "password": "password123",
+    }
+
+    response = client.post("/auth/register", json=payload)
+
+    assert response.status_code == 201
+
+    data = response.json()
+
+    assert "id" in data
+    assert data["username"] == payload["username"]
+    assert data["email"] == payload["email"]
+    assert data["is_admin"] is False
+
