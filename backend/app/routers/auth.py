@@ -4,7 +4,7 @@ from typing import List
 
 from app.services.user_service import CSVUserService
 from app.deps import get_user_service, pwd_context, create_access_token, get_current_user
-from app.schemas.user import UserCreate, UserOut, Token
+from app.schemas.user import UserCreate, UserOut, Token, UserUpdate
 
 router = APIRouter(prefix="/auth", tags=["auth4"])
 
@@ -111,3 +111,53 @@ def delete_user_route(
             detail="user_not_found",
         )
     return {"status": "deleted"}
+
+@router.put("/me", response_model=UserOut)
+def update_me(
+    payload: UserUpdate,
+    curr=Depends(get_current_user),
+    svc: CSVUserService = Depends(get_user_service),
+):
+    update_kwargs: dict = {}
+
+    if payload.username is not None:
+        update_kwargs["username"] = payload.username
+    if payload.email is not None:
+        update_kwargs["email"] = payload.email
+    if payload.password is not None:
+        update_kwargs["password_hash"] = pwd_context.hash(payload.password)
+
+    if not update_kwargs:
+        return UserOut(
+            id=curr["id"],
+            username=curr["username"],
+            email=curr["email"],
+            is_admin=curr.get("is_admin", False),
+        )
+
+    try:
+        updated = svc.update_user(
+            user_id=curr["id"],
+            **update_kwargs,
+        )
+    except ValueError as e:
+        msg = str(e)
+        if msg in {"username_taken", "email_taken"}:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=msg,
+            )
+        if msg == "user_not_found":
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=msg,
+            )
+        raise
+
+    return UserOut(
+        id=updated["id"],
+        username=updated["username"],
+        email=updated["email"],
+        is_admin=updated.get("is_admin", False),
+    )
+

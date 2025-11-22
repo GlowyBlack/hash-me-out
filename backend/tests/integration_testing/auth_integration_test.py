@@ -233,8 +233,8 @@ def test_admin_can_access_users(client, temp_user_service, dummy_pwd_context):
     
 def test_register_creates_user_and_returns_userout(client):
     payload = {
-        "username": "janaki_test_user",
-        "email": "janaki_test@example.com",
+        "username": "janaki_test_user_xyz123",
+        "email": "janaki_xyz123@example.com",
         "password": "password123",
     }
 
@@ -248,4 +248,42 @@ def test_register_creates_user_and_returns_userout(client):
     assert data["username"] == payload["username"]
     assert data["email"] == payload["email"]
     assert data["is_admin"] is False
+
+    
+def test_update_me_updates_username_and_email(client, temp_user_service, dummy_pwd_context):
+    r1 = client.post(
+        "/auth/register",
+        json={
+            "username": "originalUser",
+            "email": "original@example.com",
+            "password": "pw1",
+        },
+    )
+    assert r1.status_code == 201
+
+    r2 = client.post(
+        "/auth/token",
+        data={
+            "username": "originalUser",
+            "password": "pw1",
+        },
+    )
+    assert r2.status_code == 200
+    token = r2.json()["access_token"]
+
+    r3 = client.put(
+        "/auth/me",
+        json={
+            "username": "UpdatedUser",
+            "email": "updated@example.com",
+        },
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert r3.status_code == 200
+    data = r3.json()
+
+    assert data["username"] == "UpdatedUser"
+    assert data["email"] == "updated@example.com"
+    assert data["is_admin"] is False
+
 
