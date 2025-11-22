@@ -1,23 +1,16 @@
 import csv
-import os
+from pathlib import Path
 from typing import Optional, Dict
 from app.repositories.csv_repository import CSVRepository
 
-BASE_DIR = os.path.dirname(os.path.dirname(__file__))
-DATA_DIR = os.path.join(BASE_DIR, "data")
-os.makedirs(DATA_DIR, exist_ok=True)
+USER_CSV = Path(__file__).resolve().parents[1] / "data" / "Users.csv"
 
-USER_CSV = os.path.join(DATA_DIR, "Users.csv")
 FIELDNAMES = ["id", "username", "email", "password_hash", "is_admin"]
 
 class CSVUserService:
     def __init__(self, repo: CSVRepository, path: str = USER_CSV):
         self.repo = repo
         self.path = path
-        if not os.path.exists(self.path):
-            with open(self.path, "w", newline="", encoding="utf-8") as f:
-                writer = csv.DictWriter(f, fieldnames=FIELDNAMES)
-                writer.writeheader()
 
     def _norm(self, s: str) -> str:
         return s.strip().lower()
