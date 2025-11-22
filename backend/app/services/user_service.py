@@ -92,21 +92,18 @@ class CSVUserService:
 
         for u in users:
             if int(u["id"]) == user_id_int:
+
                 if username is not None:
                     new_username_norm = self._norm(username)
                     for other in users:
-                        if int(other["id"]) != user_id_int and self._norm(
-                            other["username"]
-                        ) == new_username_norm:
+                        if int(other["id"]) != user_id_int and self._norm(other["username"]) == new_username_norm:
                             raise ValueError("username_taken")
                     u["username"] = username
 
                 if email is not None:
                     new_email_norm = self._norm(email)
                     for other in users:
-                        if int(other["id"]) != user_id_int and self._norm(
-                            other["email"]
-                        ) == new_email_norm:
+                        if int(other["id"]) != user_id_int and self._norm(other["email"]) == new_email_norm:
                             raise ValueError("email_taken")
                     u["email"] = email
 
@@ -124,8 +121,6 @@ class CSVUserService:
             writer.writeheader()
             writer.writerows(users)
 
+        updated_user["id"] = int(updated_user["id"])
+
         return updated_user
-
-   
-
-    
