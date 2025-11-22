@@ -1,30 +1,34 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel, EmailStr
+from typing import List
+
 from app.services.user_service import CSVUserService
 from app.deps import get_user_service, pwd_context, create_access_token, get_current_user
 from typing import List 
 
-router = APIRouter(prefix="/auth", tags=["auth4"])
+
+router = APIRouter(prefix="/auth", tags=["auth"])
+
 
 class UserCreateRequest(BaseModel):
     username: str
     email: EmailStr
     password: str
-   
+
+
 class UserOut(BaseModel):
     id: int
     username: str
     email: EmailStr
     is_admin: bool
-    
-class TokenData(BaseModel):
-    sub: str | None = None
-    id: int | None = None
-    is_admin: bool | None = None
-    exp: int | None = None
 
-@router.post("/register", response_model=UserOut)
+
+@router.post(
+    "/register",
+    response_model=UserOut,
+    status_code=status.HTTP_201_CREATED,
+)
 def register(payload: UserCreateRequest, svc: CSVUserService = Depends(get_user_service)):
     try:
         user = svc.create_user(
@@ -33,12 +37,18 @@ def register(payload: UserCreateRequest, svc: CSVUserService = Depends(get_user_
             password_hash=pwd_context.hash(payload.password),
             is_admin=False,
         )
-        return UserOut(id=user["id"], username=user["username"], email=user["email"], is_admin=user["is_admin"],)
+        return UserOut(
+            id=user["id"],
+            username=user["username"],
+            email=user["email"],
+            is_admin=user["is_admin"],
+        )
     except ValueError as e:
         msg = str(e)
         if msg in {"username_taken", "email_taken"}:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=msg)
         raise
+
 
 @router.post("/token")
 def login(form: OAuth2PasswordRequestForm = Depends(), svc: CSVUserService = Depends(get_user_service)):
@@ -49,39 +59,43 @@ def login(form: OAuth2PasswordRequestForm = Depends(), svc: CSVUserService = Dep
     token = create_access_token(username=user["username"], user_id=user["id"], is_admin=user["is_admin"], minutes=60)
     return {"access_token": token, "token_type": "bearer"}
 
+
 @router.get("/me", response_model=UserOut)
 def me(curr=Depends(get_current_user)):
-    return UserOut(id=curr["id"], username=curr["username"], email=curr["email"],is_admin=curr.get("is_admin", False),)
+    return UserOut(
+        id=curr["id"],
+        username=curr["username"],
+        email=curr["email"],
+        is_admin=curr["is_admin"],
+    )
 
-def get_current_admin(curr=Depends(get_current_user)):
+
+@router.get("/users", response_model=List[UserOut])
+def list_users(
+    curr=Depends(get_current_user),
+    svc: CSVUserService = Depends(get_user_service),
+):
     if not curr.get("is_admin"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Admin privileges required",
         )
-    return curr
 
-@router.get("/users", response_model=List[UserOut])
-def list_users(_: dict = Depends(get_current_admin),svc: CSVUserService = Depends(get_user_service),):
-    users = svc.get_all_users()
-    return [
-        UserOut(
-            id=u["id"],
-            username=u["username"],
-            email=u["email"],
-            is_admin=u["is_admin"],
+    rows = svc.repo.read_all(svc.path)
+    users_out = []
+
+    for row in rows:
+        user_id = int(row["id"])
+        raw_flag = str(row.get("is_admin", "")).strip().lower()
+        is_admin = raw_flag in {"true", "1", "yes"}
+
+        users_out.append(
+            UserOut(
+                id=user_id,
+                username=row["username"],
+                email=row["email"],
+                is_admin=is_admin,
+            )
         )
-        for u in users
-    ]
 
-@router.delete("/users/{user_id}")
-def delete_user_route(user_id: int,_: dict = Depends(get_current_admin),svc: CSVUserService = Depends(get_user_service),):
-    ok = svc.delete_user(user_id)
-    if not ok:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="user_not_found",
-        )
-    return {"status": "deleted"}
-
-
+    return users_out

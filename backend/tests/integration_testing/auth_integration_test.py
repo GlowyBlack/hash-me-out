@@ -230,3 +230,43 @@ def test_admin_can_access_users(client, temp_user_service, dummy_pwd_context):
     )
 
     assert login_resp.status_code == 200
+    token = login_resp.json()["access_token"]
+
+    resp = client.get(
+        "/auth/users",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert isinstance(data, list)
+    assert any(u["username"] == "admin" and u["is_admin"] for u in data)
+
+
+def test_non_admin_blocked_from_admin_users(client, temp_user_service, dummy_pwd_context):
+    svc = temp_user_service
+    dummy = dummy_pwd_context
+
+    svc.create_user(
+        username="bob",
+        email="bob@example.com",
+        password_hash=dummy.hash("pw"),
+        is_admin=False,
+    )
+
+    login_resp = client.post(
+        "/auth/token",
+        data={"username": "bob", "password": "pw"},
+    )
+
+    assert login_resp.status_code == 200
+    token = login_resp.json()["access_token"]
+
+    resp = client.get(
+        "/auth/users",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert resp.status_code == 403
+    body = resp.json()
+    assert body["detail"] == "Admin privileges required"
