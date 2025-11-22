@@ -1,12 +1,16 @@
 from pathlib import Path
+from typing import List, Optional
 from app.models.request import Request
 from app.schemas.readinglist import ReadingListCreate, ReadingListDetail, ReadingListSummary 
 from app.models.readinglist import ReadingList 
-from app.utils.data_manager import CSVRepository
+from app.repositories.base_repository import BaseRepository
+from app.repositories.csv_repository import CSVRepository
+from app.repositories.book_repository import BookRepository
 
 class ReadingListService:
-    def __init__(self):
-        self.repo = CSVRepository()
+    def __init__(self, repo: BaseRepository, book_repo: BookRepository):
+        self.repo = repo
+        self.book_repo = book_repo
         self.path = Path(__file__).resolve().parents[1] / "data" / "ReadingLists.csv"
         self.fields = ["ListID", "UserID", "Name", "ISBNs", "IsPublic"]
         
@@ -15,7 +19,7 @@ class ReadingListService:
         if not rows:
             return 1
         ids = [int(r["ListID"]) for r in rows if r["ListID"].isdigit()]
-        return max(ids, default=0) + 1
+        return max(ids, default = 0) + 1
 
     def __already_added(self, list_id: int, isbn: str) -> bool:
         rows = self.repo.read_all(self.path)
@@ -38,7 +42,7 @@ class ReadingListService:
         
         return count
     
-    def get_all_readinglist(self, user_id: int):
+    def get_all_readinglist(self, user_id: int) -> List[ReadingListSummary]:
         rows = self.repo.read_all(self.path)
         result = []
         for r in rows:
@@ -46,34 +50,33 @@ class ReadingListService:
                 rl = ReadingList.from_dict(r)
                 result.append(
                     ReadingListSummary(
-                        list_id=rl.list_id,
-                        name=rl.name,
-                        total_books=len(rl.books),
-                        is_public=rl.is_public
+                        list_id = rl.list_id,
+                        name = rl.name,
+                        total_books = len(rl.books),
+                        is_public = rl.is_public
                     )
                 )
 
         return result
     
     def create_list(self, data: ReadingListCreate, user_id: int) -> ReadingListDetail:
-        next_id = self.__generate_next_id()
-        num_readinglist = self.__number_of_readinglist(user_id=user_id)
-        if num_readinglist >= 10:
+        if self.__number_of_readinglist(user_id) >= 10:
             raise ValueError("You can only have 10 reading lists")
-        
+
         rows = self.repo.read_all(self.path)
         for r in rows:
             if r["UserID"] == str(user_id) and r["Name"].lower() == data.name.lower():
                 raise ValueError(f'A reading list named "{data.name}" already exists.')
-        
-        readinglist = ReadingList(list_id=next_id,
-                                  user_id=user_id,
-                                  name=data.name) 
-        
-        self.repo.append_row(self.path, self.fields, readinglist.to_csv_dict())
-        return ReadingListDetail(**readinglist.to_api_dict())
+
+        next_id = self.__generate_next_id()
+        rl = ReadingList(next_id, user_id, data.name)
+
+        self.repo.append_row(self.path, self.fields, rl.to_csv_dict())
+        books_info = []
+        return ReadingListDetail(**rl.to_api_dict(books_info))
+
     
-    def delete_list(self, list_id: int, user_id: int):
+    def delete_list(self, list_id: int, user_id: int) -> bool:
         
         rows = self.repo.read_all(self.path)
         original_count = len(rows)
@@ -168,3 +171,37 @@ class ReadingListService:
 
         return False
 
+    def get_user_public_readinglists(self, user_id: int) -> Optional[ReadingListSummary]:
+        rows = self.repo.read_all(self.path)
+        result = []
+
+        for r in rows:
+            if (
+                r["UserID"] == str(user_id) and 
+                r.get("IsPublic", "false") == "true"
+            ):
+                rl = ReadingList.from_dict(r)
+                result.append(
+                    ReadingListSummary(
+                        list_id = rl.list_id,
+                        name = rl.name,
+                        total_books = len(rl.books),
+                        is_public = rl.is_public
+                    )
+                )
+
+        if not result:
+            return {"message": "User has no public reading lists"}
+
+        return result
+
+    def get_list_detail(self, list_id: int, user_id: int) -> Optional[ReadingListDetail]:
+        rows = self.repo.read_all(self.path)
+
+        for r in rows:
+            if r["ListID"] == str(list_id) and r["UserID"] == str(user_id):
+                rl = ReadingList.from_dict(r)
+                books_info = self.book_repo.get_books_by_isbn(rl.books)
+                return ReadingListDetail(**rl.to_api_dict(books_info))
+
+        return None

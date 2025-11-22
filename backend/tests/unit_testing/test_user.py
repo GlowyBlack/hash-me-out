@@ -2,7 +2,7 @@ import csv
 import pytest
 
 from app.services.user_service import CSVUserService, FIELDNAMES
-from app.utils.data_manager import CSVRepository
+from app.repositories.csv_repository import CSVRepository
 
 service = CSVUserService(CSVRepository())
 

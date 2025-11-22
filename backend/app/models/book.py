@@ -36,14 +36,14 @@ class Book:
     @classmethod
     def from_dict(cls, row: dict):
         return cls(
-            isbn=row["ISBN"],
-            book_title=row["Book-Title"],
-            author=row["Book-Author"],
-            year_of_publication=row.get("Year-Of-Publication"),
-            publisher=row.get("Publisher"),
-            image_url_s=row.get("Image-URL-S"),
-            image_url_m=row.get("Image-URL-M"),
-            image_url_l=row.get("Image-URL-L"),
+            isbn = row["ISBN"],
+            book_title = row["Book-Title"],
+            author = row["Book-Author"],
+            year_of_publication = row.get("Year-Of-Publication"),
+            publisher = row.get("Publisher"),
+            image_url_s = row.get("Image-URL-S"),
+            image_url_m = row.get("Image-URL-M"),
+            image_url_l = row.get("Image-URL-L"),
         )
 
 
