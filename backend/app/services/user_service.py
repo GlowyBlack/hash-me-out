@@ -2,7 +2,7 @@ import csv
 import os
 from typing import Optional, Dict, List
 
-from app.utils.data_manager import CSVRepository
+from app.repositories.csv_repository import CSVRepository
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "data")

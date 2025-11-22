@@ -4,8 +4,10 @@ from unittest import mock
 from pydantic import ValidationError
 from app.services.readinglist_service import ReadingListService
 from app.schemas.readinglist import ReadingListDetail, ReadingListCreate, ReadingListSummary
+from app.repositories.csv_repository import CSVRepository
+from app.repositories.book_repository import BookRepository
 
-service = ReadingListService()
+service = ReadingListService(repo=CSVRepository(), book_repo=BookRepository())
 
 @pytest.fixture(autouse=True)
 def clean_readinglist_csv(tmp_path):
@@ -74,7 +76,7 @@ def test_rename_success():
     ok = service.rename(list_id=r.list_id, user_id=1, new_name="New Name")
     assert ok is True
 
-    detail = service.get_list_detail(r.list_id, 1)
+    detail = service.get_list_detail(list_id=r.list_id, user_id=1)
     assert detail.name == "New Name"
 
 def test_rename_conflict():

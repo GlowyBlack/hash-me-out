@@ -1,7 +1,7 @@
 from pathlib import Path
 from app.models.request import Request
 from app.schemas.request import RequestCreate, RequestRead 
-from app.utils.data_manager import CSVRepository 
+from app.repositories.csv_repository import CSVRepository 
 
 class RequestService:
     def __init__(self):

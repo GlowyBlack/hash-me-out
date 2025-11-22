@@ -1,6 +1,6 @@
 from pathlib import Path
 from app.models.review import Review
-from app.utils.data_manager import CSVRepository
+from app.repositories.csv_repository import CSVRepository
 from app.schemas.review import ReviewCreate, ReviewRead, ReviewUpdate
 
 
