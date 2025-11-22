@@ -5,7 +5,7 @@ from typing import List
 
 from app.services.user_service import CSVUserService
 from app.deps import get_user_service, pwd_context, create_access_token, get_current_user
-from app.schemas.user import UserCreate, UserOut, Token
+from app.schemas.user import UserCreate, UserOut, Token, UserUpdate
 
 
 router = APIRouter(prefix="/auth", tags=["auth"])
