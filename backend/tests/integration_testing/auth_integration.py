@@ -3,7 +3,7 @@ from fastapi.testclient import TestClient
 from app.main import app
 from app.deps import get_user_service
 from app.services.user_service import CSVUserService
-from app.utils.data_manager import CSVRepository
+from app.repositories.csv_repository import CSVRepository
 import app.deps as deps_module
 import app.routers.auth as auth_module
 

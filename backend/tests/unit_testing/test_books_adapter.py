@@ -1,6 +1,6 @@
 import csv
 import pytest
-from app.utils.books_adapter import BXBooksCSVAdapter
+from app.repositories.books_adapter import BXBooksCSVAdapter
 from app.schemas.book import BookCreate
 
 
