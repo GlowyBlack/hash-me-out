@@ -22,21 +22,20 @@ def service(tmp_path):
 
 def test_create_review_success(service):
     content = ReviewCreate(
-        isbn = "034545104X",
         comment = "This is great!"
     )
-    result = service.create_review(1, content)
+    result = service.create_review(user_id = 1, data = content, isbn = "034545104X")
 
     assert isinstance(result, ReviewRead)
     assert result.user_id == 1
     assert result.isbn == "034545104X"
     assert result.comment == "This is great!"
-    assert result.review_id == 1  # clean slate → should be 1
+    assert result.review_id == 1  
 
 
 def test_get_all_reviews(service):
-    content = ReviewCreate(isbn = "1111111111", comment = "Garbage book.")
-    created = service.create_review(2, content)
+    content = ReviewCreate(comment = "Garbage book.")
+    created = service.create_review(user_id = 2, data = content, isbn = "1111111111")
 
     rows = service.get_all_reviews("1111111111")
 
@@ -45,8 +44,8 @@ def test_get_all_reviews(service):
 
 
 def test_delete_review(service):
-    content = ReviewCreate(isbn="1111111111", comment="Delete me")
-    created = service.create_review(2, content)
+    content = ReviewCreate(comment="Delete me")
+    created = service.create_review(user_id = 2, data = content, isbn="1111111111")
 
     ok = service.delete_review(created.review_id)
     assert ok is True
@@ -56,8 +55,8 @@ def test_delete_review(service):
 
 
 def test_create_review_twice_same_user_and_book_raises(service):
-    content = ReviewCreate(isbn = "034545104X", comment = "This is great!")
-    service.create_review(1, content)
+    content = ReviewCreate(comment = "This is great!")
+    service.create_review(user_id = 1, data = content, isbn = "034545104X")
 
     with pytest.raises(ValueError):
-        service.create_review(1, content)
+        service.create_review(user_id = 1, data = content, isbn = "034545104X")
