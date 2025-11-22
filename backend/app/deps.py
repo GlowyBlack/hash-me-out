@@ -31,12 +31,9 @@ def decode_token(token: str):
             detail="Invalid token",
         )
 
-# Repo + service singletons
-_repo = CSVRepository()
-_user_service = CSVUserService(_repo)
 
 def get_user_service() -> CSVUserService:
-    return _user_service
+    return CSVUserService(CSVRepository())
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")
 
