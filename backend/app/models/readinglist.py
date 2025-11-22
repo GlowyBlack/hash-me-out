@@ -1,7 +1,6 @@
 from datetime import datetime
 from typing import List, Dict
 from app.schemas.book import BookItem
-from app.utils.data_manager import CSVRepository
 
 class ReadingList:
     def __init__(self, list_id: int, user_id: int, name: str, books: List[BookItem] = None, is_public: bool = False):
@@ -32,39 +31,15 @@ class ReadingList:
             is_public=row.get("IsPublic", "false") == "true"
         )
 
-    def to_api_dict(self) -> dict:
-        book_info_list =self.__get_book_info()
+    def to_api_dict(self, book_info) -> dict:
         return {
             "list_id": self.list_id,
             "user_id": self.user_id,
             "name": self.name,
-            "books": book_info_list,
+            "books": book_info,
             "is_public": self.is_public,
         }
                 
-    def __get_book_info(self):
-        books_path = "app/data/Books.csv"
-        repo = CSVRepository()
-        all_books = repo.read_all(books_path)
-        book_lookup = {row["ISBN"]: row for row in all_books}
-
-        returned_books = []
-        for isbn in self.books:
-            book_data = book_lookup.get(isbn)
-            if book_data:
-                returned_books.append({
-                    "isbn": isbn,
-                    "book_title": book_data.get("Book-Title", "Unknown Title"),
-                    "author": book_data.get("Book-Author", "Unknown Author")
-                })
-            else:
-                returned_books.append({
-                    "isbn": isbn,
-                    "book_title": "Unknown Title",
-                    "author": "Unknown Author"
-                })
-        return returned_books
-             
     def rename(self, new_name: str):
         self.name = new_name
         

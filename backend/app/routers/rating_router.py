@@ -1,8 +1,8 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, status
 from app.schemas.rating import RatingCreate, RatingRead, AvgRatingRead
 from app.services.rating_service import RatingService
 
-router = APIRouter(prefix="/ratings", tags=["Ratings"])
+router = APIRouter(prefix = "/ratings", tags = ["Ratings"])
 service = RatingService()
 
 
@@ -10,28 +10,28 @@ service = RatingService()
 def add_rating(isbn: str, payload: RatingCreate, user_id: int):
     return service.create_rating(user_id, isbn, payload.rating)
 
-@router.get("/", response_model=list[RatingRead])
+@router.get("/", response_model = list[RatingRead])
 def get_all_ratings():
     return service.get_all_ratings()
 
 
-@router.get("/books/{isbn}", response_model=list[RatingRead])
+@router.get("/books/{isbn}", response_model = list[RatingRead])
 def get_ratings_by_isbn(isbn: str):
     return service.get_ratings_by_isbn(isbn)
 
 
-@router.get("/books/{isbn}/average", response_model=AvgRatingRead)
+@router.get("/books/{isbn}/average", response_model = AvgRatingRead)
 def get_avg_rating(isbn: str):
     return service.get_avg_rating(isbn)
 
 
-@router.get("/users/{user_id}/books/{isbn}", response_model=RatingRead | None)
+@router.get("/users/{user_id}/books/{isbn}", response_model = RatingRead | None)
 def get_user_rating(user_id: int, isbn: str):
     return service.get_user_rating(user_id, isbn)
 
 
-@router.delete("/", status_code=204)
+@router.delete("/", status_code = 204)
 def delete_rating(user_id: int, isbn: str):
     ok = service.delete_rating(user_id, isbn)
     if not ok:
-        raise HTTPException(status_code=404, detail="Rating not found")
+        raise HTTPException(status_code = status.HTTP_404_NOT_FOUND, detail = "Rating not found")

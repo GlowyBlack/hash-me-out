@@ -1,12 +1,27 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
+from pydantic import BaseModel, EmailStr
 from typing import List
 
 from app.services.user_service import CSVUserService
 from app.deps import get_user_service, pwd_context, create_access_token, get_current_user
 from app.schemas.user import UserCreate, UserOut, Token, UserUpdate
 
-router = APIRouter(prefix="/auth", tags=["auth4"])
+
+router = APIRouter(prefix="/auth", tags=["auth"])
+
+
+class UserCreateRequest(BaseModel):
+    username: str
+    email: EmailStr
+    password: str
+
+
+class UserOut(BaseModel):
+    id: int
+    username: str
+    email: EmailStr
+    is_admin: bool
 
 
 @router.post(
@@ -14,10 +29,7 @@ router = APIRouter(prefix="/auth", tags=["auth4"])
     response_model=UserOut,
     status_code=status.HTTP_201_CREATED,
 )
-def register(
-    payload: UserCreate,
-    svc: CSVUserService = Depends(get_user_service),
-):
+def register(payload: UserCreateRequest, svc: CSVUserService = Depends(get_user_service)):
     try:
         user = svc.create_user(
             username=payload.username,
@@ -41,11 +53,8 @@ def register(
         raise
 
 
-@router.post("/token", response_model=Token)
-def login(
-    form: OAuth2PasswordRequestForm = Depends(),
-    svc: CSVUserService = Depends(get_user_service),
-):
+@router.post("/token")
+def login(form: OAuth2PasswordRequestForm = Depends(), svc: CSVUserService = Depends(get_user_service)):
     user = svc.get_by_username(form.username)
     if not user or not pwd_context.verify(form.password, user["password_hash"]):
         raise HTTPException(
@@ -62,102 +71,43 @@ def login(
     return Token(access_token=token, token_type="bearer")
 
 
+
 @router.get("/me", response_model=UserOut)
 def me(curr=Depends(get_current_user)):
     return UserOut(
         id=curr["id"],
         username=curr["username"],
         email=curr["email"],
-        is_admin=curr.get("is_admin", False),
+        is_admin=curr["is_admin"],
     )
 
 
-def get_current_admin(curr=Depends(get_current_user)):
+@router.get("/users", response_model=List[UserOut])
+def list_users(
+    curr=Depends(get_current_user),
+    svc: CSVUserService = Depends(get_user_service),
+):
     if not curr.get("is_admin"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Admin privileges required",
         )
-    return curr
 
+    rows = svc.repo.read_all(svc.path)
+    users_out = []
 
-@router.get("/users", response_model=List[UserOut])
-def list_users(
-    _: dict = Depends(get_current_admin),
-    svc: CSVUserService = Depends(get_user_service),
-):
-    users = svc.get_all_users()
-    return [
-        UserOut(
-            id=u["id"],
-            username=u["username"],
-            email=u["email"],
-            is_admin=u["is_admin"],
-        )
-        for u in users
-    ]
+    for row in rows:
+        user_id = int(row["id"])
+        raw_flag = str(row.get("is_admin", "")).strip().lower()
+        is_admin = raw_flag in {"true", "1", "yes"}
 
-
-@router.delete("/users/{user_id}")
-def delete_user_route(
-    user_id: int,
-    _: dict = Depends(get_current_admin),
-    svc: CSVUserService = Depends(get_user_service),
-):
-    ok = svc.delete_user(user_id)
-    if not ok:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="user_not_found",
-        )
-    return {"status": "deleted"}
-
-@router.put("/me", response_model=UserOut)
-def update_me(
-    payload: UserUpdate,
-    curr=Depends(get_current_user),
-    svc: CSVUserService = Depends(get_user_service),
-):
-    update_kwargs: dict = {}
-
-    if payload.username is not None:
-        update_kwargs["username"] = payload.username
-    if payload.email is not None:
-        update_kwargs["email"] = payload.email
-    if payload.password is not None:
-        update_kwargs["password_hash"] = pwd_context.hash(payload.password)
-
-    if not update_kwargs:
-        return UserOut(
-            id=curr["id"],
-            username=curr["username"],
-            email=curr["email"],
-            is_admin=curr.get("is_admin", False),
-        )
-
-    try:
-        updated = svc.update_user(
-            user_id=curr["id"],
-            **update_kwargs,
-        )
-    except ValueError as e:
-        msg = str(e)
-        if msg in {"username_taken", "email_taken"}:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=msg,
+        users_out.append(
+            UserOut(
+                id=user_id,
+                username=row["username"],
+                email=row["email"],
+                is_admin=is_admin,
             )
-        if msg == "user_not_found":
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=msg,
-            )
-        raise
+        )
 
-    return UserOut(
-        id=updated["id"],
-        username=updated["username"],
-        email=updated["email"],
-        is_admin=updated.get("is_admin", False),
-    )
-
+    return users_out
