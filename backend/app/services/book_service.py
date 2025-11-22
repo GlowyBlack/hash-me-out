@@ -5,6 +5,7 @@ from app.schemas.book import BookCreate, BookRead, BookUpdate
 
 class BookService:
     def __init__(self):
+        """Initialize the service with a CSV repository and define the CSV path and fields."""
         self.repo = BXBooksCSVAdapter()
         self.path = str(Path(__file__).resolve().parents[1] / "data" / "BX_Books.csv")
         self.fields = ["ISBN", 
@@ -19,10 +20,12 @@ class BookService:
         
 
     def __book_exists(self, isbn: str) -> bool:
+        """Check if a book with the given ISBN exists in the CSV database."""
         rows = self.repo.read_all(self.path)
         return any(r["ISBN"] == isbn for r in rows)
 
     def __load_book_or_none(self, isbn: str):
+        """Load a book by ISBN from the CSV, or return None if it does not exist."""
         rows = self.repo.read_all(self.path)
         for row in rows:
             if row["ISBN"] == isbn:
@@ -30,6 +33,7 @@ class BookService:
         return None
     
     def get_all_books(self) -> list[BookRead]:
+        """Retrieve all books from the CSV as a list of BookRead objects."""
         rows = self.repo.read_all(self.path)
         return [
             BookRead(**Book.from_dict(r).to_api_dict())
@@ -37,12 +41,14 @@ class BookService:
         ]
 
     def get_book(self, isbn: str):
+        """Retrieve a single book by ISBN. Returns None if the book does not exist."""
         row = self.__load_book_or_none(isbn)
         if not row:
             return None
         return BookRead(**Book.from_dict(row).to_api_dict())
 
     def create_book(self, data: BookCreate) -> BookRead:
+        """Create a new book entry. Raises an error if the book already exists."""
         if self.__book_exists(data.isbn):
             raise ValueError("Book already exists in the database.")
 
@@ -62,6 +68,7 @@ class BookService:
         return BookRead(**book.to_api_dict())
 
     def update_book(self, isbn: str, data: BookUpdate):
+        """Update an existing book's details. Returns None if the book is not found."""
         rows = self.repo.read_all(self.path)
         update_data = data.model_dump(exclude_unset = True)
 
@@ -92,7 +99,7 @@ class BookService:
         return BookRead(**Book.from_dict(row).to_api_dict())
 
     def delete_book(self, isbn: str) -> bool:
-
+        """Delete a book by ISBN. Returns True if deleted, False if not found."""
         rows = self.repo.read_all(self.path)
         new_rows = [r for r in rows if r["ISBN"] != isbn]
 

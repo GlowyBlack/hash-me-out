@@ -15,15 +15,15 @@ def prepare_csv_for_testing():
     path = book_router.service.path
 
     try:
-        with open(path, "r", encoding="latin-1") as f:
+        with open(path, "r", encoding = "latin-1") as f:
             original_contents = f.read()
     except FileNotFoundError:
         original_contents = None
 
-    with open(path, "w", newline="", encoding="latin-1") as f:
+    with open(path, "w", newline = "", encoding = "latin-1") as f:
         writer = csv.DictWriter(
             f,
-            fieldnames=[
+            fieldnames = [
                 "ISBN",
                 "Book-Title",
                 "Book-Author",
@@ -33,7 +33,7 @@ def prepare_csv_for_testing():
                 "Image-URL-M",
                 "Image-URL-L",
             ],
-            delimiter=";", 
+            delimiter = ";", 
         )
         writer.writeheader()
 
@@ -68,7 +68,7 @@ def test_create_book_successful(client):
         "publisher": "Disney Hyperion",
     }
 
-    r = client.post("/books/", json=payload)
+    r = client.post("/books/", json = payload)
     assert r.status_code == 200
     data = r.json()
 
@@ -85,7 +85,7 @@ def test_get_book_successful(client):
         "book_title": "Percy Jackson and the Lightning Thief",
         "author": "Rick Riordan",
     }
-    client.post("/books/", json=payload)
+    client.post("/books/", json = payload)
 
     r = client.get("/books/9780307245304")
     assert r.status_code == 200
@@ -102,7 +102,7 @@ def test_update_book_successful(client):
         "book_title": "Percy Jackson and the Lightning Thief",
         "author": "Rick Riordan",
     }
-    r_create = client.post("/books/", json=create_payload)
+    r_create = client.post("/books/", json = create_payload)
     assert r_create.status_code == 200
 
     update_payload = {
@@ -110,7 +110,7 @@ def test_update_book_successful(client):
         "author": "Updated Author",
     }
 
-    r_update = client.put("/books/9780307245304", json=update_payload)
+    r_update = client.put("/books/9780307245304", json = update_payload)
     assert r_update.status_code == 200
 
     r_get = client.get("/books/9780307245304")
@@ -132,7 +132,7 @@ def test_delete_book_successful(client):
         "book_title": "Percy Jackson and the Lightning Thief",
         "author": "Rick Riordan",
     }
-    client.post("/books/", json=payload)
+    client.post("/books/", json = payload)
 
     r_delete = client.delete("/books/9780307245304")
     assert r_delete.status_code == 204
@@ -150,7 +150,7 @@ def test_create_book_fail_missing_required_fields(client):
     """
     Request body missing required fields should trigger 422 validation error.
     """
-    r = client.post("/books/", json={"isbn": "9780307245304"})
+    r = client.post("/books/", json = {"isbn": "9780307245304"})
     assert r.status_code == 422
 
 
@@ -161,14 +161,14 @@ def test_create_book_invalid_isbn_returns_422(client):
     - Invalid ISBNs (other lengths) → 422
     """
 
-    r_short = client.post("/books/", json={
+    r_short = client.post("/books/", json = {
         "isbn": "11",
         "book_title": "Bad ISBN",
         "author": "Someone",
     })
     assert r_short.status_code == 422
 
-    r_long = client.post("/books/", json={
+    r_long = client.post("/books/", json = {
         "isbn": "1" * 40,
         "book_title": "Bad ISBN",
         "author": "Someone",
@@ -191,7 +191,7 @@ def test_update_book_fail_not_found(client):
         "book_title": "Should Not Update",
         "author": "Nobody",
     }
-    r = client.put("/books/NOPE", json=update_payload)
+    r = client.put("/books/NOPE", json = update_payload)
     assert r.status_code == 404
     assert r.json() == {"detail": "Book not found"}
 

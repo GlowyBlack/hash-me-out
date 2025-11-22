@@ -125,8 +125,8 @@ def test_get_book_returns_none_when_not_found():
 def test_invalid_isbn_fail(invalid_isbn):
     with pytest.raises(ValidationError) as exc_info:
         BookCreate(
-            isbn=invalid_isbn,
-            book_title="Percy Jackson and the Lightning Thief",
-            author="Rick Riordan",
+            isbn = invalid_isbn,
+            book_title = "Percy Jackson and the Lightning Thief",
+            author = "Rick Riordan",
         )
     assert "ISBN must contain exactly 10 or 13 digits" in str(exc_info.value)

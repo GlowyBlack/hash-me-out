@@ -7,6 +7,7 @@ service = BookService()
 
 @router.post("/")
 def create_book(book: BookCreate):
+    """Create a new book entry in the system."""
     try:
         return service.create_book(book)
     except ValueError as e:
@@ -38,6 +39,7 @@ def update_book(isbn: str, book: BookUpdate):
     
 @router.delete("/{isbn}", status_code = 204)
 def delete_book(isbn: str):
+    """Delete a book from the system by its ISBN."""
     if not service.delete_book(isbn):
         raise HTTPException(status_code = 404, detail = "Book not found")
     return {"message": "Book deleted successfully"}
