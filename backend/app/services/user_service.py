@@ -21,7 +21,7 @@ class CSVUserService:
 
     def _norm(self, s: str) -> str:
         return s.strip().lower()
-    
+
     def _convert_row(self, row: dict) -> dict:
         r = dict(row)
         r["id"] = int(r["id"])

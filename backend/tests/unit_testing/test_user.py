@@ -189,4 +189,20 @@ def test_set_admin_updates_flag():
     updated = service.update_user(user_id=u1["id"], is_admin=True)
 
     assert updated["is_admin"] is True
+    
+def test_create_user_preserves_username_casing():
+    created = service.create_user(
+        username="JanakiCute123",
+        email="JaNaKi@example.com",
+        password_hash="pw1",
+    )
+
+    assert created["username"] == "JanakiCute123"
+    assert created["email"] == "JaNaKi@example.com"
+
+    found = service.get_by_username("   JANAKICUTE123   ")
+    assert found is not None
+    assert found["id"] == created["id"]
+    assert found["username"] == "JanakiCute123"
+
    
