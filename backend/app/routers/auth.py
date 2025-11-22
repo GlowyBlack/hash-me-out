@@ -61,6 +61,12 @@ def login(form: OAuth2PasswordRequestForm = Depends(), svc: CSVUserService = Dep
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="invalid_credentials",
         )
+        
+    if user.get("is_suspended", False):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Your account is suspended until {user.get('suspended_until', 'N/A')}.",
+        )
 
     token = create_access_token(
         username=user["username"],
@@ -111,3 +117,43 @@ def list_users(
         )
 
     return users_out
+
+@router.post("/suspend/{user_id}")
+def suspend_user_route(
+    user_id: int,
+    duration_minutes: int,
+    curr=Depends(get_current_user),
+    svc: CSVUserService = Depends(get_user_service),
+):
+    if not curr.get("is_admin"):
+        raise HTTPException(403, "Admin privileges required")
+
+    try:
+        suspended_user = svc.suspend_user(
+            admin_id=curr["id"],
+            target_id=user_id,
+            duration_minutes=duration_minutes,
+        )
+        return {
+            "message": f"User {user_id} suspended for {duration_minutes} minutes.",
+            "suspended_until": suspended_user["suspended_until"],
+        }
+    except ValueError:
+        raise HTTPException(404, "User not found")
+
+@router.post("/unsuspend/{user_id}")
+def unsuspend_user_route(
+    user_id: int,
+    curr=Depends(get_current_user),
+    svc: CSVUserService = Depends(get_user_service),
+):
+    """Allows admin to unsuspend a user."""
+    if not curr.get("is_admin"):
+        raise HTTPException(403, "Admin privileges required")
+
+    try:
+        svc.unsuspend_user(curr["id"], user_id)
+        return {"message": f"User {user_id} is no longer suspended."}
+
+    except ValueError:
+        raise HTTPException(404, "User not found")
