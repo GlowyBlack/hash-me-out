@@ -1,6 +1,0 @@
-{
-  "devDependencies": {
-    "@types/estree": "^1.0.8",
-    "@types/json5": "^0.0.30"
-  }
-}

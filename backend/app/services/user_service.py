@@ -55,23 +55,7 @@ class CSVUserService:
 
         rec["id"] = new_id
         return rec
-
-    def get_all_users(self) -> List[Dict]:
-        rows = self.repo.read_all(self.path)
-        for r in rows:
-            r["id"] = int(r["id"])
-        return rows
-
-    def delete_user(self, user_id: int) -> bool:
-        rows = self.repo.read_all(self.path)
-        filtered = [r for r in rows if int(r["id"]) != user_id]
-
-        if len(filtered) == len(rows):
-            return False
-
-        self.repo.write_all(self.path, FIELDNAMES, filtered)
-        return True
-
+    
     def update_user(
         self,
         user_id: int,
@@ -81,7 +65,6 @@ class CSVUserService:
         password_hash: str | None = None,
     ) -> Dict:
         rows = self.repo.read_all(self.path)
-
 
         target_idx = None
         for i, r in enumerate(rows):
@@ -93,7 +76,7 @@ class CSVUserService:
             raise ValueError("user_not_found")
 
         rec = rows[target_idx]
-        
+
         new_username = self._norm(username) if username is not None else None
         new_email = self._norm(email) if email is not None else None
 
@@ -122,3 +105,4 @@ class CSVUserService:
             "email": rec["email"],
             "password_hash": rec["password_hash"],
         }
+  
