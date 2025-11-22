@@ -4,3 +4,4 @@ id,username,email,password_hash,is_admin
 5,kels,user1@example.com,$2b$12$r9jo83b8BSqeg6eoAQPoDOwJ/Wz1Jhv05tqoaGCWtTSkErc4CTd/S,False
 6,sara,user123@example.com,$2b$12$61BojMRHXe3jMeUTgyvunOKToiZb7zO3nK8yP.E5Wsg6HvM9Wryjm,False
 7,sara1,user12@example.com,$2b$12$ZfSFCFWTbDWcBd/09Llz3O4XGzurvHyjBE5TtegncoqWG08Aeaqhu,True
+8,string,user1234@example.com,$2b$12$JSamPXz3x8a9osR6Q5pOqONyq8kJWyqLxTog3Luoq7lqGkWNMv3ra,False
