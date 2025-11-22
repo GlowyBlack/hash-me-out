@@ -22,7 +22,7 @@ app.add_middleware(
 
 
 app.include_router(request_router)
-app.include_router(auth_router.router, prefix="/auth", tags=["auth"])
+app.include_router(auth_router.router)
 app.include_router(review_router)
 app.include_router(book_router)
 app.include_router(readinglist_router)

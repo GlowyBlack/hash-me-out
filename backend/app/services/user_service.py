@@ -1,6 +1,6 @@
 import csv
 import os
-from typing import Optional, Dict, List
+from typing import Optional, Dict
 
 from app.utils.data_manager import CSVRepository
 
@@ -9,7 +9,7 @@ DATA_DIR = os.path.join(BASE_DIR, "data")
 os.makedirs(DATA_DIR, exist_ok=True)
 
 USER_CSV = os.path.join(DATA_DIR, "Users.csv")
-FIELDNAMES = ["id", "username", "email", "password_hash"]
+FIELDNAMES = ["id", "username", "email", "password_hash", "is_admin"]
 
 
 class CSVUserService:
@@ -24,85 +24,103 @@ class CSVUserService:
     def _norm(self, s: str) -> str:
         return s.strip().lower()
 
+    def _get_next_id(self) -> int:
+        rows = self.repo.read_all(self.path)
+        if not rows:
+            return 1
+        return max(int(r["id"]) for r in rows) + 1
+
     def get_by_username(self, username: str) -> Optional[Dict]:
         username_norm = self._norm(username)
         for row in self.repo.read_all(self.path):
             if self._norm(row["username"]) == username_norm:
                 row["id"] = int(row["id"])
+                if "is_admin" in row:
+                    val = str(row["is_admin"]).strip().lower()
+                    row["is_admin"] = val in {"true", "1", "yes"}
                 return row
         return None
 
-    def create_user(self, *, username: str, email: str, password_hash: str) -> Dict:
-        rows = self.repo.read_all(self.path)
+    def create_user(
+        self,
+        username: str,
+        email: str,
+        password_hash: str,
+        is_admin: bool = False,
+    ) -> Dict:
+        users = self.repo.read_all(self.path)
 
         username_norm = self._norm(username)
         email_norm = self._norm(email)
 
-        if any(self._norm(r["username"]) == username_norm for r in rows):
-            raise ValueError("username_taken")
-        if any(self._norm(r["email"]) == email_norm for r in rows):
-            raise ValueError("email_taken")
+        for u in users:
+            if self._norm(u["username"]) == username_norm:
+                raise ValueError("username_taken")
+            if self._norm(u["email"]) == email_norm:
+                raise ValueError("email_taken")
 
-        new_id = 1 if not rows else max(int(r["id"]) for r in rows) + 1
-        rec = {
-            "id": str(new_id),
-            "username": username_norm,
-            "email": email_norm,
+        new_id = self._get_next_id()
+
+        user = {
+            "id": new_id,
+            "username": username,
+            "email": email,
             "password_hash": password_hash,
+            "is_admin": is_admin,
         }
-        rows.append(rec)
-        self.repo.write_all(self.path, FIELDNAMES, rows)
 
-        rec["id"] = new_id
-        return rec
-    
+        users.append(user)
+
+        with open(self.path, "w", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=FIELDNAMES)
+            writer.writeheader()
+            writer.writerows(users)
+
+        return user
+
     def update_user(
         self,
         user_id: int,
-        *,
         username: str | None = None,
         email: str | None = None,
-        password_hash: str | None = None,
+        is_admin: bool | None = None,
     ) -> Dict:
-        rows = self.repo.read_all(self.path)
+        users = self.repo.read_all(self.path)
 
-        target_idx = None
-        for i, r in enumerate(rows):
-            if int(r["id"]) == user_id:
-                target_idx = i
+        updated_user: Optional[Dict] = None
+        user_id_int = int(user_id)
+
+        for u in users:
+            if int(u["id"]) == user_id_int:
+
+                if username is not None:
+                    new_username_norm = self._norm(username)
+                    for other in users:
+                        if int(other["id"]) != user_id_int and self._norm(other["username"]) == new_username_norm:
+                            raise ValueError("username_taken")
+                    u["username"] = username
+
+                if email is not None:
+                    new_email_norm = self._norm(email)
+                    for other in users:
+                        if int(other["id"]) != user_id_int and self._norm(other["email"]) == new_email_norm:
+                            raise ValueError("email_taken")
+                    u["email"] = email
+
+                if is_admin is not None:
+                    u["is_admin"] = is_admin
+
+                updated_user = u
                 break
 
-        if target_idx is None:
+        if updated_user is None:
             raise ValueError("user_not_found")
 
-        rec = rows[target_idx]
+        with open(self.path, "w", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=FIELDNAMES)
+            writer.writeheader()
+            writer.writerows(users)
 
-        new_username = self._norm(username) if username is not None else None
-        new_email = self._norm(email) if email is not None else None
+        updated_user["id"] = int(updated_user["id"])
 
-        if new_username is not None:
-            for r in rows:
-                if int(r["id"]) != user_id and self._norm(r["username"]) == new_username:
-                    raise ValueError("username_taken")
-
-        if new_email is not None:
-            for r in rows:
-                if int(r["id"]) != user_id and self._norm(r["email"]) == new_email:
-                    raise ValueError("email_taken")
-
-        if new_username is not None:
-            rec["username"] = new_username
-        if new_email is not None:
-            rec["email"] = new_email
-        if password_hash is not None:
-            rec["password_hash"] = password_hash
-
-        self.repo.write_all(self.path, FIELDNAMES, rows)
-
-        return {
-            "id": int(rec["id"]),
-            "username": rec["username"],
-            "email": rec["email"],
-            "password_hash": rec["password_hash"],
-        }
-  
+        return updated_user
