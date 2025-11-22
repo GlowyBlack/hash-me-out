@@ -13,9 +13,7 @@ class RequestService:
 
 
     def __generate_next_id(self) -> int:
-        """
-        Generate the next RequestID number.
-        """
+        """Generate the next RequestID number."""
         rows = self.repo.read_all(self.path)
         if not rows:
             return 1
@@ -23,9 +21,7 @@ class RequestService:
         return max(ids, default=0) + 1
 
     def __already_requested(self, user_id: int, isbn: str) -> bool:
-        """
-        Checks if this user has already requested the same book 
-        """
+        """Checks if this user has already requested the same book"""
         rows = self.repo.read_all(self.path)
         return any(r["UserID"] == str(user_id) and r["ISBN"] == isbn for r in rows)
 
@@ -58,16 +54,12 @@ class RequestService:
         self.repo.write_all(self.totalpath, self.total_fields, rows)
         
     def get_all_requests(self) -> list[RequestRead]:
-            """
-            Retrieve all requests from the requests.csv file.
-            """
-            rows = self.repo.read_all(self.path)
-            return [RequestRead(**Request.from_dict(r).to_api_dict()) for r in rows]    
+        """Retrieve all requests from the requests.csv file."""
+        rows = self.repo.read_all(self.path)
+        return [RequestRead(**Request.from_dict(r).to_api_dict()) for r in rows]    
         
     def create_request(self, user_id: int, data: RequestCreate) -> RequestRead:
-        """
-        Create a new book request and save it to the requests.csv file.
-        """
+        """Create a new book request and save it to the requests.csv file."""
         if self.__already_requested(user_id, data.isbn):
             raise ValueError("This user has already requested this book.")
 
@@ -86,9 +78,7 @@ class RequestService:
         return RequestRead(**request.to_api_dict())
 
     def delete_request(self, request_id: int) -> bool:
-        """
-        Delete a specific request and reindex the remaining IDs.
-        """
+        """Delete a specific request and reindex the remaining IDs."""
         rows = self.repo.read_all(self.path)
         original_count = len(rows)
         

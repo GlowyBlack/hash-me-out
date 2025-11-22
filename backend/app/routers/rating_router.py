@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, status
 from app.schemas.rating import RatingCreate, RatingRead, AvgRatingRead
 from app.services.rating_service import RatingService
 
@@ -34,4 +34,4 @@ def get_user_rating(user_id: int, isbn: str):
 def delete_rating(user_id: int, isbn: str):
     ok = service.delete_rating(user_id, isbn)
     if not ok:
-        raise HTTPException(status_code = 404, detail = "Rating not found")
+        raise HTTPException(status_code = status.HTTP_404_NOT_FOUND, detail = "Rating not found")

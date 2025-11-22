@@ -1,7 +1,6 @@
 import csv
 import os
 from typing import Optional, Dict
-
 from app.repositories.csv_repository import CSVRepository
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
@@ -10,7 +9,6 @@ os.makedirs(DATA_DIR, exist_ok=True)
 
 USER_CSV = os.path.join(DATA_DIR, "Users.csv")
 FIELDNAMES = ["id", "username", "email", "password_hash", "is_admin"]
-
 
 class CSVUserService:
     def __init__(self, repo: CSVRepository, path: str = USER_CSV):
