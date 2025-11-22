@@ -7,9 +7,9 @@ service = ReviewService()
 
 
 @router.post("/")
-def create_review(review: ReviewCreate, user_id: int):
+def create_review(review: ReviewCreate, user_id: int, isbn: str):
     try:
-        return service.create_review(user_id = user_id, data = review)
+        return service.create_review(user_id = user_id, data = review, isbn = isbn)
     except ValueError as e:
         raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST, detail=str(e))
 

@@ -46,11 +46,10 @@ def client():
 
 def test_create_review(client):
     content = {
-        "isbn": "1234567890",
-        "comment": "Great book indeed",
+        "comment": "Great book indeed"
     }
 
-    r = client.post("/reviews/?user_id=1", json=content)
+    r = client.post("/reviews/?user_id=1&isbn=1234567890", json=content)
     assert r.status_code == 200
 
     data = r.json()
@@ -61,9 +60,21 @@ def test_create_review(client):
 
 
 def test_get_all_reviews_for_isbn(client):
-    client.post("/reviews/?user_id=1", json={"isbn": "1111111111", "comment": "First review"})
-    client.post("/reviews/?user_id=2", json={"isbn": "1111111111", "comment": "Second review"})
-    client.post("/reviews/?user_id=3", json={"isbn": "2222222222", "comment": "Other book"})
+    client.post("/reviews/?user_id=1&isbn=1111111111",
+                json={"comment": "First review"})
+    client.post("/reviews/?user_id=2&isbn=1111111111",
+                json={"comment": "Second review"})
+    client.post("/reviews/?user_id=3&isbn=2222222222",
+                json={"comment": "Other book"})
+
+    r = client.get("/reviews/1111111111")
+    assert r.status_code == 200
+
+    rows = r.json()
+    assert len(rows) == 2
+    user_ids = sorted(rev["user_id"] for rev in rows)
+    assert user_ids == [1, 2]
+
 
     r = client.get("/reviews/1111111111")
     assert r.status_code == 200
@@ -75,26 +86,27 @@ def test_get_all_reviews_for_isbn(client):
 
 
 def test_duplicate_review_same_user_and_isbn_returns_400(client):
-    content = {
-        "isbn": "3333333333",
-        "comment": "Nice long review",
-    }
-
-    r1 = client.post("/reviews/?user_id=10", json=content)
+    r1 = client.post(
+        "/reviews/?user_id=10&isbn=3333333333",
+        json={"comment": "Nice long review"}
+    )
     assert r1.status_code == 200
 
-    r2 = client.post("/reviews/?user_id=10", json=content)
+    r2 = client.post(
+        "/reviews/?user_id=10&isbn=3333333333",
+        json={"comment": "Nice long review"}
+    )
     assert r2.status_code == 400
-    data = r2.json()
-    assert "already reviewed" in data["detail"].lower()
+    assert "already reviewed" in r2.json()["detail"].lower()
 
 
 def test_edit_review(client):
     create_resp = client.post(
-        "/reviews/?user_id=5",
-        json={"isbn": "4444444444", "comment": "Original text"},
+        "/reviews/?user_id=5&isbn=4444444444",
+        json={"comment": "Original text"},
     )
     assert create_resp.status_code == 200
+
     review_id = create_resp.json()["review_id"]
 
     update_content = {"comment": "Updated comment here"}
@@ -109,10 +121,11 @@ def test_edit_review(client):
 
 def test_delete_review(client):
     create_resp = client.post(
-        "/reviews/?user_id=7",
-        json={"isbn": "5555555555", "comment": "To be deleted"},
+        "/reviews/?user_id=7&isbn=5555555555",
+        json={"comment": "To be deleted"},
     )
     assert create_resp.status_code == 200
+
     review_id = create_resp.json()["review_id"]
 
     r_del = client.delete(f"/reviews/{review_id}")
