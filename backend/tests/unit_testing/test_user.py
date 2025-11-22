@@ -168,3 +168,25 @@ def test_update_user_not_found():
         )
 
     assert str(excinfo.value) == "user_not_found"
+
+def test_create_user_defaults_to_non_admin():
+    result = service.create_user(
+        username="alice",
+        email="alice@example.com",
+        password_hash="pw",
+    )
+
+    assert result["is_admin"] is False
+    
+    
+def test_set_admin_updates_flag():
+    u1 = service.create_user(
+        username="alice",
+        email="alice@example.com",
+        password_hash="pw",
+    )
+
+    updated = service.update_user(user_id=u1["id"], is_admin=True)
+
+    assert updated["is_admin"] is True
+   

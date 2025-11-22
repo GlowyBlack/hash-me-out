@@ -1,27 +1,32 @@
 import csv
+import os
 import pytest
 from fastapi.testclient import TestClient
+
 from app.main import app
 from app.routers import rating_router
 
+
 @pytest.fixture(autouse=True)
 def prepare_csv_for_testing():
+    """
+    Integration fixture for ratings, will reset Ratings.csv before each test and restore it afterward.
+    """
     path = rating_router.service.ratings_path
 
     try:
         with open(path, "r", encoding="utf-8") as f:
             original_contents = f.read()
     except FileNotFoundError:
-        original_contents = None 
-    
+        original_contents = None
+
     with open(path, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=["UserID", "ISBN", "Book-Rating"])
+        writer = csv.DictWriter(f, fieldnames=rating_router.service.fields)
         writer.writeheader()
 
     yield
 
     if original_contents is None:
-        import os
         if os.path.exists(path):
             os.remove(path)
     else:
@@ -31,8 +36,15 @@ def prepare_csv_for_testing():
 
 @pytest.fixture
 def client():
+    """
+    FastAPI test client for /ratings endpoints.
+    """
     return TestClient(app)
 
+
+# ---------------------------------------------------------------------------
+# Integration tests
+# ---------------------------------------------------------------------------
 
 def test_add_rating(client):
     r = client.post(
@@ -69,6 +81,11 @@ def test_delete_rating(client):
     assert r2.status_code == 404
     assert r2.json() == {"detail": "Rating not found"}
 
+
+# ---------------------------------------------------------------------------
+# Aggregation tests
+# ---------------------------------------------------------------------------
+
 def test_avg_rating_multiple_users(client):
     client.post("/ratings/books/555?user_id=1", json={"rating": 4})
     client.post("/ratings/books/555?user_id=2", json={"rating": 8})
@@ -76,20 +93,28 @@ def test_avg_rating_multiple_users(client):
 
     r = client.get("/ratings/books/555/average")
     assert r.status_code == 200
-    data = r.json()
-    assert data == {"isbn": "555", "avg_rating": 6.0, "count": 3}
-def test_create_rating_invalid_value_returns_422(client):
-    r = client.post("/ratings/books/123?user_id=1", json={"rating": 11})
-    assert r.status_code == 422
+    assert r.json() == {"isbn": "555", "avg_rating": 6.0, "count": 3}
 
-    r2 = client.post("/ratings/books/123?user_id=1", json={"rating": -1})
-    assert r2.status_code == 422
 
 def test_avg_rating_when_no_ratings(client):
     r = client.get("/ratings/books/NO_RATINGS/average")
     assert r.status_code == 200
-    data = r.json()
-    assert data == {"isbn": "NO_RATINGS", "avg_rating": 0.0, "count": 0}
+    assert r.json() == {"isbn": "NO_RATINGS", "avg_rating": 0.0, "count": 0}
+
+
+# ---------------------------------------------------------------------------
+# Equivalence/boundary tests
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("value", [11, -1])
+def test_create_rating_invalid_value_returns_422(client, value):
+    r = client.post("/ratings/books/123?user_id=1", json={"rating": value})
+    assert r.status_code == 422
+
+
+# ---------------------------------------------------------------------------
+# Quick, extra exception handling test
+# ---------------------------------------------------------------------------
 
 def test_get_user_rating_not_found_returns_null(client):
     r = client.get("/ratings/users/999/books/UNKNOWN")
