@@ -206,3 +206,32 @@ def test_create_user_preserves_username_casing():
     assert found["username"] == "JanakiCute123"
 
    
+def test_suspend_user_sets_flag_and_time(tmp_path):
+    service.path = str(tmp_path / "Users.csv")
+    with open(service.path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=FIELDNAMES)
+        writer.writeheader()
+
+    admin = service.create_user(username="admin", email="admin@example.com", password_hash="pw", is_admin=True)
+    user = service.create_user(username="bob", email="bob@example.com", password_hash="pw2")
+
+    suspended = service.suspend_user(admin["id"], user["id"], duration_minutes=30)
+
+    assert suspended["is_suspended"] == "true"
+    assert suspended["suspended_until"] != ""
+
+
+def test_unsuspend_user_clears_flags(tmp_path):
+    service.path = str(tmp_path / "Users.csv")
+    with open(service.path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=FIELDNAMES)
+        writer.writeheader()
+
+    admin = service.create_user(username="admin", email="admin@example.com", password_hash="pw", is_admin=True)
+    user = service.create_user(username="bob", email="bob@example.com", password_hash="pw2")
+
+    service.suspend_user(admin["id"], user["id"], duration_minutes=30)
+    unsuspended = service.unsuspend_user(admin["id"], user["id"])
+
+    assert unsuspended["is_suspended"] == "false"
+    assert unsuspended["suspended_until"] == ""

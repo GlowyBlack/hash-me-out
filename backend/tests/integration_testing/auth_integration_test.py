@@ -270,3 +270,67 @@ def test_non_admin_blocked_from_admin_users(client, temp_user_service, dummy_pwd
     assert resp.status_code == 403
     body = resp.json()
     assert body["detail"] == "Admin privileges required"
+
+def test_admin_can_suspend_user(client, temp_user_service, dummy_pwd_context):
+    svc = temp_user_service
+    dummy = dummy_pwd_context
+
+    svc.create_user(username="admin", email="admin@example.com", password_hash=dummy.hash("pw"), is_admin=True)
+    user = svc.create_user(username="bob", email="bob@example.com", password_hash=dummy.hash("pw2"))
+
+    login_resp = client.post("/auth/token", data={"username": "admin", "password": "pw"})
+    token = login_resp.json()["access_token"]
+
+    resp = client.post(
+        f"/auth/suspend/{user['id']}?duration_minutes=60",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert resp.status_code == 200
+    assert "suspended_until" in resp.json()
+
+
+def test_suspended_user_cannot_login(client, temp_user_service, dummy_pwd_context):
+    svc = temp_user_service
+    dummy = dummy_pwd_context
+
+    svc.create_user(username="admin", email="admin@example.com", password_hash=dummy.hash("pw"), is_admin=True)
+    user = svc.create_user(username="bob", email="bob@example.com", password_hash=dummy.hash("pw2"))
+
+    login_resp = client.post("/auth/token", data={"username": "admin", "password": "pw"})
+    admin_token = login_resp.json()["access_token"]
+
+    client.post(
+        f"/auth/suspend/{user['id']}?duration_minutes=10",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+
+    r = client.post("/auth/token", data={"username": "bob", "password": "pw2"})
+    assert r.status_code == 403
+    assert "suspended" in r.json()["detail"].lower()
+
+
+def test_admin_can_unsuspend_user(client, temp_user_service, dummy_pwd_context):
+    svc = temp_user_service
+    dummy = dummy_pwd_context
+
+    svc.create_user(username="admin", email="admin@example.com", password_hash=dummy.hash("pw"), is_admin=True)
+    user = svc.create_user(username="bob", email="bob@example.com", password_hash=dummy.hash("pw2"))
+
+    login_resp = client.post("/auth/token", data={"username": "admin", "password": "pw"})
+    admin_token = login_resp.json()["access_token"]
+
+    client.post(
+        f"/auth/suspend/{user['id']}?duration_minutes=30",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+
+    resp = client.post(
+        f"/auth/unsuspend/{user['id']}",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+
+    assert resp.status_code == 200
+
+    login_resp = client.post("/auth/token", data={"username": "bob", "password": "pw2"})
+    assert login_resp.status_code == 200
