@@ -51,7 +51,7 @@ class ReviewService:
         )
 
     def __resequence_ids(self, rows):
-        for i, row in enumerate(rows, start=1):
+        for i, row in enumerate(rows, start = 1):
             row["ReviewID"] = str(i)
 
     # ------------------------------------------------------------------
@@ -67,10 +67,10 @@ class ReviewService:
 
         new_id = self.__generate_next_id()
         review = Review(
-            review_id=new_id,
-            user_id=user_id,
-            isbn=data.isbn,
-            comment=data.comment,
+            review_id = new_id,
+            user_id = user_id,
+            isbn = data.isbn,
+            comment = data.comment,
         )
 
         self.repo.append_row(self.path, self.fields, review.to_csv_dict())
