@@ -1,7 +1,7 @@
 import csv
 from pathlib import Path
 
-# Searches for books whose isbn or author or title matches the query
+"""Searches for books whose isbn or author or title matches the query"""
 def search_books(query: str):
     if not query:
         return []
@@ -35,4 +35,3 @@ def search_books(query: str):
         
     return results
 
-# print(search_books("Mark P. O. Morford"))

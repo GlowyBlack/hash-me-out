@@ -4,8 +4,7 @@ import pytest
 from app.services.user_service import CSVUserService, FIELDNAMES
 from app.utils.data_manager import CSVRepository
 
-_repo = CSVRepository()
-service = CSVUserService(_repo)
+service = CSVUserService(CSVRepository())
 
 
 @pytest.fixture(autouse=True)
@@ -25,7 +24,6 @@ def test_create_user_success():
         password_hash="hashed_pw_here",
     )
 
-
     assert isinstance(result, dict)
     assert result["username"] == "alice"
     assert result["email"] == "alice@example.com"
@@ -40,7 +38,6 @@ def test_create_user_username_taken_raises():
         password_hash="pw1",
     )
 
-   
     with pytest.raises(ValueError) as excinfo:
         service.create_user(
             username="alice",
@@ -64,12 +61,13 @@ def test_create_user_email_taken_raises():
             password_hash="pw2",
         )
     assert str(excinfo.value) == "email_taken"
-    
+
+
 def test_get_by_username_success():
     u1 = service.create_user(
-    username="alice",
-    email="alice@example.com",
-    password_hash="pw1",
+        username="alice",
+        email="alice@example.com",
+        password_hash="pw1",
     )
 
     service.create_user(
@@ -77,7 +75,7 @@ def test_get_by_username_success():
         email="bob@example.com",
         password_hash="pw2",
     )
-    
+
     found = service.get_by_username("  ALIce  ")
 
     assert found is not None
@@ -85,8 +83,110 @@ def test_get_by_username_success():
     assert found["username"] == u1["username"]
     assert found["email"] == u1["email"]
 
+
 def test_get_by_username_unknown_returns_none():
     result = service.get_by_username("nonexistent_user")
-
     assert result is None
 
+
+def test_update_user_success():
+    u1 = service.create_user(
+        username="alice",
+        email="alice@example.com",
+        password_hash="pw1",
+    )
+
+    service.create_user(
+        username="bob",
+        email="bob@example.com",
+        password_hash="pw2",
+    )
+
+    updated = service.update_user(
+        user_id=u1["id"],
+        username="newalice",
+        email="newalice@example.com",
+    )
+
+    assert updated["id"] == u1["id"]
+    assert updated["username"] == "newalice"
+    assert updated["email"] == "newalice@example.com"
+
+    found = service.get_by_username("  NEWALICE  ")
+    assert found is not None
+    assert found["id"] == u1["id"]
+    assert found["email"] == "newalice@example.com"
+
+
+def test_update_user_username_taken():
+    u1 = service.create_user(
+        username="alice",
+        email="alice@example.com",
+        password_hash="pw1",
+    )
+    u2 = service.create_user(
+        username="bob",
+        email="bob@example.com",
+        password_hash="pw2",
+    )
+
+    with pytest.raises(ValueError) as excinfo:
+        service.update_user(
+            user_id=u2["id"],
+            username="alice",
+        )
+
+    assert str(excinfo.value) == "username_taken"
+
+
+def test_update_user_email_taken():
+    u1 = service.create_user(
+        username="alice",
+        email="alice@example.com",
+        password_hash="pw1",
+    )
+    u2 = service.create_user(
+        username="bob",
+        email="bob@example.com",
+        password_hash="pw2",
+    )
+
+    with pytest.raises(ValueError) as excinfo:
+        service.update_user(
+            user_id=u2["id"],
+            email="alice@example.com",
+        )
+
+    assert str(excinfo.value) == "email_taken"
+
+
+def test_update_user_not_found():
+    with pytest.raises(ValueError) as excinfo:
+        service.update_user(
+            user_id=999,
+            username="ghost",
+        )
+
+    assert str(excinfo.value) == "user_not_found"
+
+def test_create_user_defaults_to_non_admin():
+    result = service.create_user(
+        username="alice",
+        email="alice@example.com",
+        password_hash="pw",
+    )
+
+    assert result["is_admin"] is False
+    
+    
+def test_set_admin_updates_flag():
+    u1 = service.create_user(
+        username="alice",
+        email="alice@example.com",
+        password_hash="pw",
+    )
+
+    updated = service.update_user(user_id=u1["id"], is_admin=True)
+
+    assert updated["is_admin"] is True
+   

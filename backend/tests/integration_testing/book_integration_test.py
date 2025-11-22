@@ -9,12 +9,12 @@ def prepare_csv_for_testing(tmp_path):
     path = book_router.service.path
 
     try:
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, "r", encoding="latin-1") as f:
             original_contents = f.read()
     except FileNotFoundError:
-        original_contents = None 
-    
-    with open(path, "w", newline="", encoding="utf-8") as f:
+        original_contents = None
+
+    with open(path, "w", newline="", encoding="latin-1") as f:
         writer = csv.DictWriter(
             f,
             fieldnames=[
@@ -26,10 +26,11 @@ def prepare_csv_for_testing(tmp_path):
                 "Image-URL-S",
                 "Image-URL-M",
                 "Image-URL-L",
-            ]
+            ],
+             delimiter=";" 
         )
         writer.writeheader()
-    
+
     yield
 
     if original_contents is None:
@@ -37,7 +38,7 @@ def prepare_csv_for_testing(tmp_path):
         if os.path.exists(path):
             os.remove(path)
     else:
-        with open(path, "w", encoding="utf-8") as f:
+        with open(path, "w", encoding="latin-1") as f:
             f.write(original_contents)
 
 @pytest.fixture
@@ -55,28 +56,24 @@ def test_create_book_successful(client):
     })
     assert r.status_code == 200
     data = r.json()
-    # print(data)
     assert data["isbn"] == "9780307245304"
     assert data["book_title"] == "Percy Jackson"
     assert data["author"] == "Rick Riordan"
     
     
 def test_get_book_successful(client):
-    # first, create the book
     client.post("/books/", json={
         "isbn": "9780307245304",
         "book_title": "Percy Jackson",
         "author": "Rick Riordan"
     })
 
-    # then retrieve it
     r = client.get("/books/9780307245304")
     assert r.status_code == 200
     data = r.json()
     assert data["isbn"] == "9780307245304"
     assert data["book_title"] == "Percy Jackson"
 
-# update, delete
 
 def test_update_book_successful(client):
 
@@ -113,9 +110,8 @@ def test_delete_book_successful(client):
     })
 
     delete_response = client.delete("/books/9780307245304")
-    assert delete_response.status_code == 204 # no content
+    assert delete_response.status_code == 204
 
-    # Try deleting again (book no longer exists)
     delete_again_response = client.delete("/books/9780307245304")
     assert delete_again_response.status_code == 404
     assert delete_again_response.json() == {"detail": "Book not found"} 
@@ -123,7 +119,6 @@ def test_delete_book_successful(client):
 def test_create_book_fail_missing_fields(client):
     r = client.post("/books/", json={
         "isbn": "9780307245304",
-        # missing book_title + author
     })
     assert r.status_code == 422
 

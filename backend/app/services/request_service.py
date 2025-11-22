@@ -1,4 +1,3 @@
-from datetime import datetime
 from pathlib import Path
 from app.models.request import Request
 from app.schemas.request import RequestCreate, RequestRead 
@@ -8,6 +7,7 @@ class RequestService:
     def __init__(self):
         self.repo = CSVRepository()
         self.path = Path(__file__).resolve().parents[1] / "data" / "Requests.csv"
+        self.totalpath = Path(__file__).resolve().parents[1] / "data" / "Total_Requested.csv"
         self.fields = ["RequestID", "UserID", "Book Title", "Author", "ISBN"]
         self.total_fields = ["ISBN", "Total Requested"]
 
@@ -30,8 +30,7 @@ class RequestService:
         return any(r["UserID"] == str(user_id) and r["ISBN"] == isbn for r in rows)
 
     def __decrease_count(self, isbn:str):
-        path = Path(__file__).resolve().parents[1] / "data" / "Total_Requested.csv"
-        rows = self.repo.read_all(path)
+        rows = self.repo.read_all(self.totalpath)
         for r in rows:
             if r["ISBN"] == isbn:
                 new_count = int(r["Total Requested"]) - 1
@@ -40,12 +39,11 @@ class RequestService:
                     r["Total Requested"] = str(new_count)
                     break
         
-        self.repo.write_all(path, self.total_fields, rows)
+        self.repo.write_all(self.totalpath, self.total_fields, rows)
 
     
     def __update_total_requested(self, isbn: str):
-        path = Path(__file__).resolve().parents[1] / "data" / "Total_Requested.csv"
-        rows = self.repo.read_all(path)
+        rows = self.repo.read_all(self.totalpath)
         found = False
 
         for r in rows:
@@ -57,7 +55,7 @@ class RequestService:
         if not found:
             rows.append({"ISBN": isbn, "Total Requested": "1"})
 
-        self.repo.write_all(path, self.total_fields, rows)
+        self.repo.write_all(self.totalpath, self.total_fields, rows)
         
     def get_all_requests(self) -> list[RequestRead]:
             """
@@ -75,11 +73,11 @@ class RequestService:
 
         new_id = self.__generate_next_id()
         request = Request(
-            request_id=new_id,
-            user_id=user_id,
-            book_title=data.book_title,
-            author=data.author,
-            isbn=data.isbn,
+            request_id = new_id,
+            user_id = user_id,
+            book_title = data.book_title,
+            author = data.author,
+            isbn = data.isbn,
         )
 
         self.repo.append_row(self.path, self.fields, request.to_csv_dict())
@@ -101,7 +99,6 @@ class RequestService:
                 isbn_to_decrement = r["ISBN"]
                 break
 
-        # If the request ID was not found, nothing to delete
         if isbn_to_decrement is None:
             return False
 

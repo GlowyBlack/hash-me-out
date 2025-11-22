@@ -28,7 +28,6 @@ class BookRead(BaseModel):
     image_url_l: Optional[str] 
 
 class BookUpdate(BaseModel):
-    isbn: str  
     book_title: Optional[str] = None
     author: Optional[str] = None
     year_of_publication: Optional[str] = None
