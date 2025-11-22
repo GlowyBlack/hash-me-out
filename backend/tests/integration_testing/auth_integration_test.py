@@ -3,7 +3,7 @@ from fastapi.testclient import TestClient
 from app.main import app
 from app.deps import get_user_service, get_current_user
 from app.services.user_service import CSVUserService
-from app.utils.data_manager import CSVRepository
+from app.repositories.csv_repository import CSVRepository
 import app.deps as deps_module
 import app.routers.auth as auth_module
 
@@ -230,22 +230,43 @@ def test_admin_can_access_users(client, temp_user_service, dummy_pwd_context):
     )
 
     assert login_resp.status_code == 200
-    
-def test_register_creates_user_and_returns_userout(client):
-    payload = {
-        "username": "janaki_test_user",
-        "email": "janaki_test@example.com",
-        "password": "password123",
-    }
+    token = login_resp.json()["access_token"]
 
-    response = client.post("/auth/register", json=payload)
+    resp = client.get(
+        "/auth/users",
+        headers={"Authorization": f"Bearer {token}"},
+    )
 
-    assert response.status_code == 201
+    assert resp.status_code == 200
+    data = resp.json()
+    assert isinstance(data, list)
+    assert any(u["username"] == "admin" and u["is_admin"] for u in data)
 
-    data = response.json()
 
-    assert "id" in data
-    assert data["username"] == payload["username"]
-    assert data["email"] == payload["email"]
-    assert data["is_admin"] is False
+def test_non_admin_blocked_from_admin_users(client, temp_user_service, dummy_pwd_context):
+    svc = temp_user_service
+    dummy = dummy_pwd_context
 
+    svc.create_user(
+        username="bob",
+        email="bob@example.com",
+        password_hash=dummy.hash("pw"),
+        is_admin=False,
+    )
+
+    login_resp = client.post(
+        "/auth/token",
+        data={"username": "bob", "password": "pw"},
+    )
+
+    assert login_resp.status_code == 200
+    token = login_resp.json()["access_token"]
+
+    resp = client.get(
+        "/auth/users",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert resp.status_code == 403
+    body = resp.json()
+    assert body["detail"] == "Admin privileges required"

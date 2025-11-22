@@ -1,10 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from app.schemas.readinglist import ReadingListCreate, ReadingListRename
 from app.services.readinglist_service import ReadingListService
+from app.repositories.csv_repository import CSVRepository
+from app.repositories.book_repository import BookRepository
 
 router = APIRouter(prefix="/readinglist", tags=["ReadingList"])
 
-service = ReadingListService()
+service = ReadingListService(repo=CSVRepository(), book_repo = BookRepository())
 
 @router.post("/")
 def create_list(
@@ -15,8 +17,8 @@ def create_list(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 @router.delete("/{list_id}")
-def delete_request( list_id: int, user_id: int):
-    """Delete a specific request by ID."""
+def delete_list( list_id: int, user_id: int):
+    """Delete a specific readinglist by ID."""
     if not service.delete_list(list_id=list_id, user_id=user_id):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="ReadingList not found")
     return {"message": "ReadingList deleted successfully"}
@@ -60,3 +62,14 @@ def remove_book_from_readinglist(list_id: int, isbn: str, user_id: int):
         return {"message": "Book removed successfully"}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+@router.get("/public/{user_id}")
+def get_user_public(user_id: int):
+    return service.get_user_public_readinglists(user_id)
+
+@router.get("/{list_id}")
+def get_readinglist_detail(list_id: int, user_id: int):
+    detail = service.get_list_detail(list_id, user_id)
+    if not detail:
+        raise HTTPException(404, "ReadingList not found")
+    return detail

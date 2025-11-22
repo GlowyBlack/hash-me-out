@@ -9,7 +9,7 @@ service = RequestService()
 def create_request(
     request: RequestCreate, user_id: int):
     try:
-        return service.create_request(user_id,request)
+        return service.create_request(user_id=user_id, data=request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -21,7 +21,7 @@ def get_all_requests():
 @router.delete("/{request_id}")
 def delete_request( request_id: int):
     """Delete a specific request by ID."""
-    if not service.delete_request(request_id):
+    if not service.delete_request(request_id=request_id):
         raise HTTPException(status_code=404, detail="Request not found")
     return {"message": "Request deleted successfully"}
     
