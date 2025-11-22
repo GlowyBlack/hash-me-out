@@ -12,7 +12,6 @@ USER_CSV = os.path.join(DATA_DIR, "Users.csv")
 FIELDNAMES = ["id", "username", "email", "password_hash", "is_admin"]
 
 
-
 class CSVUserService:
     def __init__(self, repo: CSVRepository, path: str = USER_CSV):
         self.repo = repo
@@ -24,7 +23,7 @@ class CSVUserService:
 
     def _norm(self, s: str) -> str:
         return s.strip().lower()
-    
+
     def _convert_row(self, row: dict) -> dict:
         r = dict(row)
         r["id"] = int(r["id"])
@@ -37,8 +36,7 @@ class CSVUserService:
             r["is_admin"] = (raw_flag == "True")
 
         return r
-    
-    
+
     def get_by_username(self, username: str) -> Optional[Dict]:
         username_norm = self._norm(username)
 
@@ -48,7 +46,14 @@ class CSVUserService:
 
         return None
 
-    def create_user(self, *, username: str, email: str, password_hash: str, is_admin: bool = False,) -> Dict:
+    def create_user(
+        self,
+        *,
+        username: str,
+        email: str,
+        password_hash: str,
+        is_admin: bool = False,
+    ) -> Dict:
         rows = self.repo.read_all(self.path)
 
         username_norm = self._norm(username)
@@ -60,13 +65,15 @@ class CSVUserService:
             raise ValueError("email_taken")
 
         new_id = 1 if not rows else max(int(r["id"]) for r in rows) + 1
+
         rec = {
             "id": str(new_id),
-            "username": username_norm,
-            "email": email_norm,
+            "username": username,
+            "email": email,
             "password_hash": password_hash,
             "is_admin": "True" if is_admin else "False",
         }
+
         rows.append(rec)
         self.repo.write_all(self.path, FIELDNAMES, rows)
 
@@ -109,24 +116,24 @@ class CSVUserService:
             raise ValueError("user_not_found")
 
         rec = rows[target_idx]
-        
-        new_username = self._norm(username) if username is not None else None
-        new_email = self._norm(email) if email is not None else None
 
-        if new_username is not None:
+        new_username_norm = self._norm(username) if username is not None else None
+        new_email_norm = self._norm(email) if email is not None else None
+
+        if new_username_norm is not None:
             for r in rows:
-                if int(r["id"]) != user_id and self._norm(r["username"]) == new_username:
+                if int(r["id"]) != user_id and self._norm(r["username"]) == new_username_norm:
                     raise ValueError("username_taken")
 
-        if new_email is not None:
+        if new_email_norm is not None:
             for r in rows:
-                if int(r["id"]) != user_id and self._norm(r["email"]) == new_email:
+                if int(r["id"]) != user_id and self._norm(r["email"]) == new_email_norm:
                     raise ValueError("email_taken")
 
-        if new_username is not None:
-            rec["username"] = new_username
-        if new_email is not None:
-            rec["email"] = new_email
+        if username is not None:
+            rec["username"] = username
+        if email is not None:
+            rec["email"] = email
         if password_hash is not None:
             rec["password_hash"] = password_hash
         if is_admin is not None:
@@ -135,6 +142,6 @@ class CSVUserService:
         self.repo.write_all(self.path, FIELDNAMES, rows)
 
         return self._convert_row(rec)
-    
+
     def set_admin(self, user_id: int, is_admin: bool) -> Dict:
         return self.update_user(user_id, is_admin=is_admin)
