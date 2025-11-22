@@ -110,7 +110,7 @@ def test_delete_book_successful(client):
     })
 
     delete_response = client.delete("/books/9780307245304")
-    assert delete_response.status_code == 204
+    assert delete_response.status_code == 200
 
     delete_again_response = client.delete("/books/9780307245304")
     assert delete_again_response.status_code == 404

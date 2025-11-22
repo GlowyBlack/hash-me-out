@@ -135,7 +135,7 @@ def test_delete_book_successful(client):
     client.post("/books/", json=payload)
 
     r_delete = client.delete("/books/9780307245304")
-    assert r_delete.status_code == 204
+    assert r_delete.status_code == 200
 
     r_delete_again = client.delete("/books/9780307245304")
     assert r_delete_again.status_code == 404

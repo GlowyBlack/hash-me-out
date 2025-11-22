@@ -11,7 +11,7 @@ def create_review(review: ReviewCreate, user_id: int):
     try:
         return service.create_review(user_id = user_id, data = review)
     except ValueError as e:
-        raise HTTPException(status = status.HTTP_400_BAD_REQUEST, detail=str(e))
+        raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @router.get("/{isbn}")
