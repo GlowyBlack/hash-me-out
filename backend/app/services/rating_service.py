@@ -1,7 +1,7 @@
 from pathlib import Path
 from statistics import mean
 from app.models.rating import Rating
-from app.utils.data_manager import CSVRepository
+from app.repositories.csv_repository import CSVRepository
 from app.schemas.rating import RatingRead, AvgRatingRead
 
 

@@ -4,7 +4,7 @@ from jose import jwt, JWTError
 from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from app.utils.data_manager import CSVRepository
+from app.repositories.csv_repository import CSVRepository
 from app.services.user_service import CSVUserService
 
 #  Password hashing

@@ -2,7 +2,9 @@ import csv
 import os
 import threading
 from typing import List, Dict
-class CSVRepository:
+from app.repositories.base_repository import BaseRepository
+
+class CSVRepository(BaseRepository):
     """Thread-safe CSV handler shared across all models."""
     _locks: Dict[str, threading.Lock] = {}
 
