@@ -1,9 +1,7 @@
 from pathlib import Path
 from app.models.book import Book
-from app.utils.books_adapter import BXBooksCSVAdapter
-from app.utils.data_manager import CSVRepository
+from app.repositories.books_adapter import BXBooksCSVAdapter
 from app.schemas.book import BookCreate, BookRead, BookUpdate
-
 
 class BookService:
     def __init__(self):

@@ -4,7 +4,7 @@ from jose import jwt, JWTError
 from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from app.utils.data_manager import CSVRepository
+from app.repositories.csv_repository import CSVRepository
 from app.services.user_service import CSVUserService
 
 #  Password hashing
@@ -16,17 +16,20 @@ SECRET_KEY = os.getenv("AUTH_SECRET_KEY", "change-me")
 ALGORITHM = os.getenv("AUTH_ALGORITHM", "HS256")
 ACCESS_MINUTES = int(os.getenv("TOKEN_EXPIRE_MINUTES", "60"))
 
-def create_access_token(*, username: str, user_id: int, minutes: int = ACCESS_MINUTES) -> str:
+def create_access_token(*, username: str, user_id: int, is_admin: bool, minutes: int = ACCESS_MINUTES) -> str:
     now = datetime.now(timezone.utc)
     exp = now + timedelta(minutes=minutes)
-    payload = {"sub": username, "id": user_id, "iat": int(now.timestamp()), "exp": int(exp.timestamp())}
+    payload = {"sub": username, "id": user_id,"is_admin": is_admin, "iat": int(now.timestamp()), "exp": int(exp.timestamp())}
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
 def decode_token(token: str):
     try:
         return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
     except JWTError:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token",
+        )
 
 # Repo + service singletons
 _repo = CSVRepository()

@@ -1,10 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from app.schemas.readinglist import ReadingListCreate, ReadingListRename
 from app.services.readinglist_service import ReadingListService
+from app.repositories.csv_repository import CSVRepository
+from app.repositories.book_repository import BookRepository
 
 router = APIRouter(prefix="/readinglist", tags=["ReadingList"])
 
-service = ReadingListService()
+service = ReadingListService(repo=CSVRepository(), book_repo = BookRepository())
 
 @router.post("/")
 def create_list(

@@ -1,7 +1,6 @@
 import csv
 import os
-from app.utils.data_manager import CSVRepository
-
+from app.repositories.csv_repository import CSVRepository
 
 class BXBooksCSVAdapter(CSVRepository):
     """ Adapter for BX_Books.csv (semicolon + Latin-1 encoding). """

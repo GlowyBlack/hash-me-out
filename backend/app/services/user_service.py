@@ -2,7 +2,7 @@ import csv
 import os
 from typing import Optional, Dict
 
-from app.utils.data_manager import CSVRepository
+from app.repositories.csv_repository import CSVRepository
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "data")
@@ -23,6 +23,12 @@ class CSVUserService:
 
     def _norm(self, s: str) -> str:
         return s.strip().lower()
+    
+    def _convert_row(self, row: dict) -> dict:
+        r = dict(row)
+        r["id"] = int(r["id"])
+
+        raw_flag = r.get("is_admin", "False")
 
     def _get_next_id(self) -> int:
         rows = self.repo.read_all(self.path)
@@ -32,6 +38,7 @@ class CSVUserService:
 
     def get_by_username(self, username: str) -> Optional[Dict]:
         username_norm = self._norm(username)
+
         for row in self.repo.read_all(self.path):
             if self._norm(row["username"]) == username_norm:
                 row["id"] = int(row["id"])
