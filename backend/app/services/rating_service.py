@@ -36,9 +36,7 @@ class RatingService:
     # -----------------------------------------------------------------------
 
     def create_rating(self, user_id: int, isbn: str, rating_value: int) -> RatingRead:
-        """
-        Create or update a rating for the specified user/book.
-        """
+        """Create or update a rating for the specified user/book."""
         rows = self.__read()
 
         for row in rows:
@@ -52,9 +50,7 @@ class RatingService:
         return self.__to_read_model(rating.to_csv_dict())
 
     def get_user_rating(self, user_id: int, isbn: str) -> RatingRead | None:
-        """
-        Return a user's rating for a specific book, or None if not found.
-        """
+        """Return a user's rating for a specific book, or None if not found."""
         for row in self.__read():
             if self.__match(row, user_id, isbn):
                 return self.__to_read_model(row)
@@ -81,10 +77,7 @@ class RatingService:
         ]
 
     def get_avg_rating(self, isbn: str) -> AvgRatingRead:
-        """
-        Compute the average rating for a book.
-        If no ratings exist, return 0.0 and count 0.
-        """
+        """Compute the average rating for a book."""
         ratings = self.get_ratings_by_isbn(isbn)
 
         if not ratings:

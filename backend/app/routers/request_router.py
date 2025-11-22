@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, status
 from app.schemas.request import RequestCreate
 from app.services.request_service import RequestService
 
@@ -11,7 +11,7 @@ def create_request(
     try:
         return service.create_request(user_id=user_id, data=request)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status = status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 @router.get("/")
 def get_all_requests():
@@ -22,7 +22,7 @@ def get_all_requests():
 def delete_request( request_id: int):
     """Delete a specific request by ID."""
     if not service.delete_request(request_id=request_id):
-        raise HTTPException(status_code=404, detail="Request not found")
+        raise HTTPException(status_code = status.HTTP_404_NOT_FOUND, detail="Request not found")
     return {"message": "Request deleted successfully"}
     
     
