@@ -1,7 +1,4 @@
-id,username,email,password_hash,is_admin
-3,jan,user@example.com,$2b$12$FT/Z/OhSoBD9lDZJXafYNOmJjaVzN9jzsDBIDmpfJNTKvvR244f6u,False
-4,janu123,user@example.com,$2b$12$RAaAmnk4jRAfPlwDP2wO3eVYrWszF13moBE1UQzkE6F61wuH2bSI2,False
-5,kels,user1@example.com,$2b$12$r9jo83b8BSqeg6eoAQPoDOwJ/Wz1Jhv05tqoaGCWtTSkErc4CTd/S,False
-6,sara,user123@example.com,$2b$12$61BojMRHXe3jMeUTgyvunOKToiZb7zO3nK8yP.E5Wsg6HvM9Wryjm,False
-7,sara1,user12@example.com,$2b$12$ZfSFCFWTbDWcBd/09Llz3O4XGzurvHyjBE5TtegncoqWG08Aeaqhu,True
-8,string,user1234@example.com,$2b$12$JSamPXz3x8a9osR6Q5pOqONyq8kJWyqLxTog3Luoq7lqGkWNMv3ra,False
+id,username,email,password_hash,is_admin,is_suspended,suspended_until
+1,Al-Ameen,user@example.com,$2b$12$eMYRQrVbm08PdR0RouNUEeWyElPGntNZNFlv1bCVLvNbpmZqXXzNS,True,False,
+2,glowyblack,user1@example.com,$2b$12$EhTTDGsJc9NZ9il.W3YV9e8GdpHG5O4gviJdNNHkQ0.dS78/9wXp2,False,false,
+3,paris,user2@example.com,$2b$12$n3XxM6rAS8/KJo3sRKY2HOmmqFsHxBx7iczZ.mHyECkz9y7GIpgg.,False,False,
