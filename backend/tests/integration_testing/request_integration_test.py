@@ -1,8 +1,10 @@
 import csv
+from unittest.mock import patch
 import pytest
 from fastapi.testclient import TestClient
 from app.main import app
 from app.routers import request_router
+from app.deps import get_current_user
 
 
 @pytest.fixture(autouse=True)
@@ -26,36 +28,177 @@ def clean_request_csvs(tmp_path):
 def client():
     return TestClient(app)
 
-
 def test_request_route_success(client):
     request = {
         "book_title": "Percy Jackson",
         "author": "Rick Riordan",
-        "isbn": "9780307245304"
+        "isbn": "9780307245304",
     }
 
-    res = client.post("/requests/?user_id=1", json=request)
+    app.dependency_overrides[get_current_user] = lambda: {
+        "id": 1,
+        "username": "x",
+        "email": "x@x.com",
+        "is_admin": False,
+    }
+
+    try:
+        res = client.post("/requests/", json=request)
+    finally:
+        app.dependency_overrides.pop(get_current_user, None)
+
     assert res.status_code == 200
-    
     data = res.json()
     assert data["book_title"] == "Percy Jackson"
     assert data["author"] == "Rick Riordan"
     assert data["isbn"] == "9780307245304"
     assert data["user_id"] == 1
 
-
 def test_request_delete_success(client):
-    req = {
-        "book_title": "Test Book",
-        "author": "Someone",
-        "isbn": "1111111111"
+    app.dependency_overrides[get_current_user] = lambda: {
+        "id": 1,
+        "username": "bob",
+        "email": "bob@example.com",
+        "is_admin": False,
     }
 
-    created = client.post("/requests/?user_id=1", json=req)
-    assert created.status_code == 200
-
+    created = client.post(
+        "/requests/",
+        json={"book_title": "Test Book", "author": "Someone", "isbn": "1111111111"},
+    )
     request_id = created.json()["request_id"]
 
-    r = client.delete(f"/requests/{request_id}")
+    app.dependency_overrides[get_current_user] = lambda: {
+        "id": 99,
+        "username": "admin",
+        "email": "admin@example.com",
+        "is_admin": True,
+    }
+
+    try:
+        r = client.delete(f"/requests/{request_id}")
+    finally:
+        app.dependency_overrides.pop(get_current_user, None)
+
     assert r.status_code == 200
     assert r.json() == {"message": "Request deleted successfully"}
+
+def test_delete_nonexistent_request(client):
+
+    app.dependency_overrides[get_current_user] = lambda: {
+        "id": 1,
+        "username": "admin",
+        "email": "admin@example.com",
+        "is_admin": True,
+    }
+
+    try:
+        r = client.delete("/requests/999")
+    finally:
+        app.dependency_overrides.pop(get_current_user, None)
+
+    assert r.status_code == 404
+    assert r.json() == {"detail": "Request not found"}
+
+def test_get_all_requests(client):
+
+
+    app.dependency_overrides[get_current_user] = lambda: {
+        "id": 2, 
+        "username": "user1", 
+        "email": "user1@test.com", 
+        "is_admin": False
+    }
+
+
+    client.post(
+        "/requests/",
+        json={"book_title": "Book A", "author": "A", "isbn": "1111111111"},
+    )
+    client.post(
+        "/requests/",
+        json={"book_title": "Book B", "author": "B", "isbn": "2222222222"},
+    )
+
+    app.dependency_overrides[get_current_user] = lambda: {
+        "id": 1,
+        "username": "admin",
+        "email": "admin@example.com",
+        "is_admin": True,
+    }
+
+    try:
+        r = client.get("/requests/")
+    finally:
+        app.dependency_overrides.pop(get_current_user, None)
+
+    assert r.status_code == 200
+    data = r.json()
+    assert isinstance(data, list)
+    assert len(data) == 2
+    assert data[0]["request_id"] == 1
+    assert data[1]["request_id"] == 2
+    
+def test_user_cannot_request_same_book_twice(client):
+    app.dependency_overrides[get_current_user] = lambda: {
+        "id": 2, 
+        "username": "user2", 
+        "email": "user2@example.com", 
+        "is_admin": False
+    }
+
+    r1 = client.post(
+        "/requests/",
+        json={"book_title": "Repeat Book", "author": "X", "isbn": "1231231231"},
+    )
+    assert r1.status_code == 200
+
+    r2 = client.post(
+        "/requests/",
+        json={"book_title": "Repeat Book", "author": "X", "isbn": "1231231231"},
+    )
+
+    app.dependency_overrides.pop(get_current_user, None)
+
+    assert r2.status_code == 400
+    assert r2.json()["detail"] == "This user has already requested this book."
+
+def test_admin_deletes_only_one_of_multiple_requests(client):
+    def user2():
+        return {"id": 2, "username": "user2", "email": "user20@gmail.com", "is_admin": False}
+
+    def user3():
+        return {"id": 3, "username": "user3", "email": "user3@gmail.com", "is_admin": False}
+
+    app.dependency_overrides[get_current_user] = user2
+    client.post(
+        "/requests/",
+        json={"book_title": "Shared Book", "author": "Someone", "isbn": "9999999999"},
+    )
+
+    app.dependency_overrides[get_current_user] = user3
+    client.post(
+        "/requests/",
+        json={"book_title": "Shared Book", "author": "Someone", "isbn": "9999999999"},
+    )
+
+    def admin():
+        return {"id": 1, "username": "admin", "email": "admin@example.com", "is_admin": True}
+
+    app.dependency_overrides[get_current_user] = admin
+
+    resp = client.delete("/requests/1")
+
+    app.dependency_overrides.pop(get_current_user, None)
+
+    assert resp.status_code == 200
+    assert resp.json() == {"message": "Request deleted successfully"}
+
+    app.dependency_overrides[get_current_user] = admin
+    r_all = client.get("/requests/")
+    app.dependency_overrides.pop(get_current_user, None)
+
+    data = r_all.json()
+    assert len(data) == 1
+    assert data[0]["user_id"] == 3
+    assert data[0]["request_id"] == 1    
