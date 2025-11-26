@@ -5,25 +5,28 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 from app.routers import book_router
+from app.deps import get_current_user
 
 
 @pytest.fixture(autouse=True)
 def prepare_csv_for_testing():
     """
     Integration fixture for Book endpoints.
+    Resets the CSV before each test and restores it afterwards.
     """
     path = book_router.service.path
 
     try:
-        with open(path, "r", encoding = "latin-1") as f:
+        with open(path, "r", encoding="latin-1") as f:
             original_contents = f.read()
     except FileNotFoundError:
         original_contents = None
 
-    with open(path, "w", newline = "", encoding = "latin-1") as f:
+    # Create a fresh CSV file with header for each test
+    with open(path, "w", newline="", encoding="latin-1") as f:
         writer = csv.DictWriter(
             f,
-            fieldnames = [
+            fieldnames=[
                 "ISBN",
                 "Book-Title",
                 "Book-Author",
@@ -33,12 +36,13 @@ def prepare_csv_for_testing():
                 "Image-URL-M",
                 "Image-URL-L",
             ],
-            delimiter = ";", 
+            delimiter=";",
         )
         writer.writeheader()
 
     yield
 
+    # Restore or remove file at end of test
     if original_contents is None:
         if os.path.exists(path):
             os.remove(path)
@@ -55,11 +59,33 @@ def client():
     return TestClient(app)
 
 
+# ------------------------------------------------------------
+# ADMIN OVERRIDE FIXTURE (required for create/update/delete)
+# ------------------------------------------------------------
+@pytest.fixture
+def admin_override():
+    """
+    Overrides get_current_user so that admin-only endpoints
+    can be exercised during tests.
+    """
+    def override():
+        return {
+            "id": 1,
+            "username": "admin",
+            "email": "admin@example.com",
+            "is_admin": True,
+        }
+
+    app.dependency_overrides[get_current_user] = override
+    yield
+    app.dependency_overrides.pop(get_current_user, None)
+
+
 # ---------------------------------------------------------------------------
 # Basic integration test for books
 # ---------------------------------------------------------------------------
 
-def test_create_book_successful(client):
+def test_create_book_successful(client, admin_override):
     payload = {
         "isbn": "9780307245304",
         "book_title": "Percy Jackson and the Lightning Thief",
@@ -68,7 +94,7 @@ def test_create_book_successful(client):
         "publisher": "Disney Hyperion",
     }
 
-    r = client.post("/books/", json = payload)
+    r = client.post("/books/", json=payload)
     assert r.status_code == 200
     data = r.json()
 
@@ -79,13 +105,13 @@ def test_create_book_successful(client):
     assert data["publisher"] == payload["publisher"]
 
 
-def test_get_book_successful(client):
+def test_get_book_successful(client, admin_override):
     payload = {
         "isbn": "9780307245304",
         "book_title": "Percy Jackson and the Lightning Thief",
         "author": "Rick Riordan",
     }
-    client.post("/books/", json = payload)
+    client.post("/books/", json=payload)
 
     r = client.get("/books/9780307245304")
     assert r.status_code == 200
@@ -96,13 +122,13 @@ def test_get_book_successful(client):
     assert data["author"] == payload["author"]
 
 
-def test_update_book_successful(client):
+def test_update_book_successful(client, admin_override):
     create_payload = {
         "isbn": "9780307245304",
         "book_title": "Percy Jackson and the Lightning Thief",
         "author": "Rick Riordan",
     }
-    r_create = client.post("/books/", json = create_payload)
+    r_create = client.post("/books/", json=create_payload)
     assert r_create.status_code == 200
 
     update_payload = {
@@ -110,7 +136,7 @@ def test_update_book_successful(client):
         "author": "Updated Author",
     }
 
-    r_update = client.put("/books/9780307245304", json = update_payload)
+    r_update = client.put("/books/9780307245304", json=update_payload)
     assert r_update.status_code == 200
 
     r_get = client.get("/books/9780307245304")
@@ -121,7 +147,7 @@ def test_update_book_successful(client):
     assert data["author"] == "Updated Author"
 
 
-def test_delete_book_successful(client):
+def test_delete_book_successful(client, admin_override):
     """
     Create and then delete a book
     First delete should have 204.
@@ -132,7 +158,7 @@ def test_delete_book_successful(client):
         "book_title": "Percy Jackson and the Lightning Thief",
         "author": "Rick Riordan",
     }
-    client.post("/books/", json = payload)
+    client.post("/books/", json=payload)
 
     r_delete = client.delete("/books/9780307245304")
     assert r_delete.status_code == 200
@@ -146,29 +172,29 @@ def test_delete_book_successful(client):
 # Validation + equivalence/boundary-based tests
 # ---------------------------------------------------------------------------
 
-def test_create_book_fail_missing_required_fields(client):
+def test_create_book_fail_missing_required_fields(client, admin_override):
     """
     Request body missing required fields should trigger 422 validation error.
     """
-    r = client.post("/books/", json = {"isbn": "9780307245304"})
+    r = client.post("/books/", json={"isbn": "9780307245304"})
     assert r.status_code == 422
 
 
-def test_create_book_invalid_isbn_returns_422(client):
+def test_create_book_invalid_isbn_returns_422(client, admin_override):
     """
     Equivalence / boundary-style test for ISBN validation. Partitions are:
     - Valid ISBNs (10 or 13 digits) → accepted
     - Invalid ISBNs (other lengths) → 422
     """
 
-    r_short = client.post("/books/", json = {
+    r_short = client.post("/books/", json={
         "isbn": "11",
         "book_title": "Bad ISBN",
         "author": "Someone",
     })
     assert r_short.status_code == 422
 
-    r_long = client.post("/books/", json = {
+    r_long = client.post("/books/", json={
         "isbn": "1" * 40,
         "book_title": "Bad ISBN",
         "author": "Someone",
@@ -186,17 +212,17 @@ def test_get_book_fail_not_found(client):
     assert r.json() == {"detail": "Book not found"}
 
 
-def test_update_book_fail_not_found(client):
+def test_update_book_fail_not_found(client, admin_override):
     update_payload = {
         "book_title": "Should Not Update",
         "author": "Nobody",
     }
-    r = client.put("/books/NOPE", json = update_payload)
+    r = client.put("/books/NOPE", json=update_payload)
     assert r.status_code == 404
     assert r.json() == {"detail": "Book not found"}
 
 
-def test_delete_book_fail_not_found(client):
+def test_delete_book_fail_not_found(client, admin_override):
     r = client.delete("/books/IDONTEXIST")
     assert r.status_code == 404
     assert r.json() == {"detail": "Book not found"}
