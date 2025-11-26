@@ -3,7 +3,7 @@ import os
 from app.repositories.csv_repository import CSVRepository
 
 class BXBooksCSVAdapter(CSVRepository):
-    """ Adapter for BX_Books.csv (semicolon + Latin-1 encoding). """
+    """Adapter for BX_Books.csv (semicolon + Latin-1 encoding). """
 
     def read_all(self, path):
         if not os.path.exists(path):
