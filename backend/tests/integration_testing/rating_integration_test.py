@@ -5,6 +5,7 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 from app.routers import rating_router
+from app.deps import get_current_user
 
 
 @pytest.fixture(autouse=True)
@@ -20,12 +21,14 @@ def prepare_csv_for_testing():
     except FileNotFoundError:
         original_contents = None
 
+    # Reset file with header for each test
     with open(path, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=rating_router.service.fields)
         writer.writeheader()
 
     yield
 
+    # Restore original file after test
     if original_contents is None:
         if os.path.exists(path):
             os.remove(path)
@@ -42,13 +45,56 @@ def client():
     return TestClient(app)
 
 
+# ---------------------------------------------------------
+# User override fixture (simulates ANY logged-in user)
+# ---------------------------------------------------------
+@pytest.fixture
+def as_user1():
+    """
+    Override get_current_user to simulate user with id=1.
+    """
+    def override():
+        return {"id": 1, "username": "u1", "email": "u1@test.com", "is_admin": False}
+
+    app.dependency_overrides[get_current_user] = override
+    yield
+    app.dependency_overrides.pop(get_current_user, None)
+
+
+@pytest.fixture
+def as_user2():
+    """
+    Override get_current_user to simulate user with id=2.
+    """
+    def override():
+        return {"id": 2, "username": "u2", "email": "u2@test.com", "is_admin": False}
+
+    app.dependency_overrides[get_current_user] = override
+    yield
+    app.dependency_overrides.pop(get_current_user, None)
+
+
+@pytest.fixture
+def as_user3():
+    """
+    Override get_current_user to simulate user with id=3.
+    """
+    def override():
+        return {"id": 3, "username": "u3", "email": "u3@test.com", "is_admin": False}
+
+    app.dependency_overrides[get_current_user] = override
+    yield
+    app.dependency_overrides.pop(get_current_user, None)
+
+
+
 # ---------------------------------------------------------------------------
 # Integration tests
 # ---------------------------------------------------------------------------
 
-def test_add_rating(client):
+def test_add_rating(client, as_user1):
     r = client.post(
-        "/ratings/books/12345?user_id=1",
+        "/ratings/books/12345",
         json={"rating": 4},
     )
     assert r.status_code == 200
@@ -59,10 +105,10 @@ def test_add_rating(client):
     assert r2.json()["rating"] == 4
 
 
-def test_update_rating_and_average(client):
-    client.post("/ratings/books/999?user_id=2", json={"rating": 2})
+def test_update_rating_and_average(client, as_user2):
+    client.post("/ratings/books/999", json={"rating": 2})
 
-    r = client.post("/ratings/books/999?user_id=2", json={"rating": 5})
+    r = client.post("/ratings/books/999", json={"rating": 5})
     assert r.status_code == 200
     assert r.json()["rating"] == 5
 
@@ -71,13 +117,13 @@ def test_update_rating_and_average(client):
     assert r2.json() == {"isbn": "999", "avg_rating": 5.0, "count": 1}
 
 
-def test_delete_rating(client):
-    client.post("/ratings/books/ABC?user_id=3", json={"rating": 3})
+def test_delete_rating(client, as_user3):
+    client.post("/ratings/books/ABC", json={"rating": 3})
 
-    r = client.delete("/ratings/?user_id=3&isbn=ABC")
+    r = client.delete("/ratings/?isbn=ABC")
     assert r.status_code == 204
 
-    r2 = client.delete("/ratings/?user_id=3&isbn=ABC")
+    r2 = client.delete("/ratings/?isbn=ABC")
     assert r2.status_code == 404
     assert r2.json() == {"detail": "Rating not found"}
 
@@ -85,23 +131,44 @@ def test_delete_rating(client):
 # ---------------------------------------------------------------------------
 # Aggregation tests
 # ---------------------------------------------------------------------------
+def test_avg_rating_multiple_users(client, as_user1):
+    client.post("/ratings/books/555", json={"rating": 4})
 
-def test_avg_rating_multiple_users(client):
-    client.post("/ratings/books/555?user_id=1", json={"rating": 4})
-    client.post("/ratings/books/555?user_id=2", json={"rating": 8})
-    client.post("/ratings/books/555?user_id=3", json={"rating": 6})
+    app.dependency_overrides[get_current_user] = lambda: {
+        "id": 2, "username": "u2", "email": "u2@test.com", "is_admin": False
+    }
+    client.post("/ratings/books/555", json={"rating": 8})
+
+    app.dependency_overrides[get_current_user] = lambda: {
+        "id": 3, "username": "u3", "email": "u3@test.com", "is_admin": False
+    }
+    client.post("/ratings/books/555", json={"rating": 6})
+
+    app.dependency_overrides.pop(get_current_user, None)
 
     r = client.get("/ratings/books/555/average")
     assert r.status_code == 200
     assert r.json() == {"isbn": "555", "avg_rating": 6.0, "count": 3}
 
-    r2 = client.post("/ratings/books/123?user_id=1", json={"rating": -1})
+    app.dependency_overrides[get_current_user] = lambda: {
+        "id": 1, "username": "u1", "email": "u1@test.com", "is_admin": False
+    }
+    r2 = client.post("/ratings/books/123", json={"rating": -1})
     assert r2.status_code == 422
-    
-def test_get_all_and_get_by_isbn(client):
-    client.post("/ratings/books/111?user_id=1", json={"rating": 3})
-    client.post("/ratings/books/111?user_id=2", json={"rating": 7})
-    client.post("/ratings/books/222?user_id=1", json={"rating": 5})
+
+    app.dependency_overrides.pop(get_current_user, None)
+
+
+def test_get_all_and_get_by_isbn(client, as_user1):
+    client.post("/ratings/books/111", json={"rating": 3})
+
+    app.dependency_overrides[get_current_user] = lambda: {"id": 2, "username": "u2", "email": "u2@test.com", "is_admin": False}
+    client.post("/ratings/books/111", json={"rating": 7})
+
+    app.dependency_overrides[get_current_user] = lambda: {"id": 1, "username": "u1", "email": "u1@test.com", "is_admin": False}
+    client.post("/ratings/books/222", json={"rating": 5})
+
+    app.dependency_overrides.pop(get_current_user, None)
 
     r_all = client.get("/ratings/")
     assert r_all.status_code == 200
@@ -116,6 +183,7 @@ def test_get_all_and_get_by_isbn(client):
     user_ids = {d["user_id"] for d in isbn_data}
     assert user_ids == {1, 2}
 
+
 def test_avg_rating_when_no_ratings(client):
     r = client.get("/ratings/books/NO_RATINGS/average")
     assert r.status_code == 200
@@ -127,8 +195,8 @@ def test_avg_rating_when_no_ratings(client):
 # ---------------------------------------------------------------------------
 
 @pytest.mark.parametrize("value", [11, -1])
-def test_create_rating_invalid_value_returns_422(client, value):
-    r = client.post("/ratings/books/123?user_id=1", json={"rating": value})
+def test_create_rating_invalid_value_returns_422(client, as_user1, value):
+    r = client.post("/ratings/books/123", json={"rating": value})
     assert r.status_code == 422
 
 
