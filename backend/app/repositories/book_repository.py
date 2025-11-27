@@ -1,10 +1,10 @@
 from typing import List, Dict
-from app.repositories.csv_repository import CSVRepository
+from app.repositories.books_adapter import BXBooksCSVAdapter
 
-class BookRepository(CSVRepository):
+class BookRepository(BXBooksCSVAdapter):
 
     def get_books_by_isbn(self, isbn_list: List[str]) -> List[Dict]:
-        rows = self.read_all("app/data/Books.csv")
+        rows = self.read_all("app/data/BX_Books.csv")
         lookup = {row["ISBN"]: row for row in rows}
 
         result = []
