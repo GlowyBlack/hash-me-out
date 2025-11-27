@@ -1,13 +1,18 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from app.schemas.review import ReviewCreate, ReviewRead, ReviewUpdate
 from app.services.review_service import ReviewService
+from app.deps import get_current_user
 
 router = APIRouter(prefix="/reviews", tags=["Reviews"])
 service = ReviewService()
 
+# TODO: Make all of the methods work only for their respective role
+
 
 @router.post("/")
-def create_review(review: ReviewCreate, user_id: int, isbn: str):
+def create_review(review: ReviewCreate, isbn: str,
+                   curr = Depends(get_current_user)):
+    user_id = curr["id"]
     try:
         return service.create_review(user_id = user_id, data = review, isbn = isbn)
     except ValueError as e:
@@ -15,12 +20,14 @@ def create_review(review: ReviewCreate, user_id: int, isbn: str):
 
 
 @router.get("/{isbn}")
-def get_all_reviews(isbn: str):
+def get_all_reviews(isbn: str,):
     return service.get_all_reviews(isbn = isbn)
 
 
 @router.put("/{review_id}")
-def edit_review(review_id: int, review: ReviewUpdate):
+def edit_review(review_id: int, review: ReviewUpdate,
+                   curr = Depends(get_current_user)):
+    
     try:
         return service.edit_review(review_id = review_id, data = review)
     except ValueError as e:
@@ -28,7 +35,8 @@ def edit_review(review_id: int, review: ReviewUpdate):
 
 
 @router.delete("/{review_id}")
-def delete_review(review_id: int):
+def delete_review(review_id: int,
+                   curr = Depends(get_current_user)):
     if not service.delete_review(review_id = review_id):
         raise HTTPException(status_code = status.HTTP_404_NOT_FOUND, detail = "Review not found")
     return {"message": "Review deleted successfully"}
