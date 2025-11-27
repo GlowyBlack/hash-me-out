@@ -1,3 +1,5 @@
+import csv
+from io import StringIO
 from pathlib import Path
 from typing import List, Optional
 from app.models.request import Request
@@ -203,3 +205,41 @@ class ReadingListService:
                 return ReadingListDetail(**rl.to_api_dict(books_info))
 
         return None
+    
+
+    def export_reading_list_csv(self, list_id: int, user_id: int) -> Optional[str]:
+        """Exports a reading list to CSV and returns the CSV as a string."""
+
+        rows = self.repo.read_all(self.path)
+
+        for r in rows:
+            if r["ListID"] == str(list_id) and r["UserID"] == str(user_id):
+                rl = ReadingList.from_dict(r)
+
+                # Parse ISBNs separated by '|'
+                isbn_list = r.get("ISBNs", "")
+                if isbn_list:
+                    isbn_list = isbn_list.split("|")
+                else:
+                    isbn_list = []
+
+                # Get book details
+                books_info = self.book_repo.get_books_by_isbn(isbn_list)
+
+                output = StringIO()
+                writer = csv.writer(output)
+
+                # CSV header for book table
+                writer.writerow(["ISBN", "Title", "Author"])
+
+                # CSV rows: one per book
+                for b in books_info:
+                    writer.writerow([b["isbn"], b["book_title"], b["author"]])
+
+                # Safe filename based on reading list name
+                safe_name = rl.name.replace(" ", "_").replace("/", "_")
+                filename = f"{safe_name}.csv"
+
+                return output.getvalue(), filename
+
+        return None, None

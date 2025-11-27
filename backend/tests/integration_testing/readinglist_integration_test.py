@@ -4,6 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 from app.main import app
 from app.routers import readinglist_router
+from app.services.readinglist_service import ReadingListService
 from app.deps import get_current_user
 
 
@@ -300,3 +301,78 @@ def test_get_readinglist_detail_wrong_user(client):
 
     r = client.get(f"/readinglist/{list_id}", params={"user_id": 2})
     assert r.status_code == 404
+
+def test_download_reading_list_success(client, monkeypatch, tmp_path):
+
+    readinglist_path = tmp_path / "ReadingLists.csv"
+    readinglist_router.service.path = readinglist_path
+
+    with open(readinglist_path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(
+            f,
+            fieldnames=readinglist_router.service.fields
+        )
+        writer.writeheader()
+        writer.writerow({
+            "ListID": "1",
+            "UserID": "1",
+            "Name": "My First List",
+            "ISBNs": "9780307245304|1111111111",
+            "IsPublic": "False"
+        })
+
+    monkeypatch.setattr(
+        readinglist_router.service.book_repo,
+        "get_books_by_isbn",
+        lambda isbns: [
+            {"isbn": "9780307245304", "book_title": "Percy Jackson", "author": "Rick Riordan"},
+            {"isbn": "1111111111", "book_title": "Test Book", "author": "Test Author"},
+        ]
+    )
+
+    r = client.get("/readinglist/1/download")
+
+    assert r.status_code == 200
+    assert r.headers["content-type"].startswith("text/csv")
+    assert "attachment; filename=My_First_List.csv" in r.headers["content-disposition"]
+
+    csv_text = [line.strip("\r") for line in r.text.split("\n")]
+
+    # Header + 2 book rows
+    assert csv_text[0] == "ISBN,Title,Author"
+    assert csv_text[1] == "9780307245304,Percy Jackson,Rick Riordan"
+    assert csv_text[2] == "1111111111,Test Book,Test Author"    
+
+
+def test_download_reading_list_not_found(client, tmp_path):
+    """
+    Integration test: 404 if the reading list does not exist.
+    """
+
+    readinglist_path = tmp_path / "ReadingLists.csv"
+    readinglist_router.service.path = readinglist_path
+
+    with open(readinglist_path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(
+            f,
+            fieldnames=readinglist_router.service.fields
+        )
+        writer.writeheader()
+
+    r = client.get("/readinglist/999/download")
+
+    assert r.status_code == 404
+    assert r.json() == {"detail": "ReadingList not found"}
+
+
+def test_download_reading_list_unauthorized(client, tmp_path):
+
+    app.dependency_overrides.pop(get_current_user, None)
+
+    readinglist_path = tmp_path / "ReadingLists.csv"
+    readinglist_router.service.path = readinglist_path
+
+    r = client.get("/readinglist/1/download")
+
+    assert r.status_code in (401, 403)
+
