@@ -3,22 +3,30 @@ from app.schemas.readinglist import ReadingListCreate, ReadingListRename
 from app.services.readinglist_service import ReadingListService
 from app.repositories.csv_repository import CSVRepository
 from app.repositories.book_repository import BookRepository
+from app.deps import get_current_user
 
 router = APIRouter(prefix="/readinglist", tags=["ReadingList"])
 
 service = ReadingListService(repo=CSVRepository(), book_repo = BookRepository())
 
+# TODO: Make all of the methods work only for their respective role
+
+
 @router.post("/")
-def create_list(list: ReadingListCreate, user_id: int):
+def create_list(list: ReadingListCreate,
+                curr = Depends(get_current_user)):
     """Creates a new reading list for a user."""
+    user_id = curr["id"]
     try:
         return service.create_list(user_id = user_id, data = list)
     except ValueError as e:
         raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST, detail = str(e))
 
 @router.delete("/{list_id}")
-def delete_list( list_id: int, user_id: int):
+def delete_list( list_id: int, user_id: int,
+                   curr = Depends(get_current_user)):
     """Delete a specific readinglist by ID."""
+    user_id = curr["id"]
     if not service.delete_list(list_id = list_id, user_id = user_id):
         raise HTTPException(status_code = status.HTTP_404_NOT_FOUND, 
                             detail = "ReadingList not found")
@@ -61,8 +69,10 @@ def add_book_to_readinglist(list_id: int, isbn: str, user_id: int):
         raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST, detail = str(e))
 
 @router.delete("/{list_id}/books/{isbn}")
-def remove_book_from_readinglist(list_id: int, isbn: str, user_id: int):
+def remove_book_from_readinglist(list_id: int, isbn: str,
+                                 curr = Depends(get_current_user)):
     """Removes a book from a reading list."""
+    user_id = curr["id"]
     try:
         result = service.remove_book(list_id = list_id, user_id = user_id, isbn = isbn)
         if not result:
