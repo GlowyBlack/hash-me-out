@@ -28,7 +28,7 @@ class BookService:
         """Load a book by ISBN from the CSV, or return None if it does not exist."""
         rows = self.repo.read_all(self.path)
         for row in rows:
-            if row["ISBN"] == isbn:
+            if row["ISBN"] == str(isbn):
                 return row
         return None
     
