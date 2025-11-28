@@ -2,6 +2,7 @@ from pathlib import Path
 from app.models.request import Request
 from app.schemas.request import RequestCreate, RequestRead 
 from app.repositories.csv_repository import CSVRepository 
+from typing import Literal, List, Dict
 
 class RequestService:
     def __init__(self):
@@ -104,3 +105,21 @@ class RequestService:
         self.__decrease_count(isbn_to_decrement)
 
         return True
+
+    def get_total_requested_sorted(
+        self, order: Literal["asc", "desc"] = "desc"
+    ) -> List[Dict]:
+        """
+        Return all ISBNs with their total request counts,
+        sorted by number of requests.
+        """
+        rows = self.repo.read_all(self.totalpath)
+
+        # Convert "Total Requested" strings to ints so we can sort correctly
+        for r in rows:
+            r["Total Requested"] = int(r["Total Requested"])
+
+        reverse = order == "desc"
+        rows.sort(key=lambda r: r["Total Requested"], reverse=reverse)
+
+        return rows
