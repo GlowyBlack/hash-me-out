@@ -202,3 +202,70 @@ def test_admin_deletes_only_one_of_multiple_requests(client):
     assert len(data) == 1
     assert data[0]["user_id"] == 3
     assert data[0]["request_id"] == 1    
+
+def test_request_stats_sorted_by_total_requests(client):
+    app.dependency_overrides[get_current_user] = lambda: {
+        "id": 2,
+        "username": "user2",
+        "email": "user2@example.com",
+        "is_admin": False,
+    }
+
+    client.post(
+        "/requests/",
+        json={"book_title": "Book A", "author": "A", "isbn": "1111111111"},
+    )
+    client.post(
+        "/requests/",
+        json={"book_title": "Book B", "author": "B", "isbn": "2222222222"},
+    )
+
+    app.dependency_overrides[get_current_user] = lambda: {
+        "id": 3,
+        "username": "user3",
+        "email": "user3@example.com",
+        "is_admin": False,
+    }
+
+    client.post(
+        "/requests/",
+        json={"book_title": "Book A again", "author": "A", "isbn": "1111111111"},
+    )
+
+    app.dependency_overrides[get_current_user] = lambda: {
+        "id": 1,
+        "username": "admin",
+        "email": "admin@example.com",
+        "is_admin": True,
+    }
+
+    try:
+        r_desc = client.get("/requests/stats?order=desc")
+    finally:
+        app.dependency_overrides.pop(get_current_user, None)
+
+    assert r_desc.status_code == 200
+    data_desc = r_desc.json()
+
+    assert [row["ISBN"] for row in data_desc] == ["1111111111", "2222222222"]
+    assert data_desc[0]["Total Requested"] == 2
+    assert data_desc[1]["Total Requested"] == 1
+
+    app.dependency_overrides[get_current_user] = lambda: {
+        "id": 1,
+        "username": "admin",
+        "email": "admin@example.com",
+        "is_admin": True,
+    }
+
+    try:
+        r_asc = client.get("/requests/stats?order=asc")
+    finally:
+        app.dependency_overrides.pop(get_current_user, None)
+
+    assert r_asc.status_code == 200
+    data_asc = r_asc.json()
+
+    assert [row["ISBN"] for row in data_asc] == ["2222222222", "1111111111"]
+    assert data_asc[0]["Total Requested"] == 1
+    assert data_asc[1]["Total Requested"] == 2
