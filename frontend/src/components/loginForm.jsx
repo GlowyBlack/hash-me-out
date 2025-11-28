@@ -1,27 +1,45 @@
 "use client";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function LoginForm({ setFormType }) {
   const [input, setInput] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const router = useRouter();
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
+    setError("");
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    let email = "";
-    let username = "";
+    try {
+      const formData = new URLSearchParams();
+      formData.append("username", input); // your backend accepts either username or email
+      formData.append("password", password);
 
-    if (emailRegex.test(input)) {
-      email = input;
-    } else {
-      username = input;
+      const response = await fetch("http://localhost:8000/auth/token", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: formData.toString(),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.detail || "Login failed");
+      }
+
+      const data = await response.json();
+      // Save token in localStorage (or cookies) for authenticated requests
+      localStorage.setItem("access_token", data.access_token);
+
+      // Redirect to homepage or dashboard
+      router.push("/homepage");
+    } catch (err) {
+      setError(err.message);
     }
-
-    console.log("Logging in with:", { email, username, password });
-    // TODO: replace with actual login logic
   };
-
   return (
     <div className="relative w-full max-w-sm">
       {/* Back button at top right */}
@@ -41,12 +59,12 @@ export default function LoginForm({ setFormType }) {
           Login Below
         </h1>
         <p className="text-sm text-neutral-700 mb-4 text-center">
-          Enter your username or email and password to continue.
+          Enter your username and password to continue.
         </p>
 
         <input
           type="text"
-          placeholder="Username or Email"
+          placeholder="Username"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           className="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
