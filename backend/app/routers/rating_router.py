@@ -16,7 +16,6 @@ service = RatingService()
         "If the user has already rated this book, the rating is updated."
     ),
     response_model=RatingRead,
-    status_code=status.HTTP_201_CREATED,
     response_description="The created or updated rating.",
 )
 def add_rating(isbn: str, payload: RatingCreate, curr = Depends(get_current_user)):
@@ -70,8 +69,8 @@ def get_user_rating(user_id: int, isbn: str):
 @router.delete(
     "/",
     summary="Delete current user's rating for a book",
-    description="Deletes the current user's rating for the given ISBN if it exists.",
     status_code=status.HTTP_204_NO_CONTENT,
+    description="Deletes the current user's rating for the given ISBN if it exists.",
     response_description="No content on success.",
 )
 def delete_rating(isbn: str, curr = Depends(get_current_user)):

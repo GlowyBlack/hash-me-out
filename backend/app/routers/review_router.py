@@ -14,7 +14,6 @@ service = ReviewService()
     summary="Create a review for a book",
     description="Creates a review for the given ISBN by the current user.",
     response_model=ReviewRead,
-    status_code=status.HTTP_201_CREATED,
     response_description="The newly created review.",
 )
 def create_review(review: ReviewCreate, isbn: str,
