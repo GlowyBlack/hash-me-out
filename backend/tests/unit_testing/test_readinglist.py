@@ -150,3 +150,59 @@ def test_get_user_public_readinglists():
 def test_get_user_public_empty():
     res = service.get_user_public_readinglists(user_id=1)
     assert res == {"message": "User has no public reading lists"}
+
+
+def test_export_csv_success(monkeypatch):
+    """Reading list exists, two ISBNs, books found."""
+    monkeypatch.setattr(service.repo, "read_all", lambda path: [
+        {
+            "ListID": "1",
+            "UserID": "1",
+            "Name": "My List",
+            "ISBNs": "111|222",
+            "IsPublic": "false"
+        }
+    ])
+
+    monkeypatch.setattr(service.book_repo, "get_books_by_isbn", lambda isbns: [
+        {"isbn": "111", "book_title": "Book A", "author": "Author A"},
+        {"isbn": "222", "book_title": "Book B", "author": "Author B"},
+    ])
+
+    csv_data, filename = service.export_reading_list_csv(1, 1)
+
+    assert filename == "My_List.csv"
+    assert "ISBN,Title,Author" in csv_data
+    assert "111,Book A,Author A" in csv_data
+    assert "222,Book B,Author B" in csv_data
+
+
+def test_export_csv_not_found(monkeypatch):
+    monkeypatch.setattr(service.repo, "read_all", lambda path: [])
+
+    csv_data, filename = service.export_reading_list_csv(999, 1)
+
+    assert csv_data is None
+    assert filename is None
+
+
+def test_export_csv_empty_isbns(monkeypatch):
+    monkeypatch.setattr(service.repo, "read_all", lambda path: [
+        {
+            "ListID": "1",
+            "UserID": "1",
+            "Name": "EmptyList",
+            "ISBNs": "",
+            "IsPublic": "true"
+        }
+    ])
+
+    monkeypatch.setattr(service.book_repo, "get_books_by_isbn", lambda isbns: [])
+
+    csv_data, filename = service.export_reading_list_csv(1, 1)
+
+    assert filename == "EmptyList.csv"
+    assert csv_data.strip().splitlines() == ["ISBN,Title,Author"]
+
+
+

@@ -7,29 +7,14 @@ from app.services.user_service import CSVUserService
 from app.deps import get_user_service, pwd_context, create_access_token, get_current_user
 from app.schemas.user import UserCreate, UserOut, Token, UserUpdate
 
-
 router = APIRouter(prefix="/auth", tags=["auth"])
-
-
-class UserCreateRequest(BaseModel):
-    username: str
-    email: EmailStr
-    password: str
-
-
-class UserOut(BaseModel):
-    id: int
-    username: str
-    email: EmailStr
-    is_admin: bool
-
 
 @router.post(
     "/register",
     response_model=UserOut,
     status_code=status.HTTP_201_CREATED,
 )
-def register(payload: UserCreateRequest, svc: CSVUserService = Depends(get_user_service)):
+def register(payload: UserCreate, svc: CSVUserService = Depends(get_user_service)):
     try:
         user = svc.create_user(
             username=payload.username,

@@ -2,6 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from app.schemas.request import RequestCreate
 from app.services.request_service import RequestService
 from app.deps import get_current_user
+from typing import Literal
+
 
 router = APIRouter(prefix = "/requests", tags = ["Requests"])
 service = RequestService()
@@ -44,4 +46,16 @@ def delete_request(request_id: int,
         raise HTTPException(status_code = status.HTTP_404_NOT_FOUND, detail = "Request not found")
     return {"message": "Request deleted successfully"}
     
-    
+@router.get(
+    "/{stats}",
+    summary="Get request statistics",
+    description="Returns a list of ISBNs with ascending or descending their total request counts. ",
+    response_description="A sorted list of ISBNs with their total request counts.")
+def get_request_stats(order: Literal["asc", "desc"] = "desc", user = Depends(get_current_user)):
+    if not user["is_admin"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only admins can view statistics."
+        )
+
+    return service.get_total_requested_sorted(order=order)
