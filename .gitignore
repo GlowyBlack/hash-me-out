@@ -23,5 +23,6 @@ out/
 
 __pycache__
 prev_*/
+prev/
 .coverage
 
