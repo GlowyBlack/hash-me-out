@@ -64,3 +64,43 @@ def test_prevent_duplicate_request(service):
     with pytest.raises(ValueError, match = "already requested"):
         service.create_request(1, data=req)
 
+def test_get_total_requested_sorted_desc(service):
+    rows = [
+        {"ISBN": "1111111111", "Total Requested": "2"},
+        {"ISBN": "2222222222", "Total Requested": "5"},
+        {"ISBN": "3333333333", "Total Requested": "1"},
+    ]
+
+    with open(service.totalpath, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=service.total_fields)
+        writer.writeheader()
+        writer.writerows(rows)
+
+    result = service.get_total_requested_sorted(order="desc")
+
+    isbns_in_order = [r["ISBN"] for r in result]
+    assert isbns_in_order == ["2222222222", "1111111111", "3333333333"]
+    assert result[0]["Total Requested"] == 5
+    assert result[1]["Total Requested"] == 2
+    assert result[2]["Total Requested"] == 1
+
+
+def test_get_total_requested_sorted_asc(service):
+    rows = [
+        {"ISBN": "1111111111", "Total Requested": "2"},
+        {"ISBN": "2222222222", "Total Requested": "5"},
+        {"ISBN": "3333333333", "Total Requested": "1"},
+    ]
+
+    with open(service.totalpath, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=service.total_fields)
+        writer.writeheader()
+        writer.writerows(rows)
+
+    result = service.get_total_requested_sorted(order="asc")
+
+    isbns_in_order = [r["ISBN"] for r in result]
+    assert isbns_in_order == ["3333333333", "1111111111", "2222222222"]
+    assert result[0]["Total Requested"] == 1
+    assert result[1]["Total Requested"] == 2
+    assert result[2]["Total Requested"] == 5
