@@ -93,7 +93,7 @@ def test_register_route_username_taken(client, temp_user_service, dummy_pwd_cont
     )
 
     assert r2.status_code == 400
-    assert r2.json()["detail"] == "username_taken"
+    assert r2.json()["detail"] == "Username is taken"
 
 
 def test_register_route_email_taken(client, temp_user_service, dummy_pwd_context):
@@ -117,7 +117,7 @@ def test_register_route_email_taken(client, temp_user_service, dummy_pwd_context
     )
 
     assert r2.status_code == 400
-    assert r2.json()["detail"] == "email_taken"
+    assert r2.json()["detail"] == "Email is taken"
 
 
 def test_login_route_success_returns_token(client, temp_user_service, dummy_pwd_context):
@@ -158,7 +158,7 @@ def test_login_route_wrong_password_401(client, temp_user_service, dummy_pwd_con
 
     assert response.status_code == 401
     body = response.json()
-    assert body["detail"] == "invalid_credentials"
+    assert body["detail"] == "Wrong username or password"
 
 
 def test_login_route_unknown_user_401(client, temp_user_service, dummy_pwd_context):
@@ -169,7 +169,7 @@ def test_login_route_unknown_user_401(client, temp_user_service, dummy_pwd_conte
 
     assert response.status_code == 401
     body = response.json()
-    assert body["detail"] == "invalid_credentials"
+    assert body["detail"] == "Wrong username or password"
 
 
 def test_me_with_valid_token_returns_user(client):
