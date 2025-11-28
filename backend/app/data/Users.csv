@@ -2,3 +2,4 @@ id,username,email,password_hash,is_admin,is_suspended,suspended_until
 1,Al-Ameen,user@example.com,$2b$12$eMYRQrVbm08PdR0RouNUEeWyElPGntNZNFlv1bCVLvNbpmZqXXzNS,True,False,
 2,glowyblack,user1@example.com,$2b$12$EhTTDGsJc9NZ9il.W3YV9e8GdpHG5O4gviJdNNHkQ0.dS78/9wXp2,False,false,
 3,paris,user2@example.com,$2b$12$n3XxM6rAS8/KJo3sRKY2HOmmqFsHxBx7iczZ.mHyECkz9y7GIpgg.,False,False,
+4,nat,nat@gmail.com,$2b$12$bsRecwkYmcrROzt6F9vVX.vz/LX7YaFhZMfvh3cWwUZAKkC7FPA22,False,False,

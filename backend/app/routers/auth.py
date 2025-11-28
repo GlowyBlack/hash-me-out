@@ -45,11 +45,17 @@ def register(payload: UserCreateRequest, svc: CSVUserService = Depends(get_user_
         )
     except ValueError as e:
         msg = str(e)
-        if msg in {"username_taken", "email_taken"}:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=msg,
-            )
+        # Map internal error codes to user-friendly messages
+        if msg == "username_taken":
+            friendly_msg = "Username is taken"
+        elif msg == "email_taken":
+            friendly_msg = "Email is taken"
+        else:
+            friendly_msg = msg  # fallback
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=friendly_msg,
+        )
         raise
 
 
@@ -59,7 +65,7 @@ def login(form: OAuth2PasswordRequestForm = Depends(), svc: CSVUserService = Dep
     if not user or not pwd_context.verify(form.password, user["password_hash"]):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="invalid_credentials",
+            detail="Wrong username or password",
         )
         
     if user.get("is_suspended", False):
