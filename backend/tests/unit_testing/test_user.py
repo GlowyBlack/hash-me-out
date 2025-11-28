@@ -44,7 +44,7 @@ def test_create_user_username_taken_raises():
             email="alice2@example.com",
             password_hash="pw2",
         )
-    assert str(excinfo.value) == "username_taken"
+    assert str(excinfo.value) == "Username is taken"
 
 
 def test_create_user_email_taken_raises():
@@ -60,7 +60,7 @@ def test_create_user_email_taken_raises():
             email="alice@example.com",
             password_hash="pw2",
         )
-    assert str(excinfo.value) == "email_taken"
+    assert str(excinfo.value) == "Email is taken"
 
 
 def test_get_by_username_success():
@@ -136,7 +136,7 @@ def test_update_user_username_taken():
             username="alice",
         )
 
-    assert str(excinfo.value) == "username_taken"
+    assert str(excinfo.value) == "Username is taken"
 
 
 def test_update_user_email_taken():
@@ -157,7 +157,7 @@ def test_update_user_email_taken():
             email="alice@example.com",
         )
 
-    assert str(excinfo.value) == "email_taken"
+    assert str(excinfo.value) == "Email is taken"
 
 
 def test_update_user_not_found():
@@ -167,7 +167,7 @@ def test_update_user_not_found():
             username="ghost",
         )
 
-    assert str(excinfo.value) == "user_not_found"
+    assert str(excinfo.value) == "User not found"
 
 def test_create_user_defaults_to_non_admin():
     result = service.create_user(

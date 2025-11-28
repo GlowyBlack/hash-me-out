@@ -92,9 +92,9 @@ class CSVUserService:
 
         for u in users:
             if self._norm(u["username"]) == username_norm:
-                raise ValueError("username_taken")
+                raise ValueError("Username is taken")
             if self._norm(u["email"]) == email_norm:
-                raise ValueError("email_taken")
+                raise ValueError("Email is taken")
 
         new_id = self._get_next_id()
 
@@ -134,14 +134,14 @@ class CSVUserService:
                     new_norm = self._norm(username)
                     for other in users:
                         if int(other["id"]) != int(user_id) and self._norm(other["username"]) == new_norm:
-                            raise ValueError("username_taken")
+                            raise ValueError("Username is taken")
                     u["username"] = username
 
                 if email is not None:
                     new_norm = self._norm(email)
                     for other in users:
                         if int(other["id"]) != int(user_id) and self._norm(other["email"]) == new_norm:
-                            raise ValueError("email_taken")
+                            raise ValueError("Email is taken")
                     u["email"] = email
 
                 if is_admin is not None:
@@ -151,7 +151,7 @@ class CSVUserService:
                 break
 
         if updated_user is None:
-            raise ValueError("user_not_found")
+            raise ValueError("User not found")
 
         with open(self.path, "w", newline="", encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=FIELDNAMES)
@@ -183,7 +183,7 @@ class CSVUserService:
                 break
 
         if target is None:
-            raise ValueError("user_not_found")
+            raise ValueError("User not found")
 
         with open(self.path, "w", newline="", encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=FIELDNAMES)

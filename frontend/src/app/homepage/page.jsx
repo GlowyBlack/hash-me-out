@@ -1,34 +1,73 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function HomePage() {
   const [search, setSearch] = useState("");
+  const [user, setUser] = useState(null); // store user info
+  const router = useRouter();
+
+  useEffect(() => {
+    // Check localStorage for token
+    const token = localStorage.getItem("access_token");
+    if (token) {
+      // Optionally decode token for username or user_id
+      const decoded = JSON.parse(atob(token.split(".")[1]));
+      setUser(decoded); // store decoded info
+    }
+  }, []);
 
   const handleSearch = (e) => {
     e.preventDefault();
     console.log("Searching for:", search);
-    // TODO: implement search logic
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("access_token");
+    setUser(null);
+    router.push("/"); // redirect to homepage or login
+  };
+
+  const goToProfile = () => {
+    router.push("/profile"); // make sure you have a profile page
   };
 
   return (
-    
     <div className="min-h-screen min-w-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white shadow-md">
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
           {/* Left: Logo / Home */}
-          <div className="text-xl font-bold cursor-pointer">
-            Home
-          </div>
-          {/* Right: Login & Register */}
-          <div className= " space-x-4 flex justify-between items-center">
-            <button className="bg-white border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-100">
-            Login
-            </button>
-            <button className="bg-amber-200 hover:bg-yellow-400 px-4 py-2 rounded-lg font-semibold">
-              Register
-            </button>
+          <div className="text-xl font-bold cursor-pointer">Home</div>
+
+          {/* Right: conditional buttons */}
+          <div className="space-x-4 flex justify-between items-center">
+            {!user ? (
+              <>
+                <button className="bg-white border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-100">
+                  Login
+                </button>
+                <button className="bg-amber-200 hover:bg-yellow-400 px-4 py-2 rounded-lg font-semibold">
+                  Register
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={goToProfile}
+                  className="bg-white border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-100"
+                >
+                  Profile
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold py-3 px-6 rounded-lg shadow-md transition-all transform hover:scale-105"
+                >
+                  Logout
+                </button>
+              </>
+            )}
           </div>
         </div>
       </header>
@@ -42,10 +81,10 @@ export default function HomePage() {
           <p className="text-lg text-gray-700">
             Browse books, search by title or author, and register to make requests.
           </p>
-        </div>  
+        </div>
       </main>
 
-      {/* Search bar under header */}
+      {/* Search bar */}
       <div className="bg-gray-50 py-6">
         <div className="max-w-7xl mx-auto px-6">
           <form onSubmit={handleSearch} className="flex max-w-md mx-auto">
@@ -65,9 +104,6 @@ export default function HomePage() {
           </form>
         </div>
       </div>
-
-
-      
     </div>
   );
 }
