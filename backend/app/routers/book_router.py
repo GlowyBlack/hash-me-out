@@ -1,9 +1,17 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from app.schemas.book import BookCreate, BookUpdate
+from app.schemas.book import BookCreate, BookRead, BookUpdate
 from app.services.book_service import BookService
 from app.deps import get_current_user
 
 router = APIRouter(prefix = "/books", tags = ["Books"])
+
+@router.get("/search", response_model=list[BookRead])
+def search_books(query: str):
+    return service.search_books(query)
+
+@router.get("/live-search", response_model=list[BookRead])
+def live_search_books(query: str, limit: int = 10):
+    return service.live_search(query, limit)
 service = BookService()
 
 @router.post(
@@ -21,7 +29,7 @@ def create_book(book: BookCreate,
         return service.create_book(book)
     except ValueError as e:
         raise HTTPException(status_code = 400, detail = str(e))
-    
+
 @router.get(
     "/",
     summary="Retrieve all books",

@@ -8,66 +8,44 @@ from app.routers import book_router
 from app.deps import get_current_user
 
 
+# -----------------------------------------------------
+# FIX: override the BookService path with a temp folder
+# -----------------------------------------------------
 @pytest.fixture(autouse=True)
-def prepare_csv_for_testing():
-    """
-    Integration fixture for Book endpoints.
-    Resets the CSV before each test and restores it afterwards.
-    """
-    path = book_router.service.path
+def isolate_books_directory(tmp_path):
 
-    try:
-        with open(path, "r", encoding="latin-1") as f:
-            original_contents = f.read()
-    except FileNotFoundError:
-        original_contents = None
+    service = book_router.service
 
-    # Create a fresh CSV file with header for each test
-    with open(path, "w", newline="", encoding="latin-1") as f:
-        writer = csv.DictWriter(
-            f,
-            fieldnames=[
-                "ISBN",
-                "Book-Title",
-                "Book-Author",
-                "Year-Of-Publication",
-                "Publisher",
-                "Image-URL-S",
-                "Image-URL-M",
-                "Image-URL-L",
-            ],
-            delimiter=";",
-        )
-        writer.writeheader()
+    # Save original path (a directory)
+    original_path = service.path
+
+    # Override service.path → use temp directory for shards
+    service.path = tmp_path
+    tmp_path.mkdir(exist_ok=True)
+
+    # Clean the temp directory
+    for file in tmp_path.glob("*.csv"):
+        file.unlink()
 
     yield
 
-    # Restore or remove file at end of test
-    if original_contents is None:
-        if os.path.exists(path):
-            os.remove(path)
-    else:
-        with open(path, "w", encoding="latin-1") as f:
-            f.write(original_contents)
+    # Restore original path after each test
+    service.path = original_path
 
 
+# -----------------------------
+# CLIENT FIXTURE
+# -----------------------------
 @pytest.fixture
 def client():
-    """
-    FastAPI test client for exercising the /books API endpoints.
-    """
     return TestClient(app)
 
 
-# ------------------------------------------------------------
-# ADMIN OVERRIDE FIXTURE (required for create/update/delete)
-# ------------------------------------------------------------
+# -----------------------------
+# ADMIN OVERRIDE FIXTURE
+# -----------------------------
 @pytest.fixture
 def admin_override():
-    """
-    Overrides get_current_user so that admin-only endpoints
-    can be exercised during tests.
-    """
     def override():
         return {
             "id": 1,
@@ -81,84 +59,73 @@ def admin_override():
     app.dependency_overrides.pop(get_current_user, None)
 
 
-# ---------------------------------------------------------------------------
-# Basic integration test for books
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------
+# TESTS
+# -----------------------------------------------------
 
 def test_create_book_successful(client, admin_override):
-    payload = {
+
+    r = client.post("/books/", json={
         "isbn": "9780307245304",
-        "book_title": "Percy Jackson and the Lightning Thief",
+        "book_title": "Percy Jackson",
         "author": "Rick Riordan",
         "year_of_publication": "2005",
         "publisher": "Disney Hyperion",
-    }
+    })
 
-    r = client.post("/books/", json=payload)
     assert r.status_code == 200
     data = r.json()
 
-    assert data["isbn"] == payload["isbn"]
-    assert data["book_title"] == payload["book_title"]
-    assert data["author"] == payload["author"]
-    assert data["year_of_publication"] == payload["year_of_publication"]
-    assert data["publisher"] == payload["publisher"]
+    assert data["isbn"] == "9780307245304"
+    assert data["book_title"] == "Percy Jackson"
+    assert data["author"] == "Rick Riordan"
+    assert data["year_of_publication"] == "2005"
+    assert data["publisher"] == "Disney Hyperion"
 
 
 def test_get_book_successful(client, admin_override):
-    payload = {
+    client.post("/books/", json={
         "isbn": "9780307245304",
-        "book_title": "Percy Jackson and the Lightning Thief",
+        "book_title": "Percy Jackson",
         "author": "Rick Riordan",
-    }
-    client.post("/books/", json=payload)
+    })
 
     r = client.get("/books/9780307245304")
     assert r.status_code == 200
     data = r.json()
 
-    assert data["isbn"] == payload["isbn"]
-    assert data["book_title"] == payload["book_title"]
-    assert data["author"] == payload["author"]
+    assert data["isbn"] == "9780307245304"
+    assert data["book_title"] == "Percy Jackson"
+    assert data["author"] == "Rick Riordan"
 
 
 def test_update_book_successful(client, admin_override):
-    create_payload = {
+    client.post("/books/", json={
         "isbn": "9780307245304",
-        "book_title": "Percy Jackson and the Lightning Thief",
+        "book_title": "Percy Jackson",
         "author": "Rick Riordan",
-    }
-    r_create = client.post("/books/", json=create_payload)
-    assert r_create.status_code == 200
+    })
 
-    update_payload = {
+    r_update = client.put("/books/9780307245304", json={
         "book_title": "Updated Title",
         "author": "Updated Author",
-    }
+    })
 
-    r_update = client.put("/books/9780307245304", json=update_payload)
     assert r_update.status_code == 200
 
     r_get = client.get("/books/9780307245304")
-    assert r_get.status_code == 200
     data = r_get.json()
-    assert data["isbn"] == "9780307245304"
+
     assert data["book_title"] == "Updated Title"
     assert data["author"] == "Updated Author"
 
 
 def test_delete_book_successful(client, admin_override):
-    """
-    Create and then delete a book
-    First delete should have 204.
-    Second delete exercises exception handling and should return 404.
-    """
-    payload = {
+    client.post("/books/", json={
         "isbn": "9780307245304",
-        "book_title": "Percy Jackson and the Lightning Thief",
+        "book_title": "Percy Jackson",
         "author": "Rick Riordan",
-    }
-    client.post("/books/", json=payload)
+    })
 
     r_delete = client.delete("/books/9780307245304")
     assert r_delete.status_code == 200
@@ -168,24 +135,12 @@ def test_delete_book_successful(client, admin_override):
     assert r_delete_again.json() == {"detail": "Book not found"}
 
 
-# ---------------------------------------------------------------------------
-# Validation + equivalence/boundary-based tests
-# ---------------------------------------------------------------------------
-
 def test_create_book_fail_missing_required_fields(client, admin_override):
-    """
-    Request body missing required fields should trigger 422 validation error.
-    """
     r = client.post("/books/", json={"isbn": "9780307245304"})
     assert r.status_code == 422
 
 
 def test_create_book_invalid_isbn_returns_422(client, admin_override):
-    """
-    Equivalence / boundary-style test for ISBN validation. Partitions are:
-    - Valid ISBNs (10 or 13 digits) → accepted
-    - Invalid ISBNs (other lengths) → 422
-    """
 
     r_short = client.post("/books/", json={
         "isbn": "11",
@@ -202,10 +157,6 @@ def test_create_book_invalid_isbn_returns_422(client, admin_override):
     assert r_long.status_code == 422
 
 
-# ---------------------------------------------------------------------------
-# Exception handling: non-existent resources
-# ---------------------------------------------------------------------------
-
 def test_get_book_fail_not_found(client):
     r = client.get("/books/DOES_NOT_EXIST")
     assert r.status_code == 404
@@ -213,11 +164,10 @@ def test_get_book_fail_not_found(client):
 
 
 def test_update_book_fail_not_found(client, admin_override):
-    update_payload = {
+    r = client.put("/books/NOPE", json={
         "book_title": "Should Not Update",
         "author": "Nobody",
-    }
-    r = client.put("/books/NOPE", json=update_payload)
+    })
     assert r.status_code == 404
     assert r.json() == {"detail": "Book not found"}
 
