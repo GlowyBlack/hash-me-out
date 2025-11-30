@@ -59,7 +59,7 @@ export default function LoginForm({ setFormType, onSuccess }) {
           placeholder="Username"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400"
+          className="px-4 py-3 border border-gray-300 text-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-400"
           required
         />
 
@@ -68,7 +68,7 @@ export default function LoginForm({ setFormType, onSuccess }) {
           placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400"
+          className="px-4 py-3 border border-gray-300 text-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-400"
           required
         />
 

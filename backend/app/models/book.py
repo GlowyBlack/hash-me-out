@@ -1,3 +1,5 @@
+from titlecase import titlecase
+
 class Book:
     def __init__(self, isbn: str, book_title: str, author: str, year_of_publication: str | None = None, publisher: str | None = None, image_url_s: str | None = None, image_url_m: str | None = None, image_url_l: str | None = None):
         self.isbn = isbn
@@ -12,7 +14,7 @@ class Book:
     def to_api_dict(self) -> dict:
         return {
             "isbn": self.isbn,
-            "book_title": self.book_title.lower().title(),
+            "book_title": titlecase(self.book_title),
             "author": self.author.lower().title(),
             "year_of_publication": self.year_of_publication,
             "publisher": self.publisher,
