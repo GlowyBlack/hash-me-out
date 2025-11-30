@@ -12,8 +12,8 @@ class Book:
     def to_api_dict(self) -> dict:
         return {
             "isbn": self.isbn,
-            "book_title": self.book_title,
-            "author": self.author,
+            "book_title": self.book_title.lower().title(),
+            "author": self.author.lower().title(),
             "year_of_publication": self.year_of_publication,
             "publisher": self.publisher,
             "image_url_s": self.image_url_s,

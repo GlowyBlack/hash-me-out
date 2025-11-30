@@ -8,7 +8,7 @@ from app.schemas.book import BookCreate, BookRead, BookUpdate
 def percy():
     return BookCreate(
         isbn="9780307245304",
-        book_title="Percy Jackson and the Lightning Thief",
+        book_title="Percy Jackson And The Lightning Thief",
         author="Rick Riordan",
     )
     
@@ -59,7 +59,7 @@ def test_create_book_success(fresh_service, percy):
 
     expected = BookRead(
         isbn="9780307245304",
-        book_title="Percy Jackson and the Lightning Thief",
+        book_title="Percy Jackson And The Lightning Thief",
         author="Rick Riordan",
         year_of_publication=None,
         publisher=None,
@@ -150,6 +150,6 @@ def test_invalid_isbn_fail(invalid_isbn):
     with pytest.raises(ValidationError):
         BookCreate(
             isbn=invalid_isbn,
-            book_title="Percy Jackson and the Lightning Thief",
+            book_title="Percy Jackson And The Lightning Thief",
             author="Rick Riordan",
         )
