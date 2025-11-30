@@ -13,7 +13,7 @@ export default function LiveSearchDropdown({ liveResults, setSearch }) {
           }}
           className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm"
         >
-          <span className="font-semibold">{item.book_title}</span>
+          <span className="font-semibold text-gray-900">{item.book_title}</span>
           <div className="text-gray-600">{item.author}</div>
         </div>
       ))}
