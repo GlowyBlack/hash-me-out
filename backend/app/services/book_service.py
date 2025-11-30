@@ -8,7 +8,6 @@ from app.models.book import Book
 from app.schemas.book import BookCreate, BookRead, BookUpdate
 from app.repositories.books_adapter import BXBooksCSVAdapter
 
-
 # ---------- HEADER & SHARD VALIDATION ---------- #
 VALID_FIELDS = [
     "ISBN",
