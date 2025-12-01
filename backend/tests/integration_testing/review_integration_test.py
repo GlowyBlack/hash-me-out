@@ -5,7 +5,8 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 from app.routers import review_router
-from app.deps import get_current_user
+from app.deps import get_current_user, get_review_service
+from app.services.review_service import ReviewService
 
 
 # -------------------------------------------------------------------
@@ -28,34 +29,29 @@ def override_user():
 
 
 # -------------------------------------------------------------------
-# Reset Reviews.csv before each test
+# Fixture: temp Reviews.csv for all review routes (not a reset per test)
 # -------------------------------------------------------------------
 @pytest.fixture(autouse=True)
-def prepare_reviews_csv_for_testing():
-    path = review_router.service.path
-    fields = review_router.service.fields
+def override_review_service(tmp_path):
+    """
+    Override get_review_service so that all review routes
+    use a Reviews.csv file under tmp_path, isolated per test run.
+    """
+    reviews_path = tmp_path / "Reviews.csv"
 
-    # Backup original
-    try:
-        with open(path, "r", encoding="utf-8") as f:
-            original_contents = f.read()
-    except FileNotFoundError:
-        original_contents = None
-
-    # Create clean file for testing
-    with open(path, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=fields)
+    temp_service = ReviewService()
+    with open(reviews_path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=temp_service.fields)
         writer.writeheader()
 
-    yield
+    def _override():
+        svc = ReviewService()
+        svc.path = str(reviews_path)
+        return svc
 
-    # Restore after test
-    if original_contents is None:
-        if os.path.exists(path):
-            os.remove(path)
-    else:
-        with open(path, "w", encoding="utf-8") as f:
-            f.write(original_contents)
+    app.dependency_overrides[get_review_service] = _override
+    yield
+    app.dependency_overrides.pop(get_review_service, None)
 
 
 @pytest.fixture
@@ -80,7 +76,6 @@ def test_create_review(client):
     assert data["review_id"] == 1
 
 def test_get_all_reviews_for_isbn(client):
-
     # user 1
     client.post("/reviews/?isbn=1111111111", json={"comment": "First review"})
 
@@ -123,7 +118,9 @@ def test_duplicate_review_same_user_and_isbn_returns_400(client):
 
     r2 = client.post("/reviews/?isbn=3333333333", json={"comment": "Nice long review"})
     assert r2.status_code == 400
-    assert "already" in r2.json()["detail"].lower()
+    body = r2.json()
+    assert body["detail"]["code"] == "already_reviewed"
+    assert "reviewed" in body["detail"]["message"].lower()
 
 
 def test_edit_review(client):
