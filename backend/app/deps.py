@@ -6,6 +6,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from app.repositories.csv_repository import CSVRepository
 from app.services.user_service import CSVUserService
+from app.services.review_service import ReviewService
 
 #  Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -34,6 +35,9 @@ def decode_token(token: str):
 
 def get_user_service() -> CSVUserService:
     return CSVUserService(CSVRepository())
+
+def get_review_service() -> ReviewService:
+    return ReviewService()
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")
 
