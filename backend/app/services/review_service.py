@@ -39,7 +39,7 @@ class ReviewService:
     # -----------------------------------------------------------------------
 
     def _contains_profanity(self, text: str) -> bool:
-        """Uses PurgoMalum API to detect profanity."""
+        """Detects if the given text contains profanity."""
         try:
             encoded = quote_plus(text)
             url = f"{self.PURGOMALUM_URL}?text={encoded}"
@@ -58,9 +58,8 @@ class ReviewService:
     
     def _apply_profanity_penalty(self, user_id: int):
         """
-        Applies the profanity penalty:
-          - increments warnings
-          - auto-suspends on 3rd warning
+        Applies the profanity penalty by giving the user a warnings
+        and suspending them automatically if they reach 3 warnings.
         """
         user_row = self.user_service.increment_warning(user_id)
         warnings_count = int(user_row.get("warnings", "0") or 0)
@@ -78,10 +77,7 @@ class ReviewService:
 
     def create_review(self, user_id: int, data: ReviewCreate, isbn: str) -> ReviewRead:
         """
-        1 review per user per book.
-        Also checks profanity:
-          - increments warnings on each profane attempt
-          - auto-suspends user for a while on 3rd warning
+        1 review per user per book. Also applies the profanity penalty if needed.
         """
         if self._contains_profanity(data.comment):
             self._apply_profanity_penalty(user_id)
@@ -113,10 +109,7 @@ class ReviewService:
         data: ReviewUpdate,
     ) -> ReviewRead:
         """
-        Edit an existing review.
-        Rules:
-          - Only the owner (matching user_id) can edit.
-          - New comment goes through profanity / warnings / auto-suspension.
+        Edit an existing review if the user is the owner. New comment goes through profanity / warnings / auto-suspension.
         """
         rows = self.__read_rows()
         found_row = None
