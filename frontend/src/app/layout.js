@@ -24,6 +24,12 @@ export default function RootLayout({ children }) {
         />
       </head>
       <body className="antialiased">
+        {/* Force consistent light color scheme across macOS and Windows */}
+        <meta name="color-scheme" content="dark only" />
+      </head>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      >
         {children}
       </body>
     </html>
