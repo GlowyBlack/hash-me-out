@@ -5,6 +5,7 @@ class User:
                 hashed_password: str, time: str | None = None,
                 is_admin: bool = False, is_suspended: bool = False,
                 suspended_until: str | None = None,
+                warnings: int = 0,
     ):
         self.user_id = user_id
         self.username = username
@@ -14,6 +15,7 @@ class User:
         self.is_admin = is_admin
         self.is_suspended = is_suspended
         self.suspended_until = suspended_until
+        self.warnings = warnings
         
 
     def to_api_dict(self) -> dict:
@@ -24,6 +26,8 @@ class User:
             "time": self.time,
             "is_admin": self.is_admin,
             "is_suspended": self.is_suspended,
+            "suspended_until": self.suspended_until,
+            "warnings": self.warnings,
         }
 
 
@@ -36,6 +40,7 @@ class User:
             "is_admin": "true" if self.is_admin else "false",
             "is_suspended": "true" if self.is_suspended else "false",
             "suspended_until": self.suspended_until or "",
+            "warnings": str(self.warnings),
         }
 
 
@@ -50,4 +55,5 @@ class User:
             is_admin=row["is_admin"].lower() == "true",
             is_suspended=row["is_suspended"].lower() == "true",
             suspended_until=row.get("suspended_until", ""),
+            warnings=int(row.get("warnings", 0)),
         )
