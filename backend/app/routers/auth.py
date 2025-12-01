@@ -177,3 +177,55 @@ def unsuspend_user_route(
 
     except ValueError:
         raise HTTPException(404, "User not found")
+    
+@router.put(
+    "/me",
+    summary="Update current user profile",
+    description="Updates the current authenticated user's profile information.",
+    response_model=UserOut,
+    response_description="The updated user profile.",
+)
+def update_me(
+    payload: UserUpdate,
+    curr=Depends(get_current_user),
+    svc: CSVUserService = Depends(get_user_service),
+):
+    update_data = payload.dict(exclude_unset=True)
+
+    try:
+        user = svc.update_user(
+            user_id=curr["id"],
+            username=update_data.get("username"),
+            email=update_data.get("email"),
+            is_admin=update_data.get("is_admin") if curr.get("is_admin") else None,
+        )
+
+        return UserOut(
+            id=user["id"],
+            username=user["username"],
+            email=user["email"],
+            is_admin=user["is_admin"],
+        )
+
+    except ValueError as e:
+        msg = str(e)
+
+        if msg == "Username is taken":
+            friendly_msg = "Username is taken"
+            code = status.HTTP_400_BAD_REQUEST
+        elif msg == "Email is taken":
+            friendly_msg = "Email is taken"
+            code = status.HTTP_400_BAD_REQUEST
+        elif msg == "User not found":
+            friendly_msg = "User not found"
+            code = status.HTTP_404_NOT_FOUND
+        else:
+            friendly_msg = msg
+            code = status.HTTP_400_BAD_REQUEST
+
+        raise HTTPException(
+            status_code=code,
+            detail=friendly_msg,
+        )
+        
+
