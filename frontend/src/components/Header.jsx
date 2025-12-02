@@ -10,14 +10,14 @@ export default function Header({ user, setFormType, handleLogout, goToProfile })
           {!user ? (
             <>
               <button
-                className="bg-white border border-gray-300 text-gray-600 px-4 py-2 rounded-lg hover:bg-gray-100"
+                className="rounded-full border border-slate-300 bg-white text-slate-800 text-sm font-semibold px-6 py-3 hover:bg-slate-50 transition"
                 onClick={() => setFormType("login")}
               >
                 Login
               </button>
 
               <button
-                className="bg-yellow-400 hover:bg-yellow-500 text-gray-600 px-4 py-2 rounded-lg font-semibold"
+                className="rounded-full border border-[#ffb803] bg-[#ffb803] text-slate-900 text-sm font-semibold px-4 py-3 shadow-sm hover:bg-[#f5a800] hover:border-[#f5a800] transition"
                 onClick={() => setFormType("register")}
               >
                 Register
@@ -27,14 +27,14 @@ export default function Header({ user, setFormType, handleLogout, goToProfile })
             <>
               <button
                 onClick={goToProfile}
-                className="bg-white border border-gray-300 text-gray-600 px-4 py-2 rounded-lg hover:bg-gray-100"
+                className="rounded-full border border-slate-300 bg-white text-slate-800 text-sm font-semibold px-6 py-3 hover:bg-slate-50 transition"
               >
                 Profile
               </button>
 
               <button
                 onClick={handleLogout}
-                className="bg-yellow-400 hover:bg-yellow-500 text-gray-600 font-semibold py-3 px-6 rounded-lg shadow-md hover:scale-105"
+                className="rounded-full border border-[#ffb803] bg-[#ffb803] text-slate-900 text-sm font-semibold px-4 py-3 shadow-sm hover:bg-[#f5a800] hover:border-[#f5a800] transition"
               >
                 Logout
               </button>
