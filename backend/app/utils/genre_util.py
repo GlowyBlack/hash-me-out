@@ -82,7 +82,15 @@ GENRE_KEYWORDS = {
     ],
     "Religious Fiction": [
         "religious fiction", "faith", "spiritual journey", "biblical fiction",
-        "nuns", "clergy", "catholics", "carmelite nuns", "visions"
+        "nuns", "clergy", "catholics", "carmelite nuns", "visions",
+        "christian fiction", "christianity", "bible story", "saints",
+        "miracle", "prophet", "prayer", "monastery", "monk",
+        "judaism", "jewish fiction", "rabbi",
+        "islam", "muslim", "quran story",
+        "hinduism", "vedic", "karma", "reincarnation",
+        "buddhism", "buddhist fiction", "zen",
+        "mythical gods", "angels", "demons (fiction)", "heaven", "hell",
+        "religious family", "spiritual conflict"
     ],
     "Literary Classic": [
         "classic literature", "literary fiction", "modern classic", "classic",
