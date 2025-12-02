@@ -16,7 +16,6 @@ export default function RootLayout({ children }) {
 
       <body className="antialiased">
         {/* Force consistent light color scheme across macOS and Windows */}
-      <body className="">
           <meta name="color-scheme" content="dark only" />
         {children}
       </body>
