@@ -181,7 +181,7 @@ export default function HomePage() {
       />
 
       {/* WELCOME TEXT */}
-      <main className="max-w-7xl mx-auto px-6 py-12 text-center">
+      <main className="max-w-7xl mx-auto px-6 py-28 text-center">
         <h1 className="text-4xl font-bold mb-6 text-gray-900">
           {user ? `Welcome back, ${user.sub}!` : "Welcome to Our Library!"}
         </h1>

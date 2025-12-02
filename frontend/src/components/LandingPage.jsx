@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import LoginForm from "./LoginForm";
 import RegisterForm from "./RegisterForm";
@@ -8,9 +8,26 @@ export default function LandingPage() {
   const [formType, setFormType] = useState(null);
   const router = useRouter();
 
+  // ----------------------------
+  // Redirect logged-in users
+  // ----------------------------
+  useEffect(() => {
+    const token = localStorage.getItem("access_token");
+    if (token) {
+      try {
+        const decoded = JSON.parse(atob(token.split(".")[1]));
+        if (decoded) {
+          router.replace("/homepage"); // redirect to homepage
+        }
+      } catch (err) {
+        console.log("Invalid token, continue on landing page");
+      }
+    }
+  }, [router]);
+
   const handleSuccess = () => {
-    setFormType(null);     // close popup
-    router.push("/homepage");  // redirect to homepage
+    setFormType(null);     
+    router.push("/homepage");  // redirect to homepage after login/register
   };
 
   return (
