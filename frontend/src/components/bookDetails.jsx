@@ -1,8 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+
+import Header from "./Header";
+import AuthPopup from "./AuthPopup/AuthPopup";
+import Pagination from "./SearchResults/Pagination";
 
 export default function BookDetailPage({ book, avgRating, initialReviews }) {
+  const router = useRouter();
+
   // Backend gives: book_title, author, year_of_publication, publisher, image_url_l, isbn
   const displayTitle = book.book_title;
   const displayYear = book.year_of_publication;
@@ -10,37 +17,89 @@ export default function BookDetailPage({ book, avgRating, initialReviews }) {
   const displayAuthor = book.author;
   const coverUrl = book.image_url_l || book.image_url_m || book.image_url_s;
 
-  // Use backend avg rating if we have it
+  // Average rating from backend
   const initialAvgRating = avgRating?.avg_rating ?? 0;
   const initialRatingCount = avgRating?.count ?? 0;
 
-  // Reviews list comes from backend
+  // Reviews list from backend
   const [reviews, setReviews] = useState(initialReviews || []);
 
-  // User rating and review (simple version)
+  // User rating and review (rating optional)
   const [userRating, setUserRating] = useState(null);
   const [userComment, setUserComment] = useState("");
   const [isEditing, setIsEditing] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  // Auth state (same pattern as HomePage)
+  const [user, setUser] = useState(null);
+  const [formType, setFormType] = useState(null);
+
+  // Pagination for reviews
+  const [currentReviewPage, setCurrentReviewPage] = useState(1);
+  const [ellipsisOpen, setEllipsisOpen] = useState(null);
+  const [jumpPage, setJumpPage] = useState("");
+
+  const reviewsPerPage = 5;
+  const totalReviewPages = Math.ceil(reviews.length / reviewsPerPage);
+  const indexOfLastReview = currentReviewPage * reviewsPerPage;
+  const indexOfFirstReview = indexOfLastReview - reviewsPerPage;
+  const currentReviews = reviews.slice(indexOfFirstReview, indexOfLastReview);
+
   const API_BASE =
     process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
+
+  // Load user from token (same as HomePage)
+  useEffect(() => {
+    const token = localStorage.getItem("access_token");
+    if (token) {
+      try {
+        const decoded = JSON.parse(atob(token.split(".")[1]));
+        setUser(decoded);
+      } catch (e) {
+        console.error("Failed to decode token", e);
+      }
+    }
+  }, []);
+
+  // Called by AuthPopup when login/register succeeds
+  const handleLoginSuccess = () => {
+    setFormType(null);
+    const token = localStorage.getItem("access_token");
+    if (token) {
+      try {
+        const decoded = JSON.parse(atob(token.split(".")[1]));
+        setUser(decoded);
+      } catch (e) {
+        console.error("Failed to decode token", e);
+      }
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("access_token");
+    setUser(null);
+    router.push("/");
+  };
+
+  const goToProfile = () => {
+    router.push("/profile");
+  };
 
   async function handleSave() {
     try {
       setSaving(true);
 
-      // 1) Save rating
+      // 1) Save rating (only if user moved the slider)
       if (userRating !== null) {
-      await fetch(`${API_BASE}/ratings/books/${book.isbn}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({ rating: userRating }),
-      });
-    }
+        await fetch(`${API_BASE}/ratings/books/${book.isbn}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify({ rating: userRating }),
+        });
+      }
 
       // 2) Save review
       const reviewRes = await fetch(
@@ -61,8 +120,11 @@ export default function BookDetailPage({ book, avgRating, initialReviews }) {
         alert("Could not save review. Check console for details.");
       } else {
         const newReview = await reviewRes.json();
+        // Prepend new review
         setReviews((prev) => [newReview, ...prev]);
         setIsEditing(false);
+        // Reset to first page so user sees their review
+        setCurrentReviewPage(1);
       }
     } catch (e) {
       console.error(e);
@@ -73,21 +135,25 @@ export default function BookDetailPage({ book, avgRating, initialReviews }) {
   }
 
   return (
-    <div className="min-h-screen bg-white text-slate-900">
-      {/* Top nav */}
-      <header className="sticky top-0 z-10 bg-white border-b border-slate-200 px-8 md:px-12 py-4 flex items-center justify-between">
-        <div className="text-[1.05rem] font-bold text-[#023147]">
-          Home
-        </div>
-        <div className="flex items-center gap-3">
-          <button className="rounded-full border border-slate-300 bg-white text-slate-800 text-sm font-semibold px-4 py-2 hover:bg-slate-50 transition">
-            Profile
-          </button>
-          <button className="rounded-full border border-[#ffb803] bg-[#ffb803] text-slate-900 text-sm font-semibold px-4 py-2 shadow-sm hover:bg-[#f5a800] hover:border-[#f5a800] transition">
-            Logout
-          </button>
-        </div>
-      </header>
+    <div className="relative min-h-screen bg-gray-50 text-slate-900">
+      {/* Shared header with functional auth */}
+      <Header
+        user={user}
+        setFormType={setFormType}
+        handleLogout={() => {
+        localStorage.removeItem("access_token");
+        setUser(null);
+        router.push("/");
+      }}
+      goToProfile={() => router.push("/profile")}
+      />
+
+      {/* Login/Register popup */}
+      <AuthPopup
+        formType={formType}
+        setFormType={setFormType}
+        handleLoginSuccess={handleLoginSuccess}
+      />
 
       {/* Main content */}
       <main className="px-6 md:px-12 py-8 md:py-12">
@@ -137,7 +203,7 @@ export default function BookDetailPage({ book, avgRating, initialReviews }) {
                 </div>
               </div>
 
-              {/* Genres can go here later if you add them to the API */}
+              {/* Genres can go here later when backend exposes them */}
               {/* <div className="mt-4 flex flex-wrap gap-2">
                 {book.genres?.map((g) => (
                   <span
@@ -177,17 +243,15 @@ export default function BookDetailPage({ book, avgRating, initialReviews }) {
                     type="range"
                     min="0"
                     max="10"
-                    value={userRating ?? 0}   // visual default
+                    value={userRating ?? 0} // visual default
                     onChange={(e) => {
-                      // First interaction activates rating mode
                       setUserRating(Number(e.target.value));
                     }}
-                    className={`flex-1 
-                      ${userRating === null 
-                        ? "opacity-40 cursor-pointer accent-slate-300"   // GREYED OUT
-                        : "accent-[#ffb803]"                             // ACTIVE
-                      }
-                    `}
+                    className={`flex-1 ${
+                      userRating === null
+                        ? "opacity-40 cursor-pointer accent-slate-300"
+                        : "accent-[#ffb803]"
+                    }`}
                   />
 
                   <span>10</span>
@@ -238,11 +302,12 @@ export default function BookDetailPage({ book, avgRating, initialReviews }) {
               </div>
             </div>
 
-            {/* Reviews list */}
+            {/* Reviews list + pagination */}
             <section className="mt-1">
               <h2 className="text-base md:text-lg font-semibold text-slate-900 mb-2">
                 Reviews
               </h2>
+
               {reviews.length === 0 && (
                 <p className="text-sm text-slate-500">
                   No reviews yet. Be the first to review this book!
@@ -250,7 +315,7 @@ export default function BookDetailPage({ book, avgRating, initialReviews }) {
               )}
 
               <div className="space-y-3 mt-2">
-                {reviews.map((r) => (
+                {currentReviews.map((r) => (
                   <article
                     key={r.review_id}
                     className="bg-white border border-slate-200 rounded-xl px-4 py-3"
@@ -271,6 +336,16 @@ export default function BookDetailPage({ book, avgRating, initialReviews }) {
                   </article>
                 ))}
               </div>
+
+              <Pagination
+                currentPage={currentReviewPage}
+                totalPages={totalReviewPages}
+                setCurrentPage={setCurrentReviewPage}
+                ellipsisOpen={ellipsisOpen}
+                setEllipsisOpen={setEllipsisOpen}
+                jumpPage={jumpPage}
+                setJumpPage={setJumpPage}
+              />
             </section>
           </div>
         </section>
