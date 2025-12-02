@@ -7,8 +7,8 @@ from app.utils.openlibrary_client import fetch_subjects_from_openlibrary
 from app.utils.genre_util import map_subjects_to_genres
 
 def enrich_books_resumable(
-    input_file="app/data/BX_Books_remaining_partX.csv",
-    output_file="app/data/Enriched_Books_remaining_partX.csv",
+    input_file="app/data/BX_Books_remaining_part3.csv",
+    output_file="app/data/Enriched_Books_remaining_part3.csv",
     sleep_time=0.2,
     save_every=25
 ):
