@@ -183,7 +183,7 @@ export default function HomePage() {
       {/* WELCOME TEXT */}
       <main className="max-w-7xl mx-auto px-6 py-12 text-center">
         <h1 className="text-4xl font-bold mb-6 text-gray-900">
-          {user ? `Welcome back, ${user.sub}!` : "Welcome to Our Library!"}
+          {user ? `Welcome back, ${user.username}!` : "Welcome to Our Library!"}
         </h1>
         <p className="text-lg text-gray-700">
           Browse books, search by title or author, and register to make requests.

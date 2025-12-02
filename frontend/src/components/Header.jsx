@@ -1,13 +1,41 @@
 "use client";
+import { useRouter } from "next/navigation";
 
-export default function Header({ user, setFormType, handleLogout, goToProfile }) {
+export default function Header({
+  user,
+  setFormType,
+  handleLogout,
+  goToProfile,
+  compact = false,
+  showProfileButton = true,
+}) {
+  const router = useRouter();
+
+  const goHome = () => {
+    router.push("/homepage"); // or "/" if that's your main route
+  };
+
+  const isLoggedIn = !!user;
+
   return (
-    <header className="bg-white shadow-md">
-      <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-        <div className="text-xl font-bold text-gray-900 cursor-pointer">Home</div>
+    <header className="w-full bg-white border-b border-[#E4ECFF]">
+      <div
+        className={`max-w-6xl mx-auto px-6 ${
+          compact ? "py-2" : "py-3"
+        } flex items-center justify-between`}
+      >
+        {/* Left: Home link */}
+        <button
+          type="button"
+          onClick={goHome}
+          className="text-base font-semibold text-gray-700 cursor-pointer"
+        >
+          Home
+        </button>
 
-        <div className="space-x-4 flex justify-end items-center">
-          {!user ? (
+        {/* Right: auth / profile actions */}
+        <div className="flex items-center gap-4">
+          {!isLoggedIn ? (
             <>
               <button
                 className="rounded-full border border-slate-300 bg-white text-slate-800 text-sm font-semibold px-6 py-3 hover:bg-slate-50 transition"
