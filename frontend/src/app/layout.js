@@ -24,8 +24,8 @@ export default function RootLayout({ children }) {
         />
         <meta name="color-scheme" content="light only" />
       </head>
-
       <body className="antialiased">{children}</body>
+
     </html>
   );
 }
