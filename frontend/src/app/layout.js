@@ -22,12 +22,10 @@ export default function RootLayout({ children }) {
           href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Geist+Mono:wght@200..900&display=swap"
           rel="stylesheet"
         />
+        <meta name="color-scheme" content="light only" />
       </head>
-        {/* Force consistent light color scheme across macOS and Windows */}
-      <body className="">
-          <meta name="color-scheme" content="dark only" />
-        {children}
-      </body>
+      <body className="antialiased">{children}</body>
+
     </html>
   );
 }
