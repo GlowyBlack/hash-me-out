@@ -7,10 +7,7 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html
-      lang="en"
-      className={`${GeistSans.variable} ${GeistMono.variable}`}
-    >
+    <html lang="en">
       <head>
         <link
           rel="preconnect"
@@ -25,7 +22,9 @@ export default function RootLayout({ children }) {
           href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Geist+Mono:wght@200..900&display=swap"
           rel="stylesheet"
         />
+        <meta name="color-scheme" content="light only" />
       </head>
+
       <body className="antialiased">{children}</body>
     </html>
   );
