@@ -1,7 +1,8 @@
-id,username,email,password_hash,is_admin,is_suspended,suspended_until, warnings
-1,Al-Ameen,user@example.com,$2b$12$eMYRQrVbm08PdR0RouNUEeWyElPGntNZNFlv1bCVLvNbpmZqXXzNS,True,False,
-2,glowyblack,user1@example.com,$2b$12$EhTTDGsJc9NZ9il.W3YV9e8GdpHG5O4gviJdNNHkQ0.dS78/9wXp2,False,False,
-3,paris,user2@example.com,$2b$12$n3XxM6rAS8/KJo3sRKY2HOmmqFsHxBx7iczZ.mHyECkz9y7GIpgg.,False,False,
-4,nat,nat@gmail.com,$2b$12$bsRecwkYmcrROzt6F9vVX.vz/LX7YaFhZMfvh3cWwUZAKkC7FPA22,False,False,
-5,Fawaaz,fawaaz@gmail.com,$2b$12$dKBXgSZcyRUlxEuzTZCGquur8de0/t/hGaNmONuGK8.MXyGO.q8Vm,False,False,
-6,test,test@gmail.com,$2b$12$.4b4U3UJ/0F7PA6uoKfPGumRcTuDprbtPXJ.Xmwy5wDY.5Cxz2rW2,False,False,
+id,username,email,password_hash,is_admin,is_suspended,suspended_until,warnings
+1,Al-Ameen,user@example.com,$2b$12$eMYRQrVbm08PdR0RouNUEeWyElPGntNZNFlv1bCVLvNbpmZqXXzNS,True,False,,
+2,glowyblack,user1@example.com,$2b$12$EhTTDGsJc9NZ9il.W3YV9e8GdpHG5O4gviJdNNHkQ0.dS78/9wXp2,False,False,,
+3,paris,user2@example.com,$2b$12$n3XxM6rAS8/KJo3sRKY2HOmmqFsHxBx7iczZ.mHyECkz9y7GIpgg.,False,False,,
+4,nat,nat@gmail.com,$2b$12$bsRecwkYmcrROzt6F9vVX.vz/LX7YaFhZMfvh3cWwUZAKkC7FPA22,False,False,,
+5,Fawaaz,fawaaz@gmail.com,$2b$12$dKBXgSZcyRUlxEuzTZCGquur8de0/t/hGaNmONuGK8.MXyGO.q8Vm,False,False,,
+6,test,test@gmail.com,$2b$12$.4b4U3UJ/0F7PA6uoKfPGumRcTuDprbtPXJ.Xmwy5wDY.5Cxz2rW2,False,False,,
+7,laura,laura@laura.com,$2b$12$jeBietk8E3vRA/0iYDQGx.4KT7pvM9/oYXmCSfnP79Ljp5CnixGaK,false,false,,0
