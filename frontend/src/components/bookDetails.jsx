@@ -1,3 +1,4 @@
+// src/components/bookDetails.jsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -32,7 +33,7 @@ export default function BookDetailPage({ book, avgRating, initialReviews }) {
 
   // Auth state (same pattern as HomePage)
   const [user, setUser] = useState(null);
-  const [formType, setFormType] = useState(null);
+  const [formType, setFormType] = useState(null); // "login" | "register" | null
 
   // Pagination for reviews
   const [currentReviewPage, setCurrentReviewPage] = useState(1);
@@ -50,7 +51,10 @@ export default function BookDetailPage({ book, avgRating, initialReviews }) {
 
   // Load user from token (same as HomePage)
   useEffect(() => {
-    const token = localStorage.getItem("access_token");
+    const token = typeof window !== "undefined"
+      ? localStorage.getItem("access_token")
+      : null;
+
     if (token) {
       try {
         const decoded = JSON.parse(atob(token.split(".")[1]));
@@ -86,19 +90,50 @@ export default function BookDetailPage({ book, avgRating, initialReviews }) {
   };
 
   async function handleSave() {
+    // Not logged in: open login/register instead of calling the API
+    if (!user) {
+      // You can start with "login" instead if you prefer
+      setFormType("register");
+      return;
+    }
+
+    const token = localStorage.getItem("access_token");
+    if (!token) {
+      setFormType("login");
+      return;
+    }
+
+    // Optional: avoid obvious backend error on too-short comment
+    if (!userComment || userComment.trim().length < 8) {
+      alert("Please write at least 8 characters for your review.");
+      return;
+    }
+
     try {
       setSaving(true);
 
       // 1) Save rating (only if user moved the slider)
       if (userRating !== null) {
-        await fetch(`${API_BASE}/ratings/books/${book.isbn}`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-          body: JSON.stringify({ rating: userRating }),
-        });
+        const ratingRes = await fetch(
+          `${API_BASE}/ratings/books/${book.isbn}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            credentials: "include",
+            body: JSON.stringify({ rating: userRating }),
+          }
+        );
+
+        if (!ratingRes.ok) {
+          console.error(
+            "Rating error",
+            await ratingRes.json().catch(() => ({}))
+          );
+          // Do not block review if rating fails
+        }
       }
 
       // 2) Save review
@@ -108,6 +143,7 @@ export default function BookDetailPage({ book, avgRating, initialReviews }) {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
           },
           credentials: "include",
           body: JSON.stringify({ comment: userComment }),
@@ -117,15 +153,32 @@ export default function BookDetailPage({ book, avgRating, initialReviews }) {
       if (!reviewRes.ok) {
         const err = await reviewRes.json().catch(() => ({}));
         console.error("Review error", err);
-        alert("Could not save review. Check console for details.");
-      } else {
-        const newReview = await reviewRes.json();
-        // Prepend new review
-        setReviews((prev) => [newReview, ...prev]);
-        setIsEditing(false);
-        // Reset to first page so user sees their review
-        setCurrentReviewPage(1);
+
+        if (reviewRes.status === 401) {
+          setUser(null);
+          setFormType("login");
+          alert("Please log in to post a review.");
+          return;
+        }
+
+        // Handle structured error messages from backend if present
+        if (err?.detail?.message) {
+          alert(err.detail.message);
+        } else if (typeof err.detail === "string") {
+          alert(err.detail);
+        } else {
+          alert("Could not save review.");
+        }
+
+        return;
       }
+
+      const newReview = await reviewRes.json();
+      // Prepend new review
+      setReviews((prev) => [newReview, ...prev]);
+      setIsEditing(false);
+      // Reset to first page so user sees their review
+      setCurrentReviewPage(1);
     } catch (e) {
       console.error(e);
       alert("Something went wrong while saving.");
@@ -140,12 +193,8 @@ export default function BookDetailPage({ book, avgRating, initialReviews }) {
       <Header
         user={user}
         setFormType={setFormType}
-        handleLogout={() => {
-        localStorage.removeItem("access_token");
-        setUser(null);
-        router.push("/");
-      }}
-      goToProfile={() => router.push("/profile")}
+        handleLogout={handleLogout}
+        goToProfile={goToProfile}
       />
 
       {/* Login/Register popup */}
@@ -284,13 +333,19 @@ export default function BookDetailPage({ book, avgRating, initialReviews }) {
                 value={userComment}
                 onChange={(e) => setUserComment(e.target.value)}
                 disabled={!isEditing}
-                maxLength={500}
+                maxLength={750}
                 placeholder="Write your thoughts about this book..."
               />
+              {!user && (
+                <p className="mt-1 text-sm text-red-500">
+                  You must be logged in to post a review.
+                </p>
+              )}
+
 
               <div className="mt-2 flex items-center justify-between text-xs">
                 <span className="text-slate-500">
-                  {userComment.length}/500
+                  {userComment.length}/750
                 </span>
                 <button
                   className="rounded-full border border-[#ffb803] bg-[#ffb803] text-[0.8rem] font-semibold px-4 py-1.5 text-slate-900 shadow-sm hover:bg-[#f5a800] hover:border-[#f5a800] disabled:opacity-60 disabled:cursor-default transition"

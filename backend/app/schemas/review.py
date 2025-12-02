@@ -3,7 +3,7 @@ from datetime import datetime
 from app.utils.validators import validate_comment
 
 class ReviewCreate(BaseModel):
-    comment: str = Field(..., min_length=8)
+    comment: str = Field(..., min_length=8, max_length=750)
     
     @field_validator("comment")
     @classmethod
