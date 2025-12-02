@@ -1,3 +1,6 @@
+from typing import List
+
+
 GENRE_KEYWORDS = {
     # ---------- FICTION ----------
     "Fantasy": [
@@ -183,59 +186,85 @@ GENRE_KEYWORDS = {
     ],
     "Education and Reference": [
         "textbook", "handbook", "manual", "guide", "reference", "learning"
-    ],
-    "Fiction": ["fiction"],
-    "Nonfiction": ["nonfiction", "non-fiction", "true story"]
+    ]
 }
 
-def map_subjects_to_genres(subjects: list[str]) -> list[str]:
+def detect_fiction_nonfiction(subjects: List[str]) -> tuple[bool, bool]:
     """
-    Improved subject → genre mapper:
+    Strict classification for Fiction vs Nonfiction.
+    Prevents keyword explosion in GENRE_KEYWORDS.
+    """
+    subs = [s.lower() for s in subjects]
+
+    fiction_terms = {
+        "fiction",
+        "juvenile fiction",
+        "modern fiction"
+    }
+
+    nonfiction_terms = {
+        "nonfiction",
+        "non-fiction",
+        "biography",
+        "autobiography",
+        "true story"
+    }
+
+    is_fiction = any(s == term for s in subs for term in fiction_terms)
+    is_nonfiction = any(s == term for s in subs for term in nonfiction_terms)
+
+    return is_fiction, is_nonfiction
+
+
+def map_subjects_to_genres(subjects: List[str]) -> List[str]:
+    """
+    Improved subject → genre mapper with:
     - lowercase normalization
-    - bidirectional substring matching
-    - token-aware matching
-    - plural/singular word detection
+    - safe substring matching
+    - token-aware plural/singular handling
+    - explicit Fiction / Nonfiction classification
     """
     if not subjects:
         return []
 
     genres = set()
-
-    # normalize subjects
-    subjects = [s.lower() for s in subjects]
+    subjects_lower = [s.lower() for s in subjects]
 
     for genre, keywords in GENRE_KEYWORDS.items():
-        for s in subjects:
+        for s in subjects_lower:
 
-            # tokenize subject (e.g., "arthurian romances" → ["arthurian","romances"])
             tokens = s.split()
 
-            # check each keyword
             for kw in keywords:
                 kw = kw.lower()
 
-                # 1. keyword in subject (current behavior)
+                # keyword substring in subject
                 if kw in s:
                     genres.add(genre)
                     break
 
-                # 2. subject contains keyword variations (reverse)
-                if s in kw:
+                # subject equals keyword (rare but exact)
+                if s == kw:
                     genres.add(genre)
                     break
 
-                # 3. keyword matches any token (plural/singular handling)
+                # plural/singular token match
                 if any(
-                    token == kw or
-                    token.rstrip("s") == kw.rstrip("s") or
-                    kw.rstrip("s") == token.rstrip("s")
+                    token.rstrip("s") == kw.rstrip("s")
                     for token in tokens
                 ):
                     genres.add(genre)
                     break
 
-            # If genre matched for this subject, stop checking genre
             if genre in genres:
                 break
+
+    # --- Explicit Fiction / Nonfiction handling ---
+    is_fiction, is_nonfiction = detect_fiction_nonfiction(subjects)
+
+    if is_fiction:
+        genres.add("Fiction")
+    if is_nonfiction:
+        genres.add("Nonfiction")
 
     return list(genres)
