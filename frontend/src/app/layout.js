@@ -1,5 +1,3 @@
-import { GeistSans } from "geist/font/sans";
-import { GeistMono } from "geist/font/mono";
 import "./globals.css";
 
 export const metadata = {
@@ -14,8 +12,19 @@ export default function RootLayout({ children }) {
       className={`${GeistSans.variable} ${GeistMono.variable}`}
     >
       <head>
-        {/* Force consistent light color scheme across macOS and Windows */}
-        <meta name="color-scheme" content="light only" />
+        <link
+          rel="preconnect"
+          href="https://fonts.googleapis.com"
+        />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin=""
+        />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Geist+Mono:wght@200..900&display=swap"
+          rel="stylesheet"
+        />
       </head>
       <body className="antialiased">{children}</body>
     </html>
