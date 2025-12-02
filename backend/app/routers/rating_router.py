@@ -6,8 +6,6 @@ from app.deps import get_current_user
 router = APIRouter(prefix = "/ratings", tags = ["Ratings"])
 service = RatingService()
 
-# TODO: Make all of the methods work only for their respective role
-
 
 @router.post("/books/{isbn}",
     summary="Add or update a rating for a book",

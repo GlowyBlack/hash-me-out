@@ -143,19 +143,31 @@ class CSVUserService:
         for u in users:
             if int(u["id"]) == int(user_id):
 
+                # Only update username if it's not None AND not empty/whitespace
                 if username is not None:
-                    new_norm = self._norm(username)
-                    for other in users:
-                        if int(other["id"]) != int(user_id) and self._norm(other["username"]) == new_norm:
-                            raise ValueError("Username is taken")
-                    u["username"] = username
+                    username_clean = username.strip()
+                    if username_clean:
+                        new_norm = self._norm(username_clean)
+                        for other in users:
+                            if (
+                                int(other["id"]) != int(user_id)
+                                and self._norm(other["username"]) == new_norm
+                            ):
+                                raise ValueError("Username is taken")
+                        u["username"] = username_clean
 
+                # Only update email if it's not None AND not empty/whitespace
                 if email is not None:
-                    new_norm = self._norm(email)
-                    for other in users:
-                        if int(other["id"]) != int(user_id) and self._norm(other["email"]) == new_norm:
-                            raise ValueError("Email is taken")
-                    u["email"] = email
+                    email_clean = email.strip()
+                    if email_clean:
+                        new_norm = self._norm(email_clean)
+                        for other in users:
+                            if (
+                                int(other["id"]) != int(user_id)
+                                and self._norm(other["email"]) == new_norm
+                            ):
+                                raise ValueError("Email is taken")
+                        u["email"] = email_clean
 
                 if is_admin is not None:
                     u["is_admin"] = "true" if is_admin else "false"
@@ -169,8 +181,14 @@ class CSVUserService:
         self._write_all(users)
 
         updated_user["id"] = int(updated_user["id"])
-        updated_user["is_admin"] = str(updated_user.get("is_admin", "false")).lower() in {"true", "1", "yes"}
-        updated_user["is_suspended"] = str(updated_user.get("is_suspended", "false")).lower() in {"true", "1", "yes"}
+        updated_user["is_admin"] = (
+            str(updated_user.get("is_admin", "false")).lower()
+            in {"true", "1", "yes"}
+        )
+        updated_user["is_suspended"] = (
+            str(updated_user.get("is_suspended", "false")).lower()
+            in {"true", "1", "yes"}
+        )
         updated_user["warnings"] = int(updated_user.get("warnings", "0") or 0)
 
         return updated_user
@@ -280,3 +298,26 @@ class CSVUserService:
 
         self._write_all(users)
         return target
+
+    def get_by_id(self, user_id: int) -> Optional[Dict]:
+        """Return a single user by numeric id, or None if not found."""
+        for row in self.repo.read_all(self.path):
+            if int(row["id"]) == int(user_id):
+                row["id"] = int(row["id"])
+                row["is_admin"] = str(row.get("is_admin", "false")).lower() in {
+                    "true",
+                    "1",
+                    "yes",
+                }
+                row["is_suspended"] = str(row.get("is_suspended", "false")).lower() in {
+                    "true",
+                    "1",
+                    "yes",
+                }
+                row["warnings"] = int(row.get("warnings", "0") or 0)
+
+                # still respect suspension expiry logic
+                row = self._check_suspension_expired(row)
+
+                return row
+        return None

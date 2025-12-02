@@ -33,14 +33,14 @@ export default function Header({ user, setFormType, handleLogout, goToProfile })
             <>
               <button
                 className="bg-white border border-gray-300 text-gray-600 px-4 py-2 rounded-lg hover:bg-gray-100"
-                onClick={() => setFormType("login")}
+                onClick={() => setFormType && setFormType("login")}
               >
                 Login
               </button>
 
               <button
                 className="bg-yellow-400 hover:bg-yellow-500 text-gray-600 px-4 py-2 rounded-lg font-semibold"
-                onClick={() => setFormType("register")}
+                onClick={() => setFormType && setFormType("register")}
               >
                 Register
               </button>
