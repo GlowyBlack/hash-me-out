@@ -45,7 +45,7 @@ def test_get_all_reviews(service):
 
 def test_delete_review(service):
     content = ReviewCreate(comment="Delete me")
-    created = service.create_review(user_id = 2, data = content, isbn="1111111111")
+    created = service.create_review(user_id = 2, data = content, isbn = "1111111111")
 
     ok = service.delete_review(created.review_id)
     assert ok is True

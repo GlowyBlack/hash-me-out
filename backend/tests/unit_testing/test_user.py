@@ -29,6 +29,9 @@ def test_create_user_success():
     assert result["email"] == "alice@example.com"
     assert isinstance(result["id"], int)
     assert result["id"] >= 1
+    assert result["is_admin"] is False
+    assert result["is_suspended"] is False
+    assert result["warnings"] == 0
 
 
 def test_create_user_username_taken_raises():
@@ -169,6 +172,7 @@ def test_update_user_not_found():
 
     assert str(excinfo.value) == "User not found"
 
+
 def test_create_user_defaults_to_non_admin():
     result = service.create_user(
         username="alice",
@@ -177,8 +181,8 @@ def test_create_user_defaults_to_non_admin():
     )
 
     assert result["is_admin"] is False
-    
-    
+
+
 def test_set_admin_updates_flag():
     u1 = service.create_user(
         username="alice",
@@ -189,7 +193,8 @@ def test_set_admin_updates_flag():
     updated = service.update_user(user_id=u1["id"], is_admin=True)
 
     assert updated["is_admin"] is True
-    
+
+
 def test_create_user_preserves_username_casing():
     created = service.create_user(
         username="JanakiCute123",
@@ -205,7 +210,7 @@ def test_create_user_preserves_username_casing():
     assert found["id"] == created["id"]
     assert found["username"] == "JanakiCute123"
 
-   
+
 def test_suspend_user_sets_flag_and_time(tmp_path):
     service.path = str(tmp_path / "Users.csv")
     with open(service.path, "w", newline="", encoding="utf-8") as f:
@@ -235,3 +240,34 @@ def test_unsuspend_user_clears_flags(tmp_path):
 
     assert unsuspended["is_suspended"] == "false"
     assert unsuspended["suspended_until"] == ""
+
+
+def test_increment_warning_increases_count():
+    user = service.create_user(
+        username="bob",
+        email="bob@example.com",
+        password_hash="pw",
+    )
+
+    row1 = service.increment_warning(user["id"])
+    assert row1["warnings"] == "1"
+
+    row2 = service.increment_warning(user["id"])
+    assert row2["warnings"] == "2"
+
+
+def test_auto_suspend_for_profanity_resets_warnings_and_suspends():
+    user = service.create_user(
+        username="bob",
+        email="bob@example.com",
+        password_hash="pw",
+    )
+
+    service.increment_warning(user["id"])
+    service.increment_warning(user["id"])
+
+    suspended = service.auto_suspend_for_profanity(user["id"], duration_minutes=10)
+
+    assert suspended["is_suspended"] == "true"
+    assert suspended["suspended_until"] != ""
+    assert suspended["warnings"] == "0"
