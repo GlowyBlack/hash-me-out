@@ -3,6 +3,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 from app.recommender.vectorizer_loader import GlobalVectorizer
 from app.logger import logger
 from app.utils.cache import similarity_cache
+from app.utils.book_identity import normalize_text 
 
 
 class SimilarityEngine:
@@ -15,6 +16,8 @@ class SimilarityEngine:
                 "Call GlobalVectorizer.load() in app/main.py startup event."
             )
         logger.info("SimilarityEngine initialized.")
+
+
 
 
     def recommend_for_book(self, isbn: str, top_k: int = 10):
@@ -103,7 +106,7 @@ class SimilarityEngine:
         # ----------- 1. Content-based similarity for this ISBN -----------
         CONTENT_SAMPLE_SIZE = 200  
 
-        content_recs = self.recommend_for_book(isbn, CONTENT_SAMPLE_SIZE)  # get many candidates
+        content_recs = self.recommend_for_book(isbn, CONTENT_SAMPLE_SIZE)  
         content_scores = {rec["isbn"]: rec["score"] for rec in content_recs}
 
         if user_vector is None:

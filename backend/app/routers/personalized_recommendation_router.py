@@ -1,7 +1,7 @@
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, status
 from app.deps import get_current_user
-from app.utils.normalize import normalize_text
+from app.utils.book_identity import normalize_text
 
 from app.recommender.user_recommender import UserProfileRecommender
 from app.recommender.similarity_engine import SimilarityEngine

@@ -3,7 +3,7 @@ from fastapi import APIRouter, HTTPException, status
 from app.recommender.similarity_engine import SimilarityEngine
 from app.repositories.book_repository import BookRepository
 from app.logger import logger
-from app.utils.normalize import normalize_text
+from app.utils.book_identity import normalize_text, is_same_work, normalize_title_for_work
 
 router = APIRouter(prefix = "/recommendation", tags = ["Recommendation"])
 
@@ -33,12 +33,7 @@ def similar_books(isbn: str, top_k: int = 10):
 
     input_book = book_repo.get_book_by_isbn(isbn)
     if not input_book:
-        raise HTTPException(status_code=404, detail="Input ISBN not found")
-
-    input_key = (
-        normalize_text(input_book["Book-Title"]),
-        normalize_text(input_book["Book-Author"])
-    )
+        raise HTTPException(status_code = status.HTTP_404_NOT_FOUND, detail = "Input ISBN not found")
 
     eng = get_engine()
     recs = eng.recommend_for_book(isbn, top_k=top_k)
@@ -46,8 +41,8 @@ def similar_books(isbn: str, top_k: int = 10):
     if not recs:
         logger.warning(f"API NOTFOUND  | /recommendation/{isbn} | no similar books")
         raise HTTPException(
-            status_code=404,
-            detail="ISBN not found or no recommendations available"
+            status_code = status.HTTP_404_NOT_FOUND,
+            detail = "ISBN not found or no recommendations available"
         )
 
     seen_titles = set()
@@ -59,17 +54,15 @@ def similar_books(isbn: str, top_k: int = 10):
             logger.warning(f"SKIP          | missing metadata | isbn={rec['isbn']}")
             continue
 
+        if is_same_work(input_book, book):
+            logger.info(f"SKIP WORK     | same book/work | isbn={book['ISBN']}")
+            continue
+        
         key = (
-            normalize_text(book["Book-Title"]),
+            normalize_title_for_work(book["Book-Title"]),
             normalize_text(book["Book-Author"]),
         )
 
-        # 🔥 Prevent recommending the *same book* (different ISBN)
-        if key == input_key:
-            logger.info(f"SKIP INPUT    | same book | isbn={book['ISBN']}")
-            continue
-
-        # prevent duplicates inside results
         if key in seen_titles:
             logger.info(f"DEDUP         | {book['Book-Title']} by {book['Book-Author']}")
             continue

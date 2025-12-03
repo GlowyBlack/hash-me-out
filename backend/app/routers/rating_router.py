@@ -61,7 +61,7 @@ def get_avg_rating(isbn: str):
     response_description = "The rating if found, otherwise null.",
 )
 def get_user_rating(user_id: int, isbn: str):
-    return service.get_user_rating(user_id, isbn)
+    return service.get_user_rating(user_id = user_id,isbn = isbn)
 
 
 @router.delete(

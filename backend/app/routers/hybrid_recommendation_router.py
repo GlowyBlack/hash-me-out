@@ -8,7 +8,7 @@ from app.recommender.similarity_engine import SimilarityEngine
 from app.recommender.user_recommender import UserProfileRecommender
 from app.repositories.book_repository import BookRepository
 from app.services.user_interaction_service import UserInteractionService
-from app.utils.normalize import normalize_text
+from app.utils.book_identity import normalize_text
 
 engine = None
 
