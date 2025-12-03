@@ -57,7 +57,7 @@ def create_review(
 
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"code": "bad_request", "message": msg},
+            detail = {"code": "bad_request", "message": msg},
         )
 
 
@@ -96,7 +96,7 @@ def edit_review(
         if msg == "review_not_found":
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail={
+                detail = {
                     "code": "review_not_found",
                     "message": "Review not found.",
                 },
@@ -106,7 +106,7 @@ def edit_review(
             remaining = int(msg.split(":", 1)[1])
             raise HTTPException(
                 status_code = status.HTTP_400_BAD_REQUEST,
-                detail={
+                detail = {
                     "code": "profanity_detected",
                     "message": "Your updated review contains profanity and was not saved.",
                     "remaining_attempts": remaining,

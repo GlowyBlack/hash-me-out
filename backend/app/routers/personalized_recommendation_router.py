@@ -1,3 +1,4 @@
+from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, status
 from app.deps import get_current_user
 from app.utils.normalize import normalize_text
@@ -7,6 +8,7 @@ from app.recommender.similarity_engine import SimilarityEngine
 
 from app.services.user_interaction_service import UserInteractionService
 from app.repositories.book_repository import BookRepository
+from app.logger import logger
 
 engine = None
 
@@ -36,8 +38,11 @@ def personalized_recommendations(
     """
     Returns personalized recommendations for the current user.
     """
-
+    start = datetime.now()
     user_id = curr["id"]
+    logger.info(
+        f"API CALL      | /personalized | user_id = {user_id} top_k = {top_k}"
+    )
 
     recommender = get_user_recommender()
     user_vec = recommender.build_user_vector(user_id)
@@ -64,7 +69,7 @@ def personalized_recommendations(
         interacted_isbns=interacted_isbns,
         top_k=top_k
     )
-
+    
     results = []
     added_books = set()   
     for rec in recs:
@@ -80,11 +85,10 @@ def personalized_recommendations(
         )
         if title_author in interacted_books:
             continue
-        # if title_author in added_books:
-        #     continue
-        # added_books.add(
-        #     title_author
-        # )
+
+        added_books.add(
+            title_author
+        )
         results.append({
             "isbn": book["ISBN"],
             "title": book["Book-Title"],
@@ -98,5 +102,10 @@ def personalized_recommendations(
         })
         if len(results) >= top_k:
             break
-
+    end = datetime.now()
+    duration_ms = (end - start).total_seconds() * 1000
+    logger.info(
+        f"API DONE      | /personalized | user_id = {user_id} "
+        f"returned = {len(results)} took = {duration_ms:.2f}ms"
+    )
     return results

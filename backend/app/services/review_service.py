@@ -5,6 +5,8 @@ from app.models.review import Review
 from app.repositories.csv_repository import CSVRepository
 from app.schemas.review import ReviewCreate, ReviewRead, ReviewUpdate
 from app.services.user_service import CSVUserService
+from app.utils.cache import user_vector_cache
+from app.logger import logger
 
 WEEK_IN_MINUTES = 7 * 24 * 60
 
@@ -42,7 +44,7 @@ class ReviewService:
         """Detects if the given text contains profanity."""
         try:
             encoded = quote_plus(text)
-            url = f"{self.PURGOMALUM_URL}?text={encoded}"
+            url = f"{self.PURGOMALUM_URL}?text = {encoded}"
             resp = requests.get(url, timeout=3)
            
             if resp.status_code == 200:
@@ -86,6 +88,9 @@ class ReviewService:
             raise ValueError("already_reviewed")
 
         next_id = self.__generate_next_id()
+        user_vector_cache.invalidate(user_id)
+        logger.info(f"INVALIDATE    | user_id = {user_id} | reason='review created'")
+
 
         review = Review(
             review_id=next_id,
@@ -128,6 +133,9 @@ class ReviewService:
         if self._contains_profanity(data.comment):
             self._apply_profanity_penalty(user_id)
             
+        user_vector_cache.invalidate(user_id)
+        logger.info(f"INVALIDATE    | user_id = {user_id} | reason='review deleted'")
+
         found_row["Comment"] = data.comment
         self.__write_rows(rows)
 
@@ -144,6 +152,7 @@ class ReviewService:
 
         for i, row in enumerate(filtered, start=1):
             row["ReviewID"] = str(i)
+        # user_vector_cache.invalidate(user_id)
 
         self.__write_rows(filtered)
         

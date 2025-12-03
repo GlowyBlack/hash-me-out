@@ -200,7 +200,7 @@ def download_reading_list(list_id: int, curr=Depends(get_current_user)):
         content = csv_data,
         media_type = "text/csv",
         headers = {
-          "Content-Disposition": f"attachment; filename={filename}"
+          "Content-Disposition": f"attachment; filename = {filename}"
         },
     )
 
