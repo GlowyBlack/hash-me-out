@@ -1,3 +1,4 @@
+import re
 
 def validate_isbn(isbn: str) -> str:
     digits = "".join(ch for ch in isbn if ch.isdigit())
@@ -19,3 +20,11 @@ def validate_comment(review: str):
         raise ValueError("Review must be at least 8 characters.")
     
     return comment 
+
+def validate_email(email: str):
+    e = email.strip()
+    pattern = r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.(com|ca)$"
+    if not re.match(pattern, e):
+        raise ValueError("Invalid email format. Only .com and .ca domains are supported.")
+
+    return e

@@ -1,10 +1,18 @@
 from typing import Optional
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, field_validator
+from app.utils.validators import validate_email
 
 class UserCreate(BaseModel):
     username: str
-    email: EmailStr
+    email: str
     password: str
+    
+    @field_validator("email")
+    @classmethod
+    def valid_isbn(cls, v: str) -> str:
+        return validate_email(v)
+    
+
 
 class UserOut(BaseModel):
     id: int
