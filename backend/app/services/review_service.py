@@ -112,39 +112,78 @@ class ReviewService:
             time=now,
         )
 
-    # --------------------------------------------------------------------
+        # --------------------------------------------------------------------
     # GET ALL REVIEWS
     # --------------------------------------------------------------------
 
-    def get_all_reviews(self, isbn: str) -> list[dict]:
+    def get_all_reviews(self, isbn: str) -> list[ReviewRead]:
         """
-        Returns reviews enriched with user ratings, without changing schemas.
+        Returns all reviews for a given ISBN, enriched with:
+        - username (via CSVUserService)
+        - rating (via Ratings.csv, if present)
+
+        Keeps CSV schemas unchanged and avoids tight coupling
+        by doing the join only in this service layer.
         """
         rows = self.__read_rows()
 
-        # Load rating rows (same repo, Ratings.csv path)
+        # --- Load ratings for this book ----------------------------------
         rating_path = Path(__file__).resolve().parents[1] / "data" / "Ratings.csv"
         rating_rows = self.repo.read_all(rating_path)
 
-        # Create lookup: (user_id, isbn) -> rating value
-        rating_lookup = {}
+        # (user_id, isbn) -> rating
+        rating_lookup: dict[tuple[str, str], int] = {}
         for r in rating_rows:
-            key = (r["UserID"], r["ISBN"])
-            rating_lookup[key] = int(r["Rating"])
+            # Defensive checks in case of bad rows
+            uid = r.get("UserID")
+            r_isbn = r.get("ISBN")
+            rating_val = r.get("Rating")
 
-        # Build enriched review list
-        enriched = []
+            if uid is None or r_isbn is None or rating_val is None:
+                continue
+
+            try:
+                rating_int = int(rating_val)
+            except ValueError:
+                continue
+
+            rating_lookup[(uid, r_isbn)] = rating_int
+
+        # --- Cache usernames so we don't hit Users.csv for every row -----
+        user_cache: dict[str, str] = {}
+
+        enriched: list[ReviewRead] = []
+
         for r in rows:
-            if r["ISBN"] == isbn:
-                review_obj = Review.from_dict(r).to_api_dict()
+            if r["ISBN"] != isbn:
+                continue
 
-                uid = r["UserID"]
-                key = (uid, isbn)
+            # Base review fields from model
+            review = Review.from_dict(r)
+            review_dict = review.to_api_dict()
+            # review_dict now has: review_id, user_id, isbn, comment, time
 
-                # Add rating if exists (optional, not required)
-                review_obj["rating"] = rating_lookup.get(key)
+            uid_str = r["UserID"]  # note: this is the string ID from CSV
 
-                enriched.append(review_obj)
+            # Attach rating (if exists)
+            key = (uid_str, isbn)
+            review_dict["rating"] = rating_lookup.get(key)
+
+            # Attach username
+            if uid_str in user_cache:
+                username = user_cache[uid_str]
+            else:
+                user = self.user_service.get_by_id(int(uid_str))
+                if user:
+                    username = user["username"]
+                else:
+                    username = f"User #{uid_str}"
+                user_cache[uid_str] = username
+
+            review_dict["username"] = username
+
+            # Convert to ReviewRead so response_model validation passes
+            enriched.append(ReviewRead(**review_dict))
 
         return enriched
 
