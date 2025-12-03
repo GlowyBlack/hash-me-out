@@ -5,9 +5,9 @@ from app.repositories.csv_repository import CSVRepository
 from app.repositories.book_repository import BookRepository
 from app.deps import get_current_user
 
-router = APIRouter(prefix="/readinglist", tags=["ReadingList"])
+router = APIRouter(prefix = "/readinglist", tags = ["ReadingList"])
 
-service = ReadingListService(repo=CSVRepository(), book_repo=BookRepository())
+service = ReadingListService(repo = CSVRepository(), book_repo = BookRepository())
 
 
 @router.post(
@@ -178,37 +178,39 @@ def get_readinglist_detail(list_id: int, user_id: int):
 
 @router.get(
     "/{list_id}/download",
-    summary="Download a reading list as CSV",
-    description="Allows the authenticated user to download their reading list as a CSV file.",
-    response_class=Response,
+    summary = "Download a reading list as CSV",
+    description = "Allows the authenticated user to download their reading list as a CSV file.",
+    response_class = Response
 )
 def download_reading_list(list_id: int, curr=Depends(get_current_user)):
     user_id = curr["id"]
 
     csv_data, filename = service.export_reading_list_csv(
-        list_id=list_id,
-        user_id=user_id,
+        list_id = list_id,
+        user_id = user_id,
     )
 
     if not csv_data:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="ReadingList not found",
+          status_code = status.HTTP_404_NOT_FOUND, 
+          detail = "ReadingList not found"
         )
 
     return Response(
-        content=csv_data,
-        media_type="text/csv",
-        headers={"Content-Disposition": f"attachment; filename={filename}"},
+        content = csv_data,
+        media_type = "text/csv",
+        headers = {
+          "Content-Disposition": f"attachment; filename={filename}"
+        },
     )
 
 @router.get(
     "/",
-    summary="Get all reading lists for current user",
-    description="Returns all reading lists that belong to the authenticated user.",
-    response_description="List of reading lists.",
+    summary = "Get all reading lists for current user",
+    description = "Returns all reading lists that belong to the authenticated user.",
+    response_description = "List of reading lists.",
 )
-def get_my_readinglists(curr=Depends(get_current_user)):
+def get_my_readinglists(curr = Depends(get_current_user)):
     """Returns all reading lists for the logged in user."""
     user_id = curr["id"]
-    return service.get_all_readinglist(user_id=user_id)
+    return service.get_all_readinglist(user_id = user_id)

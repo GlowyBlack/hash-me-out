@@ -7,7 +7,7 @@ from app.services.user_service import CSVUserService
 from app.deps import get_user_service, pwd_context, create_access_token, get_current_user
 from app.schemas.user import UserCreate, UserOut, Token, UserUpdate
 
-router = APIRouter(prefix = "/auth", tags = ["auth"])
+router = APIRouter(prefix = "/auth", tags = ["Auth"])
 
 @router.post(
     "/register",
@@ -93,7 +93,7 @@ def me(curr = Depends(get_current_user)):
 
 @router.get(
     "/users",
-    summary = "List all users",
+    summary = "List all users (Admin only)",
     description = "Returns all registered users. Admin only.",
     response_model = List[UserOut],
     response_description = "A list of users.",
