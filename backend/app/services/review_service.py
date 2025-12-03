@@ -213,7 +213,7 @@ class ReviewService:
             self._apply_profanity_penalty(user_id)
             
         user_vector_cache.invalidate(user_id)
-        logger.info(f"INVALIDATE    | user_id = {user_id} | reason='review deleted'")
+        logger.info(f"INVALIDATE    | user_id = {user_id} | reason='review editted'")
 
         found_row["Comment"] = data.comment
         found_row["Time"] = datetime.now().strftime("%Y-%m-%d")
