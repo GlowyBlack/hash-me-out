@@ -149,7 +149,7 @@ def test_get_book_returns_none_when_not_found(fresh_service):
 def test_invalid_isbn_fail(invalid_isbn):
     with pytest.raises(ValidationError):
         BookCreate(
-            isbn=invalid_isbn,
-            book_title="Percy Jackson and the Lightning Thief",
-            author="Rick Riordan",
+            isbn = invalid_isbn,
+            book_title = "Percy Jackson and the Lightning Thief",
+            author = "Rick Riordan",
         )

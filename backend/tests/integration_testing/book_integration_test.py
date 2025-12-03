@@ -215,3 +215,92 @@ def test_full_search_for_159(client, admin_override):
     # Should NOT match books whose ISBN just contain "1" or "5"
     assert "1931514186" not in returned_isbns  # Peach Girl
     assert "190415123X" not in returned_isbns  # Practical Intranet
+    
+def test_full_search_filter_by_author(client, admin_override):
+    seed_dataset(client, admin_override)
+
+    # Searching "pet" matches many, but filtering by author should narrow to Akino
+    r = client.get("/books/search", params={
+        "query": "pet",
+        "author": "akino"
+    })
+
+    assert r.status_code == 200
+    data = r.json()
+
+    returned_isbns = {item["isbn"] for item in data}
+
+    # Only the two "Pet Shop of Horrors" entries
+    assert returned_isbns == {"1591823641", "1591823633"}
+    
+def test_full_search_filter_by_year_range(client, admin_override):
+    # Insert books with years
+    client.post("/books/", json={
+        "isbn": "0000000001",
+        "book_title": "Test A",
+        "author": "Author A",
+        "year_of_publication": "1999"
+    })
+    client.post("/books/", json={
+        "isbn": "0000000002",
+        "book_title": "Test B",
+        "author": "Author B",
+        "year_of_publication": "2005"
+    })
+    client.post("/books/", json={
+        "isbn": "0000000003",
+        "book_title": "Test C",
+        "author": "Author C",
+        "year_of_publication": "2010"
+    })
+    r = client.get("/books/search", params={
+        "query": "test",
+        "year_min": 2000,
+        "year_max": 2008
+    })
+
+    data = r.json()
+    returned_isbns = {item["isbn"] for item in data}
+
+    assert returned_isbns == {"0000000002"}  # Only Test B matches
+
+def test_full_search_filter_by_genre(client, admin_override):
+    seed_dataset(client, admin_override)
+
+    from app.routers.book_router import service
+    service.enriched_genres = {
+        "1591823641": "horror|mystery",
+        "1591823633": "horror|mystery",
+        "0440207460": "crime",
+    }
+
+    r = client.get("/books/search", params={
+        "query": "pet",
+        "genre": "horror"
+    })
+
+    data = r.json()
+    returned_isbns = {item["isbn"] for item in data}
+
+    assert returned_isbns == {"1591823641", "1591823633"}
+
+
+def test_full_search_combined_filters(client, admin_override):
+    seed_dataset(client, admin_override)
+
+    from app.routers.book_router import service
+    service.enriched_genres = {
+        "1591823641": "horror|mystery",
+        "1591823633": "romance",
+    }
+
+    r = client.get("/books/search", params={
+        "query": "pet",
+        "author": "akino",
+        "genre": "horror"
+    })
+
+    data = r.json()
+    returned_isbns = {item["isbn"] for item in data}
+
+    assert returned_isbns == {"1591823641"}  # Only this matches both

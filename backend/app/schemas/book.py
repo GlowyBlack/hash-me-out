@@ -26,6 +26,8 @@ class BookRead(BaseModel):
     image_url_s: Optional[str] 
     image_url_m: Optional[str] 
     image_url_l: Optional[str] 
+    class Config:
+        extra = "allow"
 
 class BookUpdate(BaseModel):
     book_title: Optional[str] = None
