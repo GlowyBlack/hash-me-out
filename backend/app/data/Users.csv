@@ -5,3 +5,4 @@ id,username,email,password_hash,is_admin,is_suspended,suspended_until,warnings
 4,nat,nat@gmail.com,$2b$12$bsRecwkYmcrROzt6F9vVX.vz/LX7YaFhZMfvh3cWwUZAKkC7FPA22,False,False,
 5,Fawaaz,fawaaz@gmail.com,$2b$12$dKBXgSZcyRUlxEuzTZCGquur8de0/t/hGaNmONuGK8.MXyGO.q8Vm,False,False,
 6,test,test@gmail.com,$2b$12$.4b4U3UJ/0F7PA6uoKfPGumRcTuDprbtPXJ.Xmwy5wDY.5Cxz2rW2,False,False,
+999,test2,test2@example.com,$2b$12$/sN9tx49gXARFBazxFXpe.JejECiMrcOrNYxYmCIDQy3uIXP9/S2.,False,False,

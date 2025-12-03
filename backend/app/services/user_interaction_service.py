@@ -30,6 +30,7 @@ class UserInteractionService:
 
         # ----- Reading List -----
         lists = self.csv.read_all(CSV_PATH_READINGLIST)
+        seen_isbns = set()
         for item in lists:
             if str(item["UserID"]) != str(user_id):
                 continue
@@ -38,11 +39,17 @@ class UserInteractionService:
             if not raw_isbns:
                 continue
 
-            # Parse "AAA|BBB|CCC"
             isbn_list = raw_isbns.split("|")
 
             for isbn in isbn_list:
                 isbn = isbn.strip()
+                if not isbn:
+                    continue
+                
+                if isbn in seen_isbns:
+                    continue
+                
+                seen_isbns.add(isbn)
                 if isbn:
                     interactions.append({
                         "isbn": isbn,
