@@ -1,12 +1,34 @@
 "use client";
+import { useRouter } from "next/navigation";
 
 export default function Header({ user, setFormType, handleLogout, goToProfile }) {
-  return (
-    <header className="bg-white shadow-md">
-      <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-        <div className="text-xl font-bold text-gray-900 cursor-pointer">Home</div>
+  const router = useRouter();
 
-        <div className="space-x-4 flex justify-end items-center">
+  return (
+    <header className="bg-white shadow-md w-full fixed top-0 left-0 z-50">
+      <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+        
+        {/* LEFT SIDE: Home + Dashboard */}
+        <div className="flex items-center space-x-6">
+          <div
+            className="text-xl font-bold text-gray-900 cursor-pointer"
+            onClick={() => router.push("/homepage")}
+          >
+            Home
+          </div>
+
+          {user?.is_admin && (
+            <div
+              className="text-xl font-bold text-gray-900 cursor-pointer"
+              onClick={() => router.push("/admin")}
+            >
+              Dashboard
+            </div>
+          )}
+        </div>
+
+        {/* RIGHT SIDE: Buttons */}
+        <div className="flex items-center space-x-4">
           {!user ? (
             <>
               <button
@@ -25,12 +47,13 @@ export default function Header({ user, setFormType, handleLogout, goToProfile })
             </>
           ) : (
             <>
-              <button
+              <div
+                className="text-xl  text-gray-900 cursor-pointer"
                 onClick={goToProfile}
                 className="rounded-full border border-slate-300 bg-white text-slate-800 text-sm font-semibold px-6 py-3 hover:bg-slate-50 transition"
               >
                 Profile
-              </button>
+              </div>
 
               <button
                 onClick={handleLogout}

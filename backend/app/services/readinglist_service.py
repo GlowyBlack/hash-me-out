@@ -8,6 +8,9 @@ from app.models.readinglist import ReadingList
 from app.repositories.base_repository import BaseRepository
 from app.repositories.csv_repository import CSVRepository
 from app.repositories.book_repository import BookRepository
+from app.utils.cache import user_vector_cache
+from app.logger import logger
+
 
 class ReadingListService:
     def __init__(self, repo: BaseRepository, book_repo: BookRepository):
@@ -74,7 +77,8 @@ class ReadingListService:
         """Deletes a reading list if it belongs to the user."""
         rows = self.repo.read_all(self.path)
         original_count = len(rows)
-        
+
+
         updated_rows = [
             r for r in rows if not (int(r["ListID"]) == list_id and int(r["UserID"]) == user_id)
         ]
@@ -85,6 +89,8 @@ class ReadingListService:
             row["ListID"] = str(i)
         
         self.repo.write_all(self.path, self.fields, updated_rows)
+        user_vector_cache.invalidate(user_id)
+        logger.info(f"INVALIDATE    | user_id = {user_id} | reason='reading list deleted'")
         
         return True
 
@@ -112,7 +118,7 @@ class ReadingListService:
         return True
 
     def toggle_visibility(self, list_id: int, user_id: int):
-        """Toggles a reading list’s public visibility setting."""
+        """Toggles a reading list's public visibility setting."""
         rows = self.repo.read_all(self.path)
 
         for r in rows:
@@ -145,6 +151,8 @@ class ReadingListService:
                 r.update(rl.to_csv_dict())
 
                 self.repo.write_all(self.path, self.fields, rows)
+                user_vector_cache.invalidate(user_id)
+                logger.info(f"INVALIDATE    | user_id = {user_id} | reason='book added to reading list'")
                 return True
 
         return False
@@ -165,6 +173,8 @@ class ReadingListService:
                 r.update(rl.to_csv_dict())
 
                 self.repo.write_all(self.path, self.fields, rows)
+                user_vector_cache.invalidate(user_id)
+                logger.info(f"INVALIDATE    | user_id = {user_id} | reason='book removed from reading list'")
                 return True
 
         return False

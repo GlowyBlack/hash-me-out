@@ -334,3 +334,53 @@ def test_admin_can_unsuspend_user(client, temp_user_service, dummy_pwd_context):
 
     login_resp = client.post("/auth/token", data={"username": "bob", "password": "pw2"})
     assert login_resp.status_code == 200
+
+
+def test_admin_can_search_users(client, temp_user_service, dummy_pwd_context):
+    svc = temp_user_service
+    dummy = dummy_pwd_context
+
+    admin = svc.create_user(username="admin", email="admin@example.com", password_hash=dummy.hash("pw"), is_admin=True)
+    user1 = svc.create_user(username="nat", email="nat@gmail.com", password_hash=dummy.hash("pw2"))
+    user2 = svc.create_user(username="natalie", email="natalie@gmail.com", password_hash=dummy.hash("pw3"))
+
+    login_resp = client.post("/auth/token", data={"username": "admin", "password": "pw"})
+    token = login_resp.json()["access_token"]
+
+    resp = client.get("/auth/search?username=nat", headers={"Authorization": f"Bearer {token}"})
+    assert resp.status_code == 200
+    data = resp.json()
+    assert isinstance(data, list)
+    assert any(u["username"] == "nat" for u in data)
+    assert any(u["username"] == "natalie" for u in data)
+    assert all("password_hash" not in u for u in data)
+
+
+def test_non_admin_cannot_search_users(client, temp_user_service, dummy_pwd_context):
+    svc = temp_user_service
+    dummy = dummy_pwd_context
+
+    user = svc.create_user(username="bob", email="bob@gmail.com", password_hash=dummy.hash("pw"))
+
+    login_resp = client.post("/auth/token", data={"username": "bob", "password": "pw"})
+    token = login_resp.json()["access_token"]
+
+    resp = client.get("/auth/search?username=bob", headers={"Authorization": f"Bearer {token}"})
+    assert resp.status_code == 403
+    assert resp.json()["detail"] == "Admin privileges required"
+
+
+def test_admin_search_no_results(client, temp_user_service, dummy_pwd_context):
+    svc = temp_user_service
+    dummy = dummy_pwd_context
+
+    admin = svc.create_user(username="admin", email="admin@example.com", password_hash=dummy.hash("pw"), is_admin=True)
+
+    login_resp = client.post("/auth/token", data={"username": "admin", "password": "pw"})
+    token = login_resp.json()["access_token"]
+    
+    resp = client.get("/auth/search?username=doesnotexist", headers={"Authorization": f"Bearer {token}"})
+    assert resp.status_code == 200
+    data = resp.json()
+    assert isinstance(data, list)
+    assert len(data) == 0
