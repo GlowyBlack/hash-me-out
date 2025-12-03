@@ -21,7 +21,7 @@ export default function RegisterForm({ setFormType, onSuccess }) {
       const data = await response.json();
       if (!response.ok) throw new Error(data.detail || "Registration failed");
 
-      if (onSuccess) onSuccess(); // 🔥 Notify parent
+      if (onSuccess) onSuccess(); 
 
     } catch (err) {
       setError(err.message);
