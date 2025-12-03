@@ -6,3 +6,5 @@ id,username,email,password_hash,is_admin,is_suspended,suspended_until,warnings
 5,Fawaaz,fawaaz@gmail.com,$2b$12$dKBXgSZcyRUlxEuzTZCGquur8de0/t/hGaNmONuGK8.MXyGO.q8Vm,False,False,,
 6,test,test@gmail.com,$2b$12$.4b4U3UJ/0F7PA6uoKfPGumRcTuDprbtPXJ.Xmwy5wDY.5Cxz2rW2,False,False,,
 7,laura,laura@laura.com,$2b$12$jeBietk8E3vRA/0iYDQGx.4KT7pvM9/oYXmCSfnP79Ljp5CnixGaK,false,false,,0
+8,bob,bob@bobbert.com,$2b$12$ual/vWB2a4u0uhRuLzlmYewjAk2orSiggmTNjoJR50IVzkrKW4SSe,false,false,,0
+9,laura2,laura2@2.co,$2b$12$aVIrjVM/LyODdALhdZjz4.So4aitZFGtkkfK98OtMhewNXQgZ0eWC,false,true,2025-12-09T13:05:59.626309,1

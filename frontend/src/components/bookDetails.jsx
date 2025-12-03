@@ -46,6 +46,8 @@ export default function BookDetailPage({ book, avgRating, initialReviews }) {
   const indexOfFirstReview = indexOfLastReview - reviewsPerPage;
   const currentReviews = reviews.slice(indexOfFirstReview, indexOfLastReview);
 
+  const [myReviewId, setMyReviewId] = useState(null);
+
   const API_BASE =
     process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
@@ -90,102 +92,158 @@ export default function BookDetailPage({ book, avgRating, initialReviews }) {
   };
 
   async function handleSave() {
-    // Not logged in: open login/register instead of calling the API
-    if (!user) {
-      // You can start with "login" instead if you prefer
-      setFormType("register");
-      return;
-    }
+  if (!user) {
+    setFormType("register");
+    return;
+  }
 
-    const token = localStorage.getItem("access_token");
-    if (!token) {
-      setFormType("login");
-      return;
-    }
+  const token = localStorage.getItem("access_token");
+  if (!token) {
+    setFormType("login");
+    return;
+  }
 
-    // Optional: avoid obvious backend error on too-short comment
-    if (!userComment || userComment.trim().length < 8) {
-      alert("Please write at least 8 characters for your review.");
-      return;
-    }
+  if (!userComment || userComment.trim().length < 8) {
+    alert("Please write at least 8 characters for your review.");
+    return;
+  }
 
-    try {
-      setSaving(true);
+  try {
+    setSaving(true);
 
-      // 1) Save rating (only if user moved the slider)
-      if (userRating !== null) {
-        const ratingRes = await fetch(
-          `${API_BASE}/ratings/books/${book.isbn}`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            credentials: "include",
-            body: JSON.stringify({ rating: userRating }),
-          }
-        );
-
-        if (!ratingRes.ok) {
-          console.error(
-            "Rating error",
-            await ratingRes.json().catch(() => ({}))
-          );
-          // Do not block review if rating fails
-        }
-      }
-
-      // 2) Save review
-      const reviewRes = await fetch(
-        `${API_BASE}/reviews?isbn=${encodeURIComponent(book.isbn)}`,
+    // 1) Rating (same as you already have)
+    if (userRating !== null) {
+      const ratingRes = await fetch(
+        `${API_BASE}/ratings/books/${book.isbn}`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          credentials: "include",
-          body: JSON.stringify({ comment: userComment }),
+          body: JSON.stringify({ rating: userRating }),
         }
       );
 
-      if (!reviewRes.ok) {
-        const err = await reviewRes.json().catch(() => ({}));
-        console.error("Review error", err);
+      if (!ratingRes.ok) {
+        const ratingErr = await ratingRes
+          .json()
+          .catch(() => ({ detail: "No JSON body" }));
+        console.error(
+          "Rating error",
+          ratingRes.status,
+          ratingRes.statusText,
+          ratingErr
+        );
+        // Don’t block review if rating fails
+      }
+    }
 
-        if (reviewRes.status === 401) {
-          setUser(null);
-          setFormType("login");
-          alert("Please log in to post a review.");
-          return;
+    let reviewRes;
+    // 2) CREATE vs EDIT
+    if (myReviewId) {
+      // EDIT existing review
+      reviewRes = await fetch(
+        `${API_BASE}/reviews/${myReviewId}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ comment: userComment }),
         }
-
-        // Handle structured error messages from backend if present
-        if (err?.detail?.message) {
-          alert(err.detail.message);
-        } else if (typeof err.detail === "string") {
-          alert(err.detail);
-        } else {
-          alert("Could not save review.");
+      );
+    } else {
+      // CREATE new review
+      reviewRes = await fetch(
+        `${API_BASE}/reviews/?isbn=${encodeURIComponent(book.isbn)}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ comment: userComment }),
         }
+      );
+    }
 
+    if (!reviewRes.ok) {
+      const err = await reviewRes.json().catch(() => ({}));
+      console.error(
+        "Review error (non-ok response)",
+        reviewRes.status,
+        reviewRes.statusText,
+        err
+      );
+
+      if (reviewRes.status === 401) {
+        setUser(null);
+        setFormType("login");
+        alert("Please log in to post a review.");
         return;
       }
 
-      const newReview = await reviewRes.json();
-      // Prepend new review
-      setReviews((prev) => [newReview, ...prev]);
-      setIsEditing(false);
-      // Reset to first page so user sees their review
-      setCurrentReviewPage(1);
-    } catch (e) {
-      console.error(e);
-      alert("Something went wrong while saving.");
-    } finally {
-      setSaving(false);
+      if (err?.detail?.message) {
+        alert(err.detail.message);
+      } else if (typeof err.detail === "string") {
+        alert(err.detail);
+      } else {
+        alert("Could not save review.");
+      }
+      return;
     }
+
+    // Response ok → update local list
+    let savedReview = null;
+    try {
+      savedReview = await reviewRes.json();
+    } catch (jsonErr) {
+      console.warn(
+        "Review response had no JSON body (likely 204). Will refetch reviews.",
+        jsonErr
+      );
+    }
+
+    if (savedReview) {
+      if (myReviewId) {
+        // replace existing review in the list
+        setReviews((prev) =>
+          prev.map((r) =>
+            r.review_id === savedReview.review_id ? savedReview : r
+          )
+        );
+      } else {
+        // newly created → prepend
+        setReviews((prev) => [savedReview, ...prev]);
+        setMyReviewId(savedReview.review_id);
+      }
+    } else {
+      // no JSON => fallback: refetch all
+      try {
+        const listRes = await fetch(
+          `${API_BASE}/reviews/${encodeURIComponent(book.isbn)}`,
+          { cache: "no-store" }
+        );
+        if (listRes.ok) {
+          const list = await listRes.json();
+          setReviews(Array.isArray(list) ? list : []);
+        }
+      } catch (refetchErr) {
+        console.error("Error while refetching reviews list", refetchErr);
+      }
+    }
+
+    setIsEditing(false);
+    setCurrentReviewPage(1);
+  } catch (e) {
+    console.error("Unexpected error in handleSave", e);
+    alert("Unexpected error while saving: " + (e?.message || e));
+  } finally {
+    setSaving(false);
   }
+}
 
   return (
     <div className="relative min-h-screen bg-gray-50 text-slate-900">
@@ -276,11 +334,6 @@ export default function BookDetailPage({ book, avgRating, initialReviews }) {
                 </h2>
                 <div className="inline-flex items-center rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">
                   Avg: {initialAvgRating.toFixed(1)} / 10
-                  {initialRatingCount > 0 && (
-                    <span className="ml-1 text-[0.7rem] text-amber-900">
-                      ({initialRatingCount})
-                    </span>
-                  )}
                 </div>
               </div>
 
@@ -360,7 +413,7 @@ export default function BookDetailPage({ book, avgRating, initialReviews }) {
             {/* Reviews list + pagination */}
             <section className="mt-1">
               <h2 className="text-base md:text-lg font-semibold text-slate-900 mb-2">
-                Reviews
+                Reviews: {initialRatingCount}
               </h2>
 
               {reviews.length === 0 && (
@@ -378,10 +431,10 @@ export default function BookDetailPage({ book, avgRating, initialReviews }) {
                     <div className="flex items-baseline justify-between mb-1.5">
                       <div className="flex items-baseline gap-2">
                         <span className="text-sm font-semibold text-slate-900">
-                          User #{r.user_id}
+                          {r.username || `User #${r.user_id}`}
                         </span>
                         <span className="text-[0.7rem] text-slate-400">
-                          {new Date(r.time).toLocaleDateString()}
+                          {new Date(r.time).toISOString().slice(0, 10)}
                         </span>
                       </div>
                     </div>

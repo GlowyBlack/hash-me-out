@@ -13,6 +13,7 @@ class ReviewCreate(BaseModel):
 class ReviewRead(BaseModel):
     review_id: int
     user_id: int 
+    username: str
     isbn: str
     comment: str
     time: datetime
