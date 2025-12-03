@@ -137,13 +137,13 @@ class ReviewService:
         rating = ratings.get((user_id, isbn))
 
         return ReviewRead(
-            review_id=next_id,
-            user_id=user_id,
-            username=username,
-            isbn=isbn,
-            comment=data.comment,
-            time=now,
-            rating=rating,
+            review_id = next_id,
+            user_id = user_id,
+            username = username,
+            isbn = isbn,
+            comment = data.comment,
+            time = now,
+            rating = rating,
         )
 
     # --------------------------------------------------------------------
@@ -173,13 +173,13 @@ class ReviewService:
 
             result.append(
                 ReviewRead(
-                    review_id=review_obj.review_id,
-                    user_id=user_id,
-                    username=username,
-                    isbn=review_obj.isbn,
-                    comment=review_obj.comment,
-                    time=review_obj.time,
-                    rating=rating,
+                    review_id = review_obj.review_id,
+                    user_id = user_id,
+                    username = username,
+                    isbn = review_obj.isbn,
+                    comment = review_obj.comment,
+                    time = review_obj.time,
+                    rating = rating,
                 )
             )
 
