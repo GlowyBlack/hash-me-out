@@ -57,7 +57,7 @@ class CSVRepository(BaseRepository):
         rwlock = self._get_rwlock(path)
         rwlock.acquire_read()
         try:
-            with open(path, 'r', newline='', encoding='utf-8') as f:
+            with open(path, 'r', newline = '', encoding = 'utf-8') as f:
                 return list(csv.DictReader(f))
         finally:
             rwlock.release_read()
@@ -67,7 +67,7 @@ class CSVRepository(BaseRepository):
         rwlock = self._get_rwlock(path)
         rwlock.acquire_write()
         try:
-            with open(path, 'w', newline='', encoding='utf-8') as f:
+            with open(path, 'w', newline = '', encoding = 'utf-8') as f:
                 writer = csv.DictWriter(f, fieldnames=fieldnames)
                 writer.writeheader()
                 writer.writerows(rows)
@@ -80,7 +80,7 @@ class CSVRepository(BaseRepository):
         rwlock.acquire_write()
         try:
             file_exists = os.path.exists(path)
-            with open(path, 'a', newline='', encoding='utf-8') as f:
+            with open(path, 'a', newline = '', encoding = 'utf-8') as f:
                 writer = csv.DictWriter(f, fieldnames=fieldnames)
                 if not file_exists:
                     writer.writeheader()

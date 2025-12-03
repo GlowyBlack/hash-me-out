@@ -24,3 +24,16 @@ class BookRepository(BXBooksCSVAdapter):
                 })
 
         return result
+    
+    def get_book_by_isbn(self, isbn: str):
+        """
+        Returns the FULL CSV row for a book.
+        If multiple rows share the same ISBN, the first is returned.
+        """
+        rows = self.read_all("app/data/BX_Books.csv")
+
+        for row in rows:
+            if row["ISBN"] == isbn:
+                return row
+
+        return None

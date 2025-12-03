@@ -23,7 +23,7 @@ VALID_FIELDS = [
 def validate_shard(file_path: Path) -> bool:
     """Ensure CSV header matches expected format."""
     try:
-        with open(file_path, encoding="latin-1") as f:
+        with open(file_path, encoding = "latin-1") as f:
             header = f.readline().strip()
 
         # Accept either delimiter (semicolon = correct, comma = accidental)
@@ -71,9 +71,9 @@ class BookService:
             if file.suffix != ".csv":
                 continue
 
-            with open(file, encoding="latin-1") as f:
+            with open(file, encoding = "latin-1") as f:
                 f.seek(0)
-                reader = csv.DictReader(f, delimiter=";")
+                reader = csv.DictReader(f, delimiter = ";")
 
                 for row in reader:
                     if row.get("ISBN") == isbn:
@@ -87,8 +87,8 @@ class BookService:
         shard_path.parent.mkdir(parents=True, exist_ok=True)
 
         if not shard_path.exists():
-            with open(shard_path, "w", encoding="latin-1", newline="") as f:
-                writer = csv.DictWriter(f, fieldnames=self.fields, delimiter=";")
+            with open(shard_path, "w", encoding = "latin-1", newline = "") as f:
+                writer = csv.DictWriter(f, fieldnames=self.fields, delimiter = ";")
                 writer.writeheader()
 
     # ---------- CREATE BOOK ---------- #
@@ -134,9 +134,9 @@ class BookService:
                 print(f"[WARNING] Invalid shard skipped: {file.name}")
                 continue
 
-            with open(file, encoding="latin-1") as f:
+            with open(file, encoding = "latin-1") as f:
                 f.seek(0)
-                reader = csv.DictReader(f, delimiter=";")
+                reader = csv.DictReader(f, delimiter = ";")
                 for row in reader:
                     book = Book.from_dict(row)
                     results.append(BookRead(**book.to_api_dict()))
@@ -153,9 +153,9 @@ class BookService:
 
         shard_path = Path(self.path) / f"{shard}.csv"
 
-        with open(shard_path, encoding="latin-1") as f:
+        with open(shard_path, encoding = "latin-1") as f:
             f.seek(0)
-            reader = csv.DictReader(f, delimiter=";")
+            reader = csv.DictReader(f, delimiter = ";")
 
             for row in reader:
                 if row["ISBN"] == isbn:
@@ -236,9 +236,9 @@ class BookService:
             if not validate_shard(file):
                 continue
 
-            with open(file, encoding="latin-1") as f:
+            with open(file, encoding = "latin-1") as f:
                 # f.seek(0)
-                reader = csv.DictReader(f, delimiter=";")
+                reader = csv.DictReader(f, delimiter = ";")
 
                 for row in reader:
                     title_raw = row["Book-Title"]
@@ -280,9 +280,9 @@ class BookService:
             if not validate_shard(file):
                 continue
 
-            with open(file, encoding="latin-1") as f:
+            with open(file, encoding = "latin-1") as f:
                 f.seek(0)
-                reader = csv.DictReader(f, delimiter=";")
+                reader = csv.DictReader(f, delimiter = ";")
 
                 for row in reader:
                     title = row["Book-Title"].lower()

@@ -18,8 +18,8 @@ class BXBooksCSVAdapter(CSVRepository):
         try:
             if not os.path.exists(path):
                 return []
-            with open(path, "r", encoding="latin-1", newline="") as f:
-                return list(csv.DictReader(f, delimiter=";"))
+            with open(path, "r", encoding = "latin-1", newline = "") as f:
+                return list(csv.DictReader(f, delimiter = ";"))
         finally:
             rwlock.release_read()
 
@@ -33,11 +33,11 @@ class BXBooksCSVAdapter(CSVRepository):
         # Exclusive lock
         rwlock.acquire_write()
         try:
-            with open(path, "w", encoding="latin-1", newline="") as f:
+            with open(path, "w", encoding = "latin-1", newline = "") as f:
                 writer = csv.DictWriter(
                     f,
                     fieldnames=fieldnames,
-                    delimiter=";"
+                    delimiter = ";"
                 )
                 writer.writeheader()
                 writer.writerows(rows)
@@ -55,11 +55,11 @@ class BXBooksCSVAdapter(CSVRepository):
         rwlock.acquire_write()
         try:
             file_exists = os.path.exists(path)
-            with open(path, "a", encoding="latin-1", newline="") as f:
+            with open(path, "a", encoding = "latin-1", newline = "") as f:
                 writer = csv.DictWriter(
                     f,
                     fieldnames=fieldnames,
-                    delimiter=";"
+                    delimiter = ";"
                 )
                 if not file_exists:
                     writer.writeheader()

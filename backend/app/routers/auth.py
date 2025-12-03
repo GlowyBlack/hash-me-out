@@ -7,15 +7,15 @@ from app.services.user_service import CSVUserService
 from app.deps import get_user_service, pwd_context, create_access_token, get_current_user
 from app.schemas.user import UserCreate, UserOut, Token, UserUpdate
 
-router = APIRouter(prefix="/auth", tags=["auth"])
+router = APIRouter(prefix = "/auth", tags=["Auth"])
 
 @router.post(
     "/register",
     response_model=UserOut,
     status_code=status.HTTP_201_CREATED,
-    summary="Register a new user account",
-    description="Creates a new user with a unique username and email.",
-    response_description="The newly created user.",
+    summary = "Register a new user account",
+    description = "Creates a new user with a unique username and email.",
+    response_description = "The newly created user.",
 )
 def register(payload: UserCreate, svc: CSVUserService = Depends(get_user_service)):
     try:
@@ -49,17 +49,17 @@ def register(payload: UserCreate, svc: CSVUserService = Depends(get_user_service
 
 @router.post(
     "/token",
-    summary="Log in and obtain access token",
-    description="Authenticates a user using username and password and returns a bearer token.",
+    summary = "Log in and obtain access token",
+    description = "Authenticates a user using username and password and returns a bearer token.",
     response_model=Token,
-    response_description="Access token to be used in the Authorization header.",
+    response_description = "Access token to be used in the Authorization header.",
 )
 def login(form: OAuth2PasswordRequestForm = Depends(), svc: CSVUserService = Depends(get_user_service)):
     user = svc.get_by_username(form.username)
     if not user or not pwd_context.verify(form.password, user["password_hash"]):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Wrong username or password",
+            detail = "Wrong username or password",
         )
         
     if user.get("is_suspended", False):
@@ -74,16 +74,15 @@ def login(form: OAuth2PasswordRequestForm = Depends(), svc: CSVUserService = Dep
         is_admin=user["is_admin"],
         minutes=60,
     )
-    return Token(access_token=token, token_type="bearer")
-
+    return Token(access_token=token, token_type = "bearer")
 
 
 @router.get(
     "/me",
-    summary="Get current user profile",
-    description="Returns the profile of the current authenticated user.",
+    summary = "Get current user profile",
+    description = "Returns the profile of the current authenticated user.",
     response_model=UserOut,
-    response_description="The current user's profile.",
+    response_description = "The current user's profile.",
 )
 def me(curr=Depends(get_current_user)):
     return UserOut(
@@ -96,10 +95,10 @@ def me(curr=Depends(get_current_user)):
 
 @router.get(
     "/users",
-    summary="List all users",
-    description="Returns all registered users. Admin only.",
+    summary = "List all users (Admin only)",
+    description = "Returns all registered users. Admin only.",
     response_model=List[UserOut],
-    response_description="A list of users.",
+    response_description = "A list of users.",
 )
 def list_users(
     curr=Depends(get_current_user),
@@ -108,7 +107,7 @@ def list_users(
     if not curr.get("is_admin"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Admin privileges required",
+            detail = "Admin privileges required",
         )
 
     rows = svc.repo.read_all(svc.path)
@@ -132,8 +131,8 @@ def list_users(
 
 @router.post(
     "/suspend/{user_id}",
-    summary="Suspend a user",
-    description="Suspends a user account for a given number of minutes. Admin only.",
+    summary = "Suspend a user (Admin only)",
+    description = "Suspends a user account for a given number of minutes. Admin only.",
 )
 def suspend_user_route(
     user_id: int,
@@ -159,8 +158,8 @@ def suspend_user_route(
 
 @router.post(
     "/unsuspend/{user_id}",
-    summary="Unsuspend a user",
-    description="Removes suspension from a user account. Admin only.",
+    summary = "Unsuspend a user (Admin only)",
+    description = "Removes suspension from a user account. Admin only.",
 )
 def unsuspend_user_route(
     user_id: int,

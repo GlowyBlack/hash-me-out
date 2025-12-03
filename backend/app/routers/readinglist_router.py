@@ -134,9 +134,9 @@ def get_readinglist_detail(list_id: int, user_id: int):
 
 @router.get(
     "/{list_id}/download",
-    summary="Download a reading list as CSV",
-    description="Allows the authenticated user to download their reading list as a CSV file.",
-    response_class=Response
+    summary = "Download a reading list as CSV",
+    description = "Allows the authenticated user to download their reading list as a CSV file.",
+    response_class = Response
 )
 def download_reading_list(list_id: int, curr = Depends(get_current_user)):
     user_id = curr["id"]
@@ -144,12 +144,12 @@ def download_reading_list(list_id: int, curr = Depends(get_current_user)):
     csv_data, filename = service.export_reading_list_csv(list_id=list_id, user_id=user_id)
 
     if not csv_data:
-        raise HTTPException(status_code=404, detail="ReadingList not found")
+        raise HTTPException(status_code = status.HTTP_404_NOT_FOUND, detail = "ReadingList not found")
 
     return Response(
-        content=csv_data,
-        media_type="text/csv",
+        content = csv_data,
+        media_type = "text/csv",
         headers={
-            "Content-Disposition": f"attachment; filename={filename}"
+            "Content-Disposition": f"attachment; filename = {filename}"
         }
     )
