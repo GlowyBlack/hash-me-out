@@ -150,7 +150,10 @@ def search_users(
                 "id": int(row["id"]),
                 "username": row["username"],
                 "email": row["email"],
-                "is_admin": str(row.get("is_admin","false")).lower() in {"true","1","yes"}
+                "is_admin": str(row.get("is_admin","false")).lower() in {"true","1","yes"},
+                "is_suspended": row.get("is_suspended", "false").lower() == "true",
+                "suspended_until": row.get("suspended_until") or None,
+                "warnings": int(row.get("warnings") or 0),
             })
 
     return matched
@@ -263,3 +266,30 @@ def update_me(
             status_code=code,
             detail=friendly_msg,
         )
+
+
+@router.get("/suspended")
+def list_suspended(
+    curr=Depends(get_current_user),
+    svc: CSVUserService = Depends(get_user_service)
+):
+    if not curr.get("is_admin"):
+        raise HTTPException(403, "Admin privileges required")
+
+    rows = svc.repo.read_all(svc.path)
+    suspended = []
+
+    for row in rows:
+        is_suspended = str(row.get("is_suspended", "false")).lower() in {"true", "1", "yes"}
+
+        if is_suspended:
+            suspended.append({
+                "id": int(row["id"]),
+                "username": row["username"],
+                "email": row["email"],
+                "is_suspended": is_suspended,
+                "suspended_until": row.get("suspended_until") or "N/A",
+                "warnings": int(row.get("warnings") or 0)
+            })
+
+    return suspended
