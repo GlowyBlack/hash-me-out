@@ -34,13 +34,25 @@ def test_create_review_success(service):
 
 
 def test_get_all_reviews(service):
-    content = ReviewCreate(comment = "Garbage book.")
-    created = service.create_review(user_id = 2, data = content, isbn = "1111111111")
+    content = ReviewCreate(comment="Garbage book.")
+    created = service.create_review(
+        user_id=2, data=content, isbn="1111111111"
+    )
 
     rows = service.get_all_reviews("1111111111")
 
     assert len(rows) == 1
-    assert rows[0] == created
+    review = rows[0]
+
+    assert isinstance(review, ReviewRead)
+    assert review.review_id == created.review_id
+    assert review.user_id == 2
+    assert review.isbn == "1111111111"
+    assert review.comment == "Garbage book."
+
+    assert review.rating is None
+    assert isinstance(review.username, str)
+    assert review.username.strip() != ""
 
 
 def test_delete_review(service):
