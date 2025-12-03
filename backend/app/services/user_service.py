@@ -83,6 +83,18 @@ class CSVUserService:
                 return row
 
         return None
+    
+    def get_by_id(self, user_id: int) -> Optional[Dict]:
+        for row in self.repo.read_all(self.path):
+            if int(row["id"]) == int(user_id):
+                row["id"] = int(row["id"])
+                row["is_admin"] = row["is_admin"].lower() == "true"
+                row["is_suspended"] = row["is_suspended"].lower() == "true"
+                row["warnings"] = int(row.get("warnings", "0") or 0)
+
+                row = self._check_suspension_expired(row)
+                return row
+        return None
 
     def create_user(
         self,
