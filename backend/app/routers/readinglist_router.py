@@ -112,6 +112,15 @@ def remove_book_from_readinglist(list_id: int, isbn: str,
         raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST, detail = str(e))
 
 @router.get(
+    "/",
+    summary="Get current user's reading lists",
+    description="Returns all reading lists owned by the authenticated user.",
+)
+def get_my_readinglists(curr = Depends(get_current_user)):
+    user_id = curr["id"]
+    return service.get_all_readinglist(user_id=user_id)
+
+@router.get(
     "/public/{user_id}",
     summary = "Get a user's public reading lists",
     description = "Returns all publicly visible reading lists for the given user.",

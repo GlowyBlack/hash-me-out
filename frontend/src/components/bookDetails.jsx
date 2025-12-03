@@ -1,3 +1,4 @@
+// src/components/bookDetails.jsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -6,6 +7,7 @@ import { useRouter } from "next/navigation";
 import Header from "./Header";
 import AuthPopup from "./AuthPopup/AuthPopup";
 import Pagination from "./SearchResults/Pagination";
+import AddToReadingListButton from "./readinglist/AddToReadingListButton";
 
 export default function BookDetailPage({ book, avgRating, initialReviews }) {
   const router = useRouter();
@@ -17,7 +19,7 @@ export default function BookDetailPage({ book, avgRating, initialReviews }) {
   const coverUrl = book.image_url_l || book.image_url_m || book.image_url_s;
 
   const initialAvgRating = avgRating?.avg_rating ?? 0;
-  const initialRatingCount = avgRating?.count ?? 0;
+  const initialRatingCount = avgRating?.count ?? 0; 
 
   const [reviews, setReviews] = useState(initialReviews || []);
 
@@ -134,6 +136,7 @@ export default function BookDetailPage({ book, avgRating, initialReviews }) {
     try {
       setSaving(true);
 
+      // 1) Rating: create/update
       if (userRating !== null) {
         const ratingRes = await fetch(
           `${API_BASE}/ratings/books/${book.isbn}`,
@@ -157,9 +160,11 @@ export default function BookDetailPage({ book, avgRating, initialReviews }) {
             ratingRes.statusText,
             ratingErr
           );
+          // Don't block review on rating failure
         }
       }
 
+      // 2) Review: create vs edit
       let reviewRes;
       if (myReviewId) {
         reviewRes = await fetch(`${API_BASE}/reviews/${myReviewId}`, {
@@ -222,16 +227,19 @@ export default function BookDetailPage({ book, avgRating, initialReviews }) {
 
       if (savedReview) {
         if (myReviewId) {
+          // replace existing review in list
           setReviews((prev) =>
             prev.map((r) =>
               r.review_id === savedReview.review_id ? savedReview : r
             )
           );
         } else {
+          // prepend new review
           setReviews((prev) => [savedReview, ...prev]);
           setMyReviewId(savedReview.review_id);
         }
       } else {
+        // Fallback: refetch entire list
         try {
           const listRes = await fetch(
             `${API_BASE}/reviews/${encodeURIComponent(book.isbn)}`,
@@ -278,7 +286,7 @@ export default function BookDetailPage({ book, avgRating, initialReviews }) {
         <section className="max-w-5xl mx-auto flex flex-col lg:flex-row gap-8 lg:gap-10">
           {/* LEFT: Book info card */}
           <div className="w-full lg:max-w-xs bg-white border border-slate-200 rounded-3xl shadow-lg p-6 flex flex-col">
-            <div className="flex justify-center mb-5">
+            <div className="relative flex justify-center mb-5">
               {coverUrl ? (
                 <img
                   src={coverUrl}
@@ -290,6 +298,15 @@ export default function BookDetailPage({ book, avgRating, initialReviews }) {
                   No cover
                 </div>
               )}
+
+              {/* Add-to-reading-list button, top-right */}
+              <div className="absolute top-2 right-2">
+                <AddToReadingListButton
+                  book={book}
+                  user={user}
+                  onRequireAuth={() => setFormType("login")}
+                />
+              </div>
             </div>
 
             <div>
@@ -333,11 +350,6 @@ export default function BookDetailPage({ book, avgRating, initialReviews }) {
                 </h2>
                 <div className="inline-flex items-center rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">
                   Avg: {initialAvgRating.toFixed(1)} / 10
-                  {initialRatingCount > 0 && (
-                    <span className="ml-1 text-[0.7rem] text-amber-900">
-                      ({initialRatingCount})
-                    </span>
-                  )}
                 </div>
               </div>
 
@@ -349,7 +361,7 @@ export default function BookDetailPage({ book, avgRating, initialReviews }) {
                     type="range"
                     min="0"
                     max="10"
-                    value={userRating ?? 0} 
+                    value={userRating ?? 0}
                     onChange={(e) => {
                       setUserRating(Number(e.target.value));
                     }}
@@ -441,7 +453,7 @@ export default function BookDetailPage({ book, avgRating, initialReviews }) {
                         </span>
                       </div>
 
-                      {/* Rating on the right, like 9/10 */}
+                      {/* Rating on the right */}
                       {r.rating != null && (
                         <span className="text-sm font-semibold text-[#023147]">
                           {r.rating}/10

@@ -21,9 +21,7 @@ class ReviewService:
 
         self.user_service = CSVUserService(CSVRepository())
 
-        self.ratings_path = (
-            Path(__file__).resolve().parents[1] / "data" / "Ratings.csv"
-        )
+        self.ratings_path = Path(__file__).resolve().parents[1] / "data" / "Ratings.csv"
 
     # --------------------------------------------------------------------
     # Internal CSV helpers
@@ -160,7 +158,7 @@ class ReviewService:
             if r["ISBN"] != isbn:
                 continue
 
-            review_obj = Review.from_dict(r) 
+            review_obj = Review.from_dict(r)
             user_id = int(review_obj.user_id)
 
             user = self.user_service.get_by_id(user_id)
@@ -190,7 +188,6 @@ class ReviewService:
         rows = self.__read_rows()
         found_row = None
 
-        # Use integer comparison to avoid whitespace / string issues
         for r in rows:
             try:
                 rid = int(r.get("ReviewID", "0") or 0)
@@ -202,46 +199,29 @@ class ReviewService:
                 break
 
         if not found_row:
-            # This is the error you’re seeing now
             raise ValueError("review_not_found")
 
-        # Only the owner can edit
         if found_row["UserID"] != str(user_id):
             raise PermissionError("not_owner")
 
-        # Profanity check on the new comment
         if self._contains_profanity(data.comment):
             self._apply_profanity_penalty(user_id)
 
-        # Update fields
         found_row["Comment"] = data.comment
-        # Store just the date, same as original CSV format
         found_row["Time"] = datetime.now().strftime("%Y-%m-%d")
 
-        # Persist changes
         self.__write_rows(rows)
 
-        # Rebuild review object and enrich with username
         updated_review = Review.from_dict(found_row)
         review_dict = updated_review.to_api_dict()
 
         user = self.user_service.get_by_id(user_id)
         review_dict["username"] = user["username"] if user else f"User #{user_id}"
-        
-        # Add optional rating (lookup from Ratings.csv)
-        rating_path = Path(__file__).resolve().parents[1] / "data" / "Ratings.csv"
-        rating_rows = self.repo.read_all(rating_path)
 
-        rating_val = None
-        for r in rating_rows:
-            if r["UserID"] == str(user_id) and r["ISBN"] == found_row["ISBN"]:
-                rating_val = int(r["Book-Rating"])
-                break
+        ratings = self._build_rating_lookup()
+        rating = ratings.get((user_id, updated_review.isbn))
+        review_dict["rating"] = rating
 
-        review_dict["rating"] = rating_val
-
-        
-        # Return as ReviewRead, which still includes username + optional rating
         return ReviewRead(**review_dict)
 
     # --------------------------------------------------------------------
