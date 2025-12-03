@@ -1,14 +1,11 @@
-// src/app/books/[isbn]/page.jsx
 
 import BookDetailPage from "@/components/bookDetails";
 
 export default async function BookPage({ params }) {
   const { isbn } = params;
 
-  // Adjust this to your backend base URL
   const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
-  // Fetch book, average rating and reviews in parallel
   const [bookRes, avgRes, reviewsRes] = await Promise.all([
     fetch(`${API_BASE}/books/${isbn}`, { cache: "no-store" }),
     fetch(`${API_BASE}/ratings/books/${isbn}/average`, { cache: "no-store" }),
@@ -16,8 +13,6 @@ export default async function BookPage({ params }) {
   ]);
 
   if (!bookRes.ok) {
-    // Very simple error handling
-    // You can replace with a proper 404 page
     throw new Error("Book not found");
   }
 

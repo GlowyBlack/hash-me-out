@@ -20,8 +20,8 @@ class ReviewRead(BaseModel):
     isbn: str
     comment: str
     time: datetime
-    rating: Optional[int] = None   # <- important: Optional
-    username: str                  # <- required, which you want
+    rating: Optional[int] = None  
+    username: str
 
 
 class ReviewUpdate(BaseModel):

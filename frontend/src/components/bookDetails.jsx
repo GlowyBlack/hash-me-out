@@ -1,4 +1,3 @@
-// src/components/bookDetails.jsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -11,37 +10,27 @@ import Pagination from "./SearchResults/Pagination";
 export default function BookDetailPage({ book, avgRating, initialReviews }) {
   const router = useRouter();
 
-  // Backend gives: book_title, author, year_of_publication, publisher, image_url_l, isbn
   const displayTitle = book.book_title;
   const displayYear = book.year_of_publication;
   const displayPublisher = book.publisher;
   const displayAuthor = book.author;
   const coverUrl = book.image_url_l || book.image_url_m || book.image_url_s;
 
-  // Average rating from backend
   const initialAvgRating = avgRating?.avg_rating ?? 0;
   const initialRatingCount = avgRating?.count ?? 0;
 
-  // Reviews list from backend
   const [reviews, setReviews] = useState(initialReviews || []);
 
-  // Ratings per user for this book: { [user_id]: rating }
-  const [ratingsByUser, setRatingsByUser] = useState({});
-
-  // User rating and review (rating optional)
   const [userRating, setUserRating] = useState(null);
   const [userComment, setUserComment] = useState("");
   const [isEditing, setIsEditing] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // Auth state (same pattern as HomePage)
   const [user, setUser] = useState(null);
-  const [formType, setFormType] = useState(null); // "login" | "register" | null
+  const [formType, setFormType] = useState(null); 
 
-  // For tracking "my" review so we know when to PUT instead of POST
   const [myReviewId, setMyReviewId] = useState(null);
 
-  // Pagination for reviews
   const [currentReviewPage, setCurrentReviewPage] = useState(1);
   const [ellipsisOpen, setEllipsisOpen] = useState(null);
   const [jumpPage, setJumpPage] = useState("");
@@ -55,7 +44,6 @@ export default function BookDetailPage({ book, avgRating, initialReviews }) {
   const API_BASE =
     process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
-  // Load user from token (same as HomePage)
   useEffect(() => {
     const token =
       typeof window !== "undefined"
@@ -72,7 +60,6 @@ export default function BookDetailPage({ book, avgRating, initialReviews }) {
     }
   }, []);
 
-  // Always fetch latest reviews for this book (so they don't disappear on refresh)
   useEffect(() => {
     async function fetchReviews() {
       try {
@@ -88,7 +75,6 @@ export default function BookDetailPage({ book, avgRating, initialReviews }) {
         const safeList = Array.isArray(list) ? list : [];
         setReviews(safeList);
 
-        // If we know the logged-in user, find their review and populate editor
         if (user && safeList.length > 0) {
           const mine = safeList.find((r) => r.user_id === user.id);
           if (mine) {
@@ -105,35 +91,6 @@ export default function BookDetailPage({ book, avgRating, initialReviews }) {
     fetchReviews();
   }, [API_BASE, book.isbn, user?.id]);
 
-  // Load ratings per user for this book (for the 9/10 on each review)
-  useEffect(() => {
-    async function fetchRatingsByUser() {
-      try {
-        const res = await fetch(
-          `${API_BASE}/ratings/books/${encodeURIComponent(
-            book.isbn
-          )}/by-user`,
-          { cache: "no-store" }
-        );
-        if (!res.ok) {
-          console.warn("Could not load ratings per user for", book.isbn);
-          return;
-        }
-        const list = await res.json(); // expected: [{ user_id, rating }, ...]
-        const map = {};
-        for (const row of list) {
-          map[row.user_id] = row.rating;
-        }
-        setRatingsByUser(map);
-      } catch (e) {
-        console.error("Error fetching ratings per user", e);
-      }
-    }
-
-    fetchRatingsByUser();
-  }, [API_BASE, book.isbn]);
-
-  // Called by AuthPopup when login/register succeeds
   const handleLoginSuccess = () => {
     setFormType(null);
     const token = localStorage.getItem("access_token");
@@ -177,7 +134,6 @@ export default function BookDetailPage({ book, avgRating, initialReviews }) {
     try {
       setSaving(true);
 
-      // 1) Rating (same as before)
       if (userRating !== null) {
         const ratingRes = await fetch(
           `${API_BASE}/ratings/books/${book.isbn}`,
@@ -201,14 +157,11 @@ export default function BookDetailPage({ book, avgRating, initialReviews }) {
             ratingRes.statusText,
             ratingErr
           );
-          // Don’t block review if rating fails
         }
       }
 
       let reviewRes;
-      // 2) CREATE vs EDIT
       if (myReviewId) {
-        // EDIT existing review
         reviewRes = await fetch(`${API_BASE}/reviews/${myReviewId}`, {
           method: "PUT",
           headers: {
@@ -218,7 +171,6 @@ export default function BookDetailPage({ book, avgRating, initialReviews }) {
           body: JSON.stringify({ comment: userComment }),
         });
       } else {
-        // CREATE new review
         reviewRes = await fetch(
           `${API_BASE}/reviews/?isbn=${encodeURIComponent(book.isbn)}`,
           {
@@ -258,7 +210,6 @@ export default function BookDetailPage({ book, avgRating, initialReviews }) {
         return;
       }
 
-      // Response ok → update local list
       let savedReview = null;
       try {
         savedReview = await reviewRes.json();
@@ -271,19 +222,16 @@ export default function BookDetailPage({ book, avgRating, initialReviews }) {
 
       if (savedReview) {
         if (myReviewId) {
-          // replace existing review in the list
           setReviews((prev) =>
             prev.map((r) =>
               r.review_id === savedReview.review_id ? savedReview : r
             )
           );
         } else {
-          // newly created → prepend
           setReviews((prev) => [savedReview, ...prev]);
           setMyReviewId(savedReview.review_id);
         }
       } else {
-        // no JSON => fallback: refetch all
         try {
           const listRes = await fetch(
             `${API_BASE}/reviews/${encodeURIComponent(book.isbn)}`,
@@ -401,7 +349,7 @@ export default function BookDetailPage({ book, avgRating, initialReviews }) {
                     type="range"
                     min="0"
                     max="10"
-                    value={userRating ?? 0} // visual default
+                    value={userRating ?? 0} 
                     onChange={(e) => {
                       setUserRating(Number(e.target.value));
                     }}
@@ -489,15 +437,14 @@ export default function BookDetailPage({ book, avgRating, initialReviews }) {
                           {r.username || `User #${r.user_id}`}
                         </span>
                         <span className="text-[0.7rem] text-slate-400">
-                          {/* Stable YYYY-MM-DD to avoid hydration issues */}
                           {new Date(r.time).toISOString().slice(0, 10)}
                         </span>
                       </div>
 
                       {/* Rating on the right, like 9/10 */}
-                      {ratingsByUser[r.user_id] != null && (
+                      {r.rating != null && (
                         <span className="text-sm font-semibold text-[#023147]">
-                          {ratingsByUser[r.user_id]}/10
+                          {r.rating}/10
                         </span>
                       )}
                     </div>
@@ -513,7 +460,7 @@ export default function BookDetailPage({ book, avgRating, initialReviews }) {
                 currentPage={currentReviewPage}
                 totalPages={totalReviewPages}
                 setCurrentPage={setCurrentReviewPage}
-                ellipsisOpen={setEllipsisOpen}
+                ellipsisOpen={ellipsisOpen}
                 setEllipsisOpen={setEllipsisOpen}
                 jumpPage={jumpPage}
                 setJumpPage={setJumpPage}
