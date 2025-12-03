@@ -36,7 +36,7 @@ def test_create_review_success(service):
 def test_get_all_reviews(service):
     content = ReviewCreate(comment="Garbage book.")
     created = service.create_review(
-        user_id=2, data=content, isbn="1111111111"
+        user_id = 2, data = content, isbn = "1111111111"
     )
 
     rows = service.get_all_reviews("1111111111")
