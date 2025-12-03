@@ -23,7 +23,7 @@ def validate_comment(review: str):
 
 def validate_email(email: str):
     e = email.strip()
-    pattern = r"^[^@\s]+@[^@\s]+\.[^@\s]+$"
+    pattern = r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.(com|ca)$"
     if not re.match(pattern, e):
         raise ValueError("Invalid email format. Please enter a valid email address.")
 
