@@ -25,4 +25,7 @@ __pycache__
 prev_*/
 prev/
 .coverage
-
+splits/
+enrich_books.py
+merge.py
+openlibrary_client.py

@@ -3,6 +3,8 @@ from statistics import mean
 from app.models.rating import Rating
 from app.repositories.csv_repository import CSVRepository
 from app.schemas.rating import RatingRead, AvgRatingRead
+from app.utils.cache import user_vector_cache
+from app.logger import logger
 
 
 class RatingService:
@@ -45,6 +47,9 @@ class RatingService:
                 self.__write(rows)
                 return self.__to_read_model(row)
 
+        user_vector_cache.invalidate(user_id)
+        logger.info(f"INVALIDATE    | user_id = {user_id} | reason='rating created or updated'")
+        
         rating = Rating(user_id, isbn, rating_value)
         self.repo.append_row(self.ratings_path, self.fields, rating.to_csv_dict())
         return self.__to_read_model(rating.to_csv_dict())
@@ -61,12 +66,16 @@ class RatingService:
 
     def delete_rating(self, user_id: int, isbn: str) -> bool:
         rows = self.__read()
+
         filtered = [r for r in rows if not self.__match(r, user_id, isbn)]
 
         if len(filtered) == len(rows):
             return False
 
         self.__write(filtered)
+        user_vector_cache.invalidate(user_id)
+        logger.info(f"INVALIDATE    | user_id = {user_id} | reason='rating deleted'")
+
         return True
 
     def get_ratings_by_isbn(self, isbn: str) -> list[RatingRead]:

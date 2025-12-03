@@ -23,7 +23,7 @@ def create_request(request: RequestCreate,
 
 @router.get(
     "/",
-    summary = "Retrieve all book requests",
+    summary = "Retrieve all book requests (Admin only)",
     description = "Returns a list of all book requests in the system."
 )
 def get_all_requests(curr = Depends(get_current_user)):
@@ -34,7 +34,7 @@ def get_all_requests(curr = Depends(get_current_user)):
 
 @router.delete(
     "/{request_id}",
-    summary = "Delete a book request",
+    summary = "Delete a book request (Admin only)",
     description = "Deletes a request by ID. Only admins can perform this action.",
     response_description = "A confirmation message on successful deletion.")
 def delete_request(request_id: int,
@@ -48,7 +48,7 @@ def delete_request(request_id: int,
     
 @router.get(
     "/{stats}",
-    summary="Get request statistics",
+    summary="Get request statistics (Admin only)",
     description="Returns a list of ISBNs with ascending or descending their total request counts. ",
     response_description="A sorted list of ISBNs with their total request counts.")
 def get_request_stats(order: Literal["asc", "desc"] = "desc", user = Depends(get_current_user)):
