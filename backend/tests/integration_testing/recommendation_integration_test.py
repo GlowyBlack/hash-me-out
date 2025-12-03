@@ -49,8 +49,22 @@ def setup_vectorizer(tmp_path):
     yield
     GlobalVectorizer.reset()
 
+@pytest.fixture
+def patch_book_repo(monkeypatch):
+    from app.repositories.book_repository import BookRepository
 
-def test_recommendation_route(client, user_override):
+    def fake_get(self, isbn):
+        mapping = {
+            "111": {"ISBN": "111", "Book-Title": "Book 111", "Book-Author": "Author 111"},
+            "222": {"ISBN": "222", "Book-Title": "Book 222", "Book-Author": "Author 222"},
+            "333": {"ISBN": "333", "Book-Title": "Book 333", "Book-Author": "Author 333"},
+        }
+        return mapping.get(isbn)
+
+    monkeypatch.setattr(BookRepository, "get_book_by_isbn", fake_get)
+
+
+def test_recommendation_route(client, user_override, patch_book_repo):
     """
     Ensures the book-to-book recommendation engine works using
     a tiny fake vector space.
