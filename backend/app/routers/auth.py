@@ -127,6 +127,34 @@ def list_users(
 
     return users_out
 
+@router.get(
+    "/search",
+    summary="Search users by username",
+    description="Admin-only search for users whose username contains the query.",
+)
+def search_users(
+    username: str,
+    curr = Depends(get_current_user),
+    svc: CSVUserService = Depends(get_user_service)
+):
+    if not curr.get("is_admin"):
+        raise HTTPException(403, "Admin privileges required")
+
+    username_norm = username.strip().lower()
+    rows = svc.repo.read_all(svc.path)
+
+    matched = []
+    for row in rows:
+        if username_norm in row["username"].lower():
+            matched.append({
+                "id": int(row["id"]),
+                "username": row["username"],
+                "email": row["email"],
+                "is_admin": str(row.get("is_admin","false")).lower() in {"true","1","yes"}
+            })
+
+    return matched
+
 @router.post(
     "/suspend/{user_id}",
     summary = "Suspend a user",

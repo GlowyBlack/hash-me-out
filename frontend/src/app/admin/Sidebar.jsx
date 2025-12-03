@@ -10,7 +10,7 @@ export default function Sidebar({ activeTab, setActiveTab }) {
 
   return (
     <div className="w-64 bg-white border-r shadow-md p-6">
-      <h2 className="text-2xl font-bold mb-6">Admin</h2>
+      <h2 className="text-2xl font-bold mb-6">Actions</h2>
 
       <ul className="space-y-3">
         {menuItems.map((item) => (
