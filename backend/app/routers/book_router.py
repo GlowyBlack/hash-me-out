@@ -1,18 +1,45 @@
+from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from app.schemas.book import BookCreate, BookRead, BookUpdate
 from app.services.book_service import BookService
 from app.deps import get_current_user
 
 router = APIRouter(prefix = "/books", tags = ["Books"])
+service = BookService()
 
 @router.get("/search", response_model = list[BookRead])
-def search_books(query: str):
-    return service.search_books(query)
+def search_books(
+    query: str,
+    author: Optional[str] = None,
+    genre: Optional[str] = None,
+    year_min: Optional[int] = None,
+    year_max: Optional[int] = None,
+):
+    return service.search_books(
+        query = query,
+        author = author,
+        genre = genre,
+        year_min = year_min,
+        year_max = year_max,
+    )
 
 @router.get("/live-search", response_model = list[BookRead])
-def live_search_books(query: str, limit: int = 10):
-    return service.live_search(query, limit)
-service = BookService()
+def live_search_books(
+    query: str,
+    author: Optional[str] = None,
+    genre: Optional[str] = None,
+    year_min: Optional[int] = None,
+    year_max: Optional[int] = None,
+    limit: int = 10,
+):
+    return service.live_search(
+        query = query,
+        author = author,
+        genre = genre,
+        year_min = year_min,
+        year_max = year_max,
+        limit = limit,
+    )
 
 @router.post(
     "/",

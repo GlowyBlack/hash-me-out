@@ -3,7 +3,7 @@ import csv
 from typing import List, Optional
 
 csv.field_size_limit(100_000_000)
-
+from app.utils.book_identity import normalize_text
 from app.models.book import Book
 from app.schemas.book import BookCreate, BookRead, BookUpdate
 from app.repositories.books_adapter import BXBooksCSVAdapter
@@ -14,6 +14,7 @@ VALID_FIELDS = [
     "Book-Title",
     "Book-Author",
     "Year-Of-Publication",
+    
     "Publisher",
     "Image-URL-S",
     "Image-URL-M",
@@ -51,9 +52,11 @@ class BookService:
         self.repo = BXBooksCSVAdapter()
         self.path = Path(__file__).resolve().parents[1] / "data" / "books"
         self.fields = VALID_FIELDS
+        self.enriched_genres = self._load_enriched_genres()
 
 
-    # ---------- SHARD HELPERS ---------- #
+
+    # ---------- INTERNAL HELPERS ---------- #
     def _determine_shard_from_title(self, title: str) -> str:
         clean = title.strip()
         if not clean:
@@ -91,6 +94,21 @@ class BookService:
                 writer = csv.DictWriter(f, fieldnames=self.fields, delimiter = ";")
                 writer.writeheader()
 
+    def _load_enriched_genres(self):
+        enriched_path = Path("app/data/enriched/enriched_books.csv")
+        enriched = {}
+
+        if not enriched_path.exists():
+            return enriched
+
+        with open(enriched_path, encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                isbn = row["ISBN"]
+                genres = row.get("combined_genres", "")
+                enriched[isbn] = normalize_text(genres)
+
+        return enriched
     # ---------- CREATE BOOK ---------- #
 
     def create_book(self, data: BookCreate) -> BookRead:
@@ -222,13 +240,22 @@ class BookService:
 
     # ---------- SEARCH (FULL) ---------- #
 
-    def search_books(self, query: str) -> List[BookRead]:
+    def search_books(
+        self, 
+        query: str,
+        author: Optional[str] = None,
+        genre: Optional[str] = None,
+        year_min: Optional[int] = None,
+        year_max: Optional[int] = None
+    ) -> List[BookRead]:
         """Case-insensitive search by title, author, or ISBN."""
-        results = []
-        q = query.lower()
-        is_isbn_search = any(char.isdigit() for char in q)
+        q = normalize_text(query)
+        author_filter = normalize_text(author) if author else None
+        genre_filter = normalize_text(genre) if genre else None
 
+        results = []
         seen = set()
+        is_isbn_search = q.isdigit()
 
         for file in Path(self.path).iterdir():
             if file.suffix != ".csv":
@@ -244,35 +271,83 @@ class BookService:
                     title_raw = row["Book-Title"]
                     author_raw = row["Book-Author"]
 
-                    title = title_raw.lower().strip()
-                    author = author_raw.lower().strip()
+                    title = normalize_text(title_raw)
+                    author_name = normalize_text(author_raw)
 
                     isbn = row["ISBN"]
 
-                    # Decide dedupe key based on query type
-                    if is_isbn_search:
-                        dedupe_key = isbn            # allow multiple editions
-                    else:
-                        dedupe_key = (title, author)
+                    dedupe_key = isbn            
                     
                     if dedupe_key in seen:
-                        continue         
-                               
-                    if q in title or q in author or q in isbn:
-                        results.append(BookRead(**Book.from_dict(row).to_api_dict()))
-                        seen.add(dedupe_key)
+                        continue  
+                    
+                    if q not in title and q not in author_name and q not in isbn:
+                        continue       
+                    
+                    book_obj = Book.from_dict(row).to_api_dict()
+               
+                    if isbn in self.enriched_genres:
+                        book_obj["combined_genres"] = self.enriched_genres[isbn]
+
+                    br = BookRead(**book_obj)
+                    results.append(br)
+                    seen.add(dedupe_key)
+                    
+        # ----- FILTER: AUTHOR -----
+        if author_filter:
+            results = [
+                b for b in results
+                if author_filter in normalize_text(b.author)
+            ]
+
+        # ----- FILTER: GENRE -----
+        if genre_filter:
+            results = [
+                b for b in results
+                if b.isbn in self.enriched_genres
+                and genre_filter in self.enriched_genres[b.isbn]
+            ]
+
+        # ----- FILTER: YEAR MIN -----
+        if year_min:
+            results = [
+                b for b in results
+                if b.year_of_publication
+                and str(b.year_of_publication).isdigit()
+                and int(b.year_of_publication) >= year_min
+            ]
+
+        # ----- FILTER: YEAR MAX -----
+        if year_max:
+            results = [
+                b for b in results
+                if b.year_of_publication
+                and str(b.year_of_publication).isdigit()
+                and int(b.year_of_publication) <= year_max
+            ]
 
         return results
     
     # ---------- LIVE SEARCH (FAST PREFIX) ---------- #
 
-    def live_search(self, query: str, limit: int = 10) -> List[BookRead]:
-        q = query.strip().lower()
+    def live_search(
+        self,
+        query: str,
+        author: Optional[str] = None,
+        genre: Optional[str] = None,
+        year_min: Optional[int] = None,
+        year_max: Optional[int] = None,
+        limit: int = 10,            
+    ) -> List[BookRead]:
+        q = normalize_text(query)
         if not q:
             return []
 
+        author_filter = normalize_text(author) if author else None
+        genre_filter = normalize_text(genre) if genre else None
+        
         results = []
-        is_isbn_query = q.isdigit()
+        is_isbn_query = any(ch.isdigit() for ch in q)
 
         for file in Path(self.path).iterdir():
             if file.suffix != ".csv":
@@ -285,29 +360,63 @@ class BookService:
                 reader = csv.DictReader(f, delimiter = ";")
 
                 for row in reader:
-                    title = row["Book-Title"].lower()
-                    author = row["Book-Author"].lower()
+                    title = normalize_text(row["Book-Title"].lower())
+                    author_name = normalize_text(row["Book-Author"].lower())
                     isbn = row["ISBN"]
 
-                    # 1. Fast ISBN prefix
+                    # 1️⃣ Prefix matches first (FAST)
+                    prefix_match = False
+
                     if is_isbn_query and isbn.startswith(q):
-                        results.append(BookRead(**Book.from_dict(row).to_api_dict()))
-                        if len(results) >= limit:
-                            return results
-                        continue
+                        prefix_match = True
+                    elif title.startswith(q) or author_name.startswith(q):
+                        prefix_match = True
 
-                    # 2. Title/Author prefix
-                    if title.startswith(q) or author.startswith(q):
-                        results.append(BookRead(**Book.from_dict(row).to_api_dict()))
-                        if len(results) >= limit:
-                            return results
-                        continue
+                    # Fallback: substring match
+                    elif q in title or q in author_name or q in isbn:
+                        prefix_match = True
 
-                    # 3. Substring fallback
-                    if q in title or q in author or q in isbn:
-                        results.append(BookRead(**Book.from_dict(row).to_api_dict()))
-                        if len(results) >= limit:
-                            return results
+                    if not prefix_match:
+                        continue
+                    
+                    # Build book object
+                    book_obj = Book.from_dict(row).to_api_dict()
+                    if isbn in self.enriched_genres:
+                        book_obj["combined_genres"] = self.enriched_genres[isbn]
+
+                    br = BookRead(**book_obj)
+
+                    if author_filter:
+                        if author_filter not in normalize_text(br.author):
+                            continue
+
+                    if genre_filter:
+                        if isbn not in self.enriched_genres:
+                            continue
+                        if genre_filter not in self.enriched_genres[isbn]:
+                            continue
+
+                    if year_min:
+                        if (
+                            br.year_of_publication
+                            and br.year_of_publication.isdigit()
+                            and int(br.year_of_publication) < year_min
+                        ):
+                            continue
+
+                    if year_max:
+                        if (
+                            br.year_of_publication
+                            and br.year_of_publication.isdigit()
+                            and int(br.year_of_publication) > year_max
+                        ):
+                            continue
+
+                    results.append(br)
+
+                    if len(results) >= limit:
+                        return results
 
         return results
+
 

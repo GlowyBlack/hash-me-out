@@ -1,3 +1,7 @@
+"use client";
+
+import { useEffect, useState } from "react";
+
 export default function Suspensions() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);

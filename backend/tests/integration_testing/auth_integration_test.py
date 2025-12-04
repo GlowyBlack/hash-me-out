@@ -384,3 +384,69 @@ def test_admin_search_no_results(client, temp_user_service, dummy_pwd_context):
     data = resp.json()
     assert isinstance(data, list)
     assert len(data) == 0
+
+
+def test_admin_can_list_suspended_users(client, temp_user_service, dummy_pwd_context):
+    svc = temp_user_service
+    dummy = dummy_pwd_context
+
+    admin = svc.create_user(
+        username="admin", email="admin@example.com", password_hash=dummy.hash("pw"), is_admin=True
+    )
+
+    user1 = svc.create_user(username="bob", email="bob@example.com", password_hash=dummy.hash("pw2"))
+    user2 = svc.create_user(username="alice", email="alice@example.com", password_hash=dummy.hash("pw3"))
+
+    login_resp = client.post("/auth/token", data={"username": "admin", "password": "pw"})
+    token = login_resp.json()["access_token"]
+
+    client.post(
+        f"/auth/suspend/{user1['id']}?duration_minutes=60",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    resp = client.get("/auth/suspended", headers={"Authorization": f"Bearer {token}"})
+    assert resp.status_code == 200
+    data = resp.json()
+    assert isinstance(data, list)
+    assert any(u["username"] == "bob" and u["is_suspended"] for u in data)
+    assert all(u["suspended_until"] is not None for u in data)
+
+    assert not any(u["username"] == "alice" for u in data)
+
+
+def test_non_admin_cannot_list_suspended(client, temp_user_service, dummy_pwd_context):
+    svc = temp_user_service
+    dummy = dummy_pwd_context
+
+    user = svc.create_user(username="bob", email="bob@example.com", password_hash=dummy.hash("pw"))
+
+    login_resp = client.post("/auth/token", data={"username": "bob", "password": "pw"})
+    token = login_resp.json()["access_token"]
+
+    resp = client.get("/auth/suspended", headers={"Authorization": f"Bearer {token}"})
+    assert resp.status_code == 403
+    assert resp.json()["detail"] == "Admin privileges required"
+
+
+def test_suspended_user_appears_and_unsuspend_removes(client, temp_user_service, dummy_pwd_context):
+    svc = temp_user_service
+    dummy = dummy_pwd_context
+
+    admin = svc.create_user(username="admin", email="admin@example.com", password_hash=dummy.hash("pw"), is_admin=True)
+    user = svc.create_user(username="bob", email="bob@example.com", password_hash=dummy.hash("pw2"))
+
+    login_resp = client.post("/auth/token", data={"username": "admin", "password": "pw"})
+    token = login_resp.json()["access_token"]
+
+    client.post(f"/auth/suspend/{user['id']}?duration_minutes=60", headers={"Authorization": f"Bearer {token}"})
+
+    resp = client.get("/auth/suspended", headers={"Authorization": f"Bearer {token}"})
+    data = resp.json()
+    assert any(u["id"] == user["id"] and u["is_suspended"] for u in data)
+
+    client.post(f"/auth/unsuspend/{user['id']}", headers={"Authorization": f"Bearer {token}"})
+
+    resp = client.get("/auth/suspended", headers={"Authorization": f"Bearer {token}"})
+    data = resp.json()
+    assert not any(u["id"] == user["id"] for u in data)
