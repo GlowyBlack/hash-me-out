@@ -65,10 +65,10 @@ export default function Suspensions() {
 
   return (
     <div className="p-6">
-      <h1 className="text-3xl font-bold mb-6">Suspended Users</h1>
+      <h1 className="text-gray-800 text-3xl font-bold mb-6">Suspended Users</h1>
 
       {users.length === 0 ? (
-        <p>No suspended users.</p>
+        <p className="text-gray-800">No suspended users.</p>
       ) : (
         <div className="space-y-6">
           {users.map((u) => (
@@ -79,7 +79,7 @@ export default function Suspensions() {
               <div className="flex justify-between items-center">
                 <div>
                   <p className="text-xl font-semibold">{u.username}</p>
-                  <p className="text-gray-700">{u.email}</p>
+                  <p className="text-gray-800">{u.email}</p>
 
                   <p className="mt-2 text-sm">
                     <strong>Suspended:</strong>{" "}
