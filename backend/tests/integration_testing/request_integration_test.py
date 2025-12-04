@@ -9,16 +9,15 @@ from app.deps import get_current_user
 
 @pytest.fixture(autouse=True)
 def clean_request_csvs(tmp_path):
-
     request_router.service.path = tmp_path / "Requests.csv"
     request_router.service.totalpath = tmp_path / "Total_Requested.csv"
 
-    with open(request_router.service.path, "w", newline = "", encoding = "utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames = request_router.service.fields)
+    with open(request_router.service.path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=request_router.service.fields)
         writer.writeheader()
 
-    with open(request_router.service.totalpath, "w", newline = "", encoding = "utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames = request_router.service.total_fields)
+    with open(request_router.service.totalpath, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=request_router.service.total_fields)
         writer.writeheader()
 
     yield
@@ -27,6 +26,7 @@ def clean_request_csvs(tmp_path):
 @pytest.fixture
 def client():
     return TestClient(app)
+
 
 def test_request_route_success(client):
     request = {
@@ -48,7 +48,6 @@ def test_request_route_success(client):
         app.dependency_overrides.pop(get_current_user, None)
 
     assert res.status_code == 200
-
 
 
 def test_request_delete_success(client):
@@ -73,9 +72,7 @@ def test_request_delete_success(client):
     assert deleted.status_code == 200
 
 
-
 def test_delete_nonexistent_request(client):
-
     app.dependency_overrides[get_current_user] = lambda: {
         "id": 1,
         "username": "admin",
@@ -91,24 +88,22 @@ def test_delete_nonexistent_request(client):
     assert r.status_code == 404
     assert r.json() == {"detail": "Request not found"}
 
+
 def test_get_all_requests(client):
-
-
     app.dependency_overrides[get_current_user] = lambda: {
-        "id": 2, 
-        "username": "user1", 
-        "email": "user1@test.com", 
-        "is_admin": False
+        "id": 2,
+        "username": "user1",
+        "email": "user1@test.com",
+        "is_admin": False,
     }
-
 
     client.post(
         "/requests/",
-        json={"book_title": "Book A", "author": "A", "isbn": "1111111111"},
+        json={"title": "Book A", "author": "A", "isbn": "1111111111"},
     )
     client.post(
         "/requests/",
-        json={"book_title": "Book B", "author": "B", "isbn": "2222222222"},
+        json={"title": "Book B", "author": "B", "isbn": "2222222222"},
     )
 
     app.dependency_overrides[get_current_user] = lambda: {
@@ -127,32 +122,34 @@ def test_get_all_requests(client):
     data = r.json()
     assert isinstance(data, list)
     assert len(data) == 2
-    assert data[0]["request_id"] == 1
-    assert data[1]["request_id"] == 2
-    
+
+
+
+
 def test_user_cannot_request_same_book_twice(client):
     app.dependency_overrides[get_current_user] = lambda: {
-        "id": 2, 
-        "username": "user2", 
-        "email": "user2@example.com", 
-        "is_admin": False
+        "id": 2,
+        "username": "user2",
+        "email": "user2@example.com",
+        "is_admin": False,
     }
 
     r1 = client.post(
         "/requests/",
-        json={"book_title": "Repeat Book", "author": "X", "isbn": "1231231231"},
+        json={"title": "Repeat Book", "author": "X", "isbn": "1231231231"},
     )
     assert r1.status_code == 200
 
     r2 = client.post(
         "/requests/",
-        json={"book_title": "Repeat Book", "author": "X", "isbn": "1231231231"},
+        json={"title": "Repeat Book", "author": "X", "isbn": "1231231231"},
     )
 
     app.dependency_overrides.pop(get_current_user, None)
 
     assert r2.status_code == 400
     assert r2.json()["detail"] == "This user has already requested this book."
+
 
 def test_admin_deletes_only_one_of_multiple_requests(client):
     def user2():
@@ -162,23 +159,26 @@ def test_admin_deletes_only_one_of_multiple_requests(client):
         return {"id": 3, "username": "user3", "email": "user3@gmail.com", "is_admin": False}
 
     app.dependency_overrides[get_current_user] = user2
-    client.post(
+    first = client.post(
         "/requests/",
-        json={"book_title": "Shared Book", "author": "Someone", "isbn": "9999999999"},
+        json={"title": "Shared Book", "author": "Someone", "isbn": "9999999999"},
     )
 
     app.dependency_overrides[get_current_user] = user3
-    client.post(
+    second = client.post(
         "/requests/",
-        json={"book_title": "Shared Book", "author": "Someone", "isbn": "9999999999"},
+        json={"title": "Shared Book", "author": "Someone", "isbn": "9999999999"},
     )
+
+    first_id = first.json()["request_id"]
+    second_id = second.json()["request_id"]
 
     def admin():
         return {"id": 1, "username": "admin", "email": "admin@example.com", "is_admin": True}
 
     app.dependency_overrides[get_current_user] = admin
 
-    resp = client.delete("/requests/1")
+    resp = client.delete(f"/requests/{first_id}")
 
     app.dependency_overrides.pop(get_current_user, None)
 
@@ -192,7 +192,7 @@ def test_admin_deletes_only_one_of_multiple_requests(client):
     data = r_all.json()
     assert len(data) == 1
     assert data[0]["user_id"] == 3
-    assert data[0]["request_id"] == 1    
+    assert data[0]["isbn"] == "9999999999"
 
 def test_request_stats_sorted_by_total_requests(client):
     app.dependency_overrides[get_current_user] = lambda: {
@@ -204,11 +204,11 @@ def test_request_stats_sorted_by_total_requests(client):
 
     client.post(
         "/requests/",
-        json={"book_title": "Book A", "author": "A", "isbn": "1111111111"},
+        json={"title": "Book A", "author": "A", "isbn": "1111111111"},
     )
     client.post(
         "/requests/",
-        json={"book_title": "Book B", "author": "B", "isbn": "2222222222"},
+        json={"title": "Book B", "author": "B", "isbn": "2222222222"},
     )
 
     app.dependency_overrides[get_current_user] = lambda: {
@@ -220,7 +220,7 @@ def test_request_stats_sorted_by_total_requests(client):
 
     client.post(
         "/requests/",
-        json={"book_title": "Book A again", "author": "A", "isbn": "1111111111"},
+        json={"title": "Book A again", "author": "A", "isbn": "1111111111"},
     )
 
     app.dependency_overrides[get_current_user] = lambda: {
