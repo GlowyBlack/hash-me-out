@@ -1,3 +1,3 @@
 export default function Requests() {
-  return <h1 className="text-3xl font-bold">Requests</h1>;
+  return <h1 className="text-gray-800 text-3xl font-bold">Requests</h1>;
 }

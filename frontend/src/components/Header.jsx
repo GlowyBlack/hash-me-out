@@ -48,9 +48,8 @@ export default function Header({ user, setFormType, handleLogout, goToProfile })
           ) : (
             <>
               <div
-                className="text-xl  text-gray-900 cursor-pointer"
                 onClick={goToProfile}
-                className="rounded-full border border-slate-300 bg-white text-slate-800 text-sm font-semibold px-6 py-3 hover:bg-slate-50 transition"
+                className="cursor-pointer rounded-full border border-slate-300 bg-white text-slate-800 text-sm font-semibold px-6 py-3 hover:bg-slate-50 transition"
               >
                 Profile
               </div>

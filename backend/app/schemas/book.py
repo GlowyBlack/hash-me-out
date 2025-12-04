@@ -26,8 +26,16 @@ class BookRead(BaseModel):
     image_url_s: Optional[str] 
     image_url_m: Optional[str] 
     image_url_l: Optional[str] 
+    
+    @field_validator("year_of_publication", mode="before")
+    def fix_zero_year(cls, v):
+        if v in ("0", 0, None, "", "0000"):
+            return "Unknown"
+        return v
+    
     class Config:
         extra = "allow"
+        
 
 class BookUpdate(BaseModel):
     book_title: Optional[str] = None

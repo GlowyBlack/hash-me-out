@@ -32,22 +32,26 @@ export default function Suspensions() {
     const token = localStorage.getItem("access_token");
 
     try {
-      const res = await fetch(`http://localhost:8000/auth/unsuspend/${id}`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const res = await fetch(
+        `http://localhost:8000/auth/unsuspend/${id}`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       if (!res.ok) {
         const errorData = await res.json();
-        alert("Could not unsuspend user: " + (errorData.detail || res.statusText));
+        alert(
+          "Could not unsuspend user: " +
+            (errorData.detail || res.statusText)
+        );
         return;
       }
 
-      // Update UI immediately instead of only refetching
-      setUsers(users.filter((u) => u.id !== id));
-
+      setUsers((prev) => prev.filter((u) => u.id !== id));
     } catch (err) {
       console.error(err);
     }
@@ -61,10 +65,10 @@ export default function Suspensions() {
 
   return (
     <div className="p-6">
-      <h1 className="text-3xl font-bold mb-6">Suspended Users</h1>
+      <h1 className="text-gray-800 text-3xl font-bold mb-6">Suspended Users</h1>
 
       {users.length === 0 ? (
-        <p>No suspended users.</p>
+        <p className="text-gray-800">No suspended users.</p>
       ) : (
         <div className="space-y-6">
           {users.map((u) => (
@@ -75,10 +79,11 @@ export default function Suspensions() {
               <div className="flex justify-between items-center">
                 <div>
                   <p className="text-xl font-semibold">{u.username}</p>
-                  <p className="text-gray-700">{u.email}</p>
+                  <p className="text-gray-800">{u.email}</p>
 
                   <p className="mt-2 text-sm">
-                    <strong>Suspended:</strong> {u.is_suspended ? "Yes" : "No"}
+                    <strong>Suspended:</strong>{" "}
+                    {u.is_suspended ? "Yes" : "No"}
                   </p>
 
                   <p className="mt-2 text-sm">
@@ -88,7 +93,12 @@ export default function Suspensions() {
                       : "N/A"}
                   </p>
 
-                  <p className="text-sm">
+                  <p className="mt-1 text-sm">
+                    <strong>Suspension Reason:</strong>{" "}
+                    {u.suspension_reason || "N/A"}
+                  </p>
+
+                  <p className="mt-1 text-sm">
                     <strong>Warnings:</strong> {u.warnings}
                   </p>
                 </div>
