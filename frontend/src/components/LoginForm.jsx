@@ -22,12 +22,38 @@ export default function LoginForm({ setFormType, onSuccess }) {
       });
 
       const data = await response.json();
-      if (!response.ok) throw new Error(data.detail || "Login failed");
+
+      if (!response.ok) {
+        if (
+          response.status === 403 &&
+          data &&
+          typeof data.detail === "object"
+        ) {
+          const d = data.detail;
+          if (d.code === "suspended") {
+            const untilText = d.suspended_until
+              ? new Date(d.suspended_until).toLocaleString()
+              : "further notice";
+            const reasonText = d.reason
+              ? ` Reason: ${d.reason}`
+              : "";
+            setError(
+              `Your account is suspended until ${untilText}.${reasonText}`
+            );
+            return;
+          }
+        }
+
+        throw new Error(
+          typeof data.detail === "string"
+            ? data.detail
+            : "Login failed"
+        );
+      }
 
       localStorage.setItem("access_token", data.access_token);
 
-      if (onSuccess) onSuccess(); // 🔥 Notify parent
-
+      if (onSuccess) onSuccess(); 
     } catch (err) {
       setError(err.message);
     }
@@ -52,7 +78,11 @@ export default function LoginForm({ setFormType, onSuccess }) {
           Login Below
         </h1>
 
-        {error && <p className="text-red-500 text-center">{error}</p>}
+        {error && (
+          <p className="text-red-500 text-center whitespace-pre-line">
+            {error}
+          </p>
+        )}
 
         <input
           type="text"
