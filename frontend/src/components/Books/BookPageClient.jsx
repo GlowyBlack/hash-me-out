@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 
 import Header from "@/components/Header";
 import AuthPopup from "@/components/AuthPopup/AuthPopup";
-import BookDetailPage from "@/components/BookDetails";
+import BookDetailPage from "@/components/Books/BookDetails";
 
 export default function BookPageClient({ book, avgRating, reviews, similarBooks }) {
   const router = useRouter();
