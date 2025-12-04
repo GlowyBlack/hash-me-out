@@ -15,7 +15,6 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState("users");
   const [loadingUser, setLoadingUser] = useState(true);
 
-  // Load user from localStorage
   useEffect(() => {
     const token = localStorage.getItem("access_token");
     if (token) {
@@ -32,14 +31,12 @@ export default function AdminPage() {
     setLoadingUser(false);
   }, []);
 
-  // Redirect non-admins to homepage
   useEffect(() => {
     if (!loadingUser && (!user || !user.is_admin)) {
       router.replace("/homepage");
     }
   }, [user, loadingUser, router]);
 
-  // Handlers
   const handleLogout = () => {
     localStorage.removeItem("access_token");
     router.push("/");
@@ -49,7 +46,7 @@ export default function AdminPage() {
     router.push("/profile");
   };
 
-  if (loadingUser || !user?.is_admin) return null; // wait until user loaded
+  if (loadingUser || !user?.is_admin) return null; 
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col pt-20">

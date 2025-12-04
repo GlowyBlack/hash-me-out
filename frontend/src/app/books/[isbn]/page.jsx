@@ -6,7 +6,6 @@ export default async function BookPage({ params }) {
   const API_BASE =
     process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
-  // Fetch everything on the server (allowed)
   const [bookRes, ratingRes, reviewsRes, simRes] = await Promise.all([
     fetch(`${API_BASE}/books/${isbn}`, { cache: "no-store" }),
     fetch(`${API_BASE}/ratings/books/${isbn}/average`, { cache: "no-store" }),
@@ -23,7 +22,6 @@ export default async function BookPage({ params }) {
   const reviews = reviewsRes.ok ? await reviewsRes.json() : [];
   const similarBooks = simRes.ok ? await simRes.json() : [];
 
-  // pass all data into the CLIENT component
   return (
     <BookPageClient
       book={book}
