@@ -32,7 +32,7 @@ def get_engine():
 
 @router.get("/")
 def personalized_recommendations(
-    top_k: int = 10,
+    top_k: int = 12,
     curr = Depends(get_current_user)
 ):
     """

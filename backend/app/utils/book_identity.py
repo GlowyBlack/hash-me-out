@@ -11,33 +11,41 @@ SERIES_PATTERNS = [
     r"\b(series|saga|chronicles)\b",
 ]
 
+
 """ Normalize text for author/title comparisons """
 def normalize_text(s: str) -> str:
     if not s:
         return ""
     s = s.lower().strip()
 
+    # replace periods (like J.K. -> J K)
     s = re.sub(r"\.", " ", s)
 
     s = re.sub(r"\s+", " ", s)
 
     return s
- 
-""" Normalize titles for identity matching (strip subtitles) """
+
 def normalize_title_for_work(title: str) -> str:
-    """
-    Removes subtitles such as ': A Novel', '(Special Edition)',
-    ': Book One', etc. to detect editions of the same underlying work.
-    """
     if not title:
         return ""
 
     t = title.lower().strip()
 
+    # Remove subtitles (ex: ": A Novel")
     t = t.split(":", 1)[0]
 
+    # Remove parenthetical parts (ex: "(Modern Classics Edition)")
     t = re.sub(r"\(.*?\)", "", t)
 
+    # Handle reversed titles like "EDIBLE WOMAN, THE"
+    t = re.sub(r",\s*the$", "", t)
+    t = re.sub(r",\s*a$", "", t)
+    t = re.sub(r",\s*an$", "", t)
+
+    # Remove leading articles: "the", "a", "an"
+    t = re.sub(r"^(the|a|an)\s+", "", t)
+
+    # Collapse spaces
     t = re.sub(r"\s+", " ", t).strip()
 
     return t
@@ -59,36 +67,32 @@ def is_series_title(title: str) -> bool:
 """ Determine if two books are the same underlying WORK """
 def is_same_work(book_a: dict, book_b: dict) -> bool:
     """
-    Returns True if two entries are essentially the same work/edition.
-    Returns False if the second book is actually a SERIES book.
+    Returns True if two entries represent the same underlying literary work.
+    This collapses duplicate editions while avoiding series books.
     """
 
+    # Title identity
     t1 = normalize_title_for_work(book_a.get("Book-Title", ""))
     t2 = normalize_title_for_work(book_b.get("Book-Title", ""))
 
     if t1 != t2:
-        return False  # Different title → not same work
+        return False
 
     if is_series_title(book_b.get("Book-Title", "")):
         return False
 
-    # -------------------
-    # Author identity check
-    # -------------------
+    # Author identity (relaxed)
     a1 = normalize_text(book_a.get("Book-Author", ""))
     a2 = normalize_text(book_b.get("Book-Author", ""))
 
     if not a1 or not a2:
         return False
 
-    # Last names must match
+    # Compare last names only (handles middle names, initials, etc.)
     ln1 = a1.split()[-1]
     ln2 = a2.split()[-1]
-    if ln1 != ln2:
-        return False
 
-    # First initials must match
-    if a1[0] != a2[0]:
+    if ln1 != ln2:
         return False
 
     return True
