@@ -1,5 +1,4 @@
 "use client";
-import { dedupeBooks } from "@/utils/dedupeBooks";
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
@@ -37,14 +36,16 @@ export default function HomePage() {
     year_max: null,
   });
 
+  // NEW: track if a search has actually been done
+  const [hasSearched, setHasSearched] = useState(false);
+
   const [currentPage, setCurrentPage] = useState(1);
   const resultsPerPage = 5;
-  const uniqueResults = dedupeBooks(results);
-  const totalPages = Math.ceil(uniqueResults.length / resultsPerPage);
-  
+
   const indexOfLast = currentPage * resultsPerPage;
   const indexOfFirst = indexOfLast - resultsPerPage;
-  const currentResults = uniqueResults.slice(indexOfFirst, indexOfLast);
+  const currentResults = results.slice(indexOfFirst, indexOfLast);
+  const totalPages = Math.ceil(results.length / resultsPerPage);
 
   const [liveResults, setLiveResults] = useState([]);
   const [liveLoading, setLiveLoading] = useState(false);
@@ -140,6 +141,7 @@ export default function HomePage() {
     setLoading(true);
     setError("");
     setResults([]);
+    setHasSearched(false); // reset before the request
 
     const params = new URLSearchParams({
       query: search,
@@ -159,6 +161,7 @@ export default function HomePage() {
       setError(err.message);
     }
     setLoading(false);
+    setHasSearched(true); // search is now done
   };
 
   useEffect(() => {
@@ -184,9 +187,7 @@ export default function HomePage() {
           `http://localhost:8000/books/live-search?${params}`
         );
         const data = await res.json();
-        const unique = dedupeBooks(data);
-
-        setLiveResults(unique);
+        setLiveResults(data);
       } catch (err) {
         console.log(err);
       }
@@ -244,7 +245,6 @@ export default function HomePage() {
   if (!authChecked) {
     return <div className="min-h-screen bg-gray-50" />;
   }
-
 
   if (suspensionInfo) {
     return (
@@ -332,7 +332,7 @@ export default function HomePage() {
         <RecommendedForYou books={recommended} />
       )}
 
-      <div className="max-w-7xl mx-auto px-6 mt-6">
+      <div className="max-w-7xl mx-auto px-6 mt-6 min-h-8">
         {loading && <p>Loading...</p>}
         {error && <p className="text-red-500">{error}</p>}
 
