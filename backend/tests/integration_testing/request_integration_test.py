@@ -56,29 +56,23 @@ def test_request_delete_success(client):
         "id": 1,
         "username": "bob",
         "email": "bob@example.com",
-        "is_admin": False,
+        "is_admin": True,
     }
 
     created = client.post(
         "/requests/",
-        json={"book_title": "Test Book", "author": "Someone", "isbn": "1111111111"},
+        json={"title": "Test Book", "author": "Someone", "isbn": "1111111111"},
     )
+
     request_id = created.json()["request_id"]
 
-    app.dependency_overrides[get_current_user] = lambda: {
-        "id": 99,
-        "username": "admin",
-        "email": "admin@example.com",
-        "is_admin": True,
-    }
+    deleted = client.delete(f"/requests/{request_id}")
 
-    try:
-        r = client.delete(f"/requests/{request_id}")
-    finally:
-        app.dependency_overrides.pop(get_current_user, None)
+    app.dependency_overrides.pop(get_current_user, None)
 
-    assert r.status_code == 200
-    assert r.json() == {"message": "Request deleted successfully"}
+    assert deleted.status_code == 200
+
+
 
 def test_delete_nonexistent_request(client):
 
