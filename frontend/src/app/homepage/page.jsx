@@ -1,4 +1,5 @@
 "use client";
+import { dedupeBooks } from "@/utils/dedupeBooks";
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
@@ -31,11 +32,12 @@ export default function HomePage() {
   // ============================
   const [currentPage, setCurrentPage] = useState(1);
   const resultsPerPage = 5;
-
+  const uniqueResults = dedupeBooks(results);
+  const totalPages = Math.ceil(uniqueResults.length / resultsPerPage);
+  
   const indexOfLast = currentPage * resultsPerPage;
   const indexOfFirst = indexOfLast - resultsPerPage;
-  const currentResults = results.slice(indexOfFirst, indexOfLast);
-  const totalPages = Math.ceil(results.length / resultsPerPage);
+  const currentResults = uniqueResults.slice(indexOfFirst, indexOfLast);
 
   // ============================
   // LIVE SEARCH STATE
@@ -120,7 +122,9 @@ export default function HomePage() {
           `http://localhost:8000/books/live-search?query=${search}`
         );
         const data = await res.json();
-        setLiveResults(data);
+        const unique = dedupeBooks(data);
+
+        setLiveResults(unique);
       } catch (err) {
         console.log(err);
       }
