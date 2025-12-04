@@ -1,6 +1,8 @@
 "use client";
+import { useRouter } from "next/navigation";
 
 export default function LiveSearchDropdown({ liveResults, setSearch }) {
+    const router = useRouter();
   if (!liveResults || liveResults.length === 0) return null;
 
   return (
@@ -8,9 +10,7 @@ export default function LiveSearchDropdown({ liveResults, setSearch }) {
       {liveResults.map((item) => (
         <div
           key={item.isbn}
-          onClick={() => {
-            setSearch(item.book_title);
-          }}
+          onClick={() =>  router.push(`/books/${item.isbn}`)}
           className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm"
         >
           <span className="font-semibold text-gray-900">{item.book_title}</span>
