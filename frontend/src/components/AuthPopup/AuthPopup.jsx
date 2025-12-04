@@ -1,7 +1,7 @@
 "use client";
 
-import LoginForm from "../LoginForm";
-import RegisterForm from "../RegisterForm";
+import LoginForm from "../Forms/LoginForm";
+import RegisterForm from "../Forms/RegisterForm";
 
 export default function AuthPopup({ formType, setFormType, handleLoginSuccess }) {
   if (!formType) return null;

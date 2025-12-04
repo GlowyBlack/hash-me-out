@@ -3,9 +3,9 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
-import Pagination from "./SearchResults/Pagination";
-import AddToReadingListButton from "./readinglist/AddToReadingListButton";
-import SimilarBooksSidebar from "./Recommended/SimilarBooks";
+import Pagination from "../SearchResults/Pagination";
+import AddToReadingListButton from "../ReadingList/AddToReadingListButton";
+import SimilarBooksSidebar from "../Recommended/SimilarBooks";
 
 
 export default function BookDetailPage({

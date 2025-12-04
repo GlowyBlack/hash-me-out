@@ -1,8 +1,8 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import LoginForm from "./LoginForm";
-import RegisterForm from "./RegisterForm";
+import LoginForm from "./Forms/LoginForm";
+import RegisterForm from "./Forms/RegisterForm";
 
 export default function LandingPage() {
   const [formType, setFormType] = useState(null);

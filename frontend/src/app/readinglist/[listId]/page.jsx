@@ -1,6 +1,6 @@
 "use client";
 
-import ReadingListView from "@/components/ReadingListView";
+import ReadingListView from "@/components/ReadingList/ReadingListView";
 
 export default function ReadingListPage({ params }) {
   const { listId } = params;           

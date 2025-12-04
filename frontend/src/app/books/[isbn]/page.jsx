@@ -1,4 +1,4 @@
-import BookPageClient from "@/components/BookPageClient";
+import BookPageClient from "@/components/Books/BookPageClient";
 
 export default async function BookPage({ params }) {
   const { isbn } = params;

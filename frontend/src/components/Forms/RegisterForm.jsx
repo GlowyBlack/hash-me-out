@@ -54,7 +54,7 @@ export default function RegisterForm({ setFormType, onSuccess }) {
           placeholder="Username"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
-          className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400"
+          className="px-4 py-3 text-gray-500 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400"
           required
         />
 
@@ -63,7 +63,7 @@ export default function RegisterForm({ setFormType, onSuccess }) {
           placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400"
+          className="px-4 py-3 text-gray-500 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400"
           required
         />
 
@@ -72,7 +72,7 @@ export default function RegisterForm({ setFormType, onSuccess }) {
           placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400"
+          className="px-4 py-3 text-gray-500 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400"
           required
         />
 
