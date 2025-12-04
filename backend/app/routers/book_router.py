@@ -1,7 +1,9 @@
+from datetime import datetime
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from app.schemas.book import BookCreate, BookRead, BookUpdate
 from app.services.book_service import BookService
+from app.logger import logger
 from app.deps import get_current_user
 
 router = APIRouter(prefix = "/books", tags = ["Books"])
@@ -32,7 +34,10 @@ def live_search_books(
     year_max: Optional[int] = None,
     limit: int = 10,
 ):
-    return service.live_search(
+    start = datetime.now()
+
+    logger.info(f"API CALL      | /live-search/{query} ")
+    result = service.live_search(
         query = query,
         author = author,
         genre = genre,
@@ -40,6 +45,11 @@ def live_search_books(
         year_max = year_max,
         limit = limit,
     )
+    elapsed = (datetime.now() - start).total_seconds() * 1000
+
+    logger.info(f"API DONE      | /live-search/{query} | length of returned book = {len(result)} | took = {elapsed:.2}ms")
+
+    return result
 
 @router.post(
     "/",

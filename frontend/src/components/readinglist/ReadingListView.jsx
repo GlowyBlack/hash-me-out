@@ -107,7 +107,7 @@ export default function ReadingListView({ listId }) {
 
   async function handleToggleVisibility() {
     if (!list) return;
-    setToggling(true);
+      setToggling(true);
     try {
       const res = await axios.put(
         `http://127.0.0.1:8000/readinglist/${listId}/visibility`,
