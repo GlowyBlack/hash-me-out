@@ -17,8 +17,12 @@ def load_enriched_books(file_path="app/data/Enriched_Books.csv"):
     # Combine fields for TF-IDF
     df["combined_text"] = (
         df["Book-Title"] + " " +
-        df["Book-Author"] + " " +
-        df["Genre"]
+        df["Book-Title"] + " " +
+        df["Genre"] + " " +
+        df["Genre"] + " " +
+        df["Genre"] + " " +
+        df["Book-Author"] 
+
     ).str.lower()
 
     return df

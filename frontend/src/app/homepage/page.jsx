@@ -3,12 +3,15 @@ import { dedupeBooks } from "@/utils/dedupeBooks";
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import RecommendedForYou from "@/components/Recommended/RecommendedForYou";
+import FilterModal from "@/components/SearchBar/FilterModal"
+import Header from "@/components/Header";
+import AuthPopup from "@/components/AuthPopup/AuthPopup";
+import SearchBar from "@/components/SearchBar/SearchBar";
+import SearchList from "@/components/SearchResults/SearchList";
+import Pagination from "@/components/SearchResults/Pagination";
 
-import Header from "../../components/Header";
-import AuthPopup from "../../components/AuthPopup/AuthPopup";
-import SearchBar from "../../components/SearchBar/SearchBar";
-import SearchList from "../../components/SearchResults/SearchList";
-import Pagination from "../../components/SearchResults/Pagination";
+
 
 export default function HomePage() {
   const router = useRouter();
@@ -17,11 +20,22 @@ export default function HomePage() {
   const [formType, setFormType] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [suspensionInfo, setSuspensionInfo] = useState(null);
+  const [recommended, setRecommended] = useState([]);
 
   const [search, setSearch] = useState("");
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [hasSearched, setHasSearched] = useState(false);
+
+
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [filters, setFilters] = useState({
+    author: null,
+    genre: null,
+    year_min: null,
+    year_max: null,
+  });
 
   const [currentPage, setCurrentPage] = useState(1);
   const resultsPerPage = 5;
@@ -33,6 +47,7 @@ export default function HomePage() {
   const currentResults = uniqueResults.slice(indexOfFirst, indexOfLast);
 
   const [liveResults, setLiveResults] = useState([]);
+  const [liveLoading, setLiveLoading] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
 
   const [ellipsisOpen, setEllipsisOpen] = useState(null);
@@ -83,6 +98,28 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
+  async function loadRecommended() {
+    if (!user) return;
+
+    try {
+      const token = localStorage.getItem("access_token");
+      const res = await fetch(`http://localhost:8000/personalized`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setRecommended(data);
+      }
+    } catch (err) {
+      console.error("Failed to load personalized recs:", err);
+    }
+  }
+
+  loadRecommended();
+}, [user]);
+
+  useEffect(() => {
     function handleClickOutside(e) {
       if (searchRef.current && !searchRef.current.contains(e.target)) {
         setLiveResults([]);
@@ -98,15 +135,22 @@ export default function HomePage() {
     e.preventDefault();
     setLiveResults([]);
     setIsTyping(false);
+    setHasSearched(true);
 
     setLoading(true);
     setError("");
     setResults([]);
 
+    const params = new URLSearchParams({
+      query: search,
+      ...(filters.author && { author: filters.author }),
+      ...(filters.genre && { genre: filters.genre }),
+      ...(filters.year_min && { year_min: filters.year_min }),
+      ...(filters.year_max && { year_max: filters.year_max }),
+    });
+
     try {
-      const res = await fetch(
-        `http://localhost:8000/books/search?query=${search}`
-      );
+      const res = await fetch(`http://localhost:8000/books/search?${params}`);
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail);
       setResults(data);
@@ -123,12 +167,21 @@ export default function HomePage() {
       return;
     }
 
+    setLiveLoading(true)
     setIsTyping(true);
 
     const timeout = setTimeout(async () => {
       try {
+        const params = new URLSearchParams({
+          query: search,
+          ...(filters.author && { author: filters.author }),
+          ...(filters.genre && { genre: filters.genre }),
+          ...(filters.year_min && { year_min: filters.year_min }),
+          ...(filters.year_max && { year_max: filters.year_max }),
+          limit: 10,
+        }); 
         const res = await fetch(
-          `http://localhost:8000/books/live-search?query=${search}`
+          `http://localhost:8000/books/live-search?${params}`
         );
         const data = await res.json();
         const unique = dedupeBooks(data);
@@ -137,6 +190,7 @@ export default function HomePage() {
       } catch (err) {
         console.log(err);
       }
+      setLiveLoading(false);
       setIsTyping(false);
     }, 300);
 
@@ -228,7 +282,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className="relative min-h-screen bg-gray-50">
+    <div className="relative min-h-screen  bg-gray-50">
       <Header
         user={user}
         setFormType={setFormType}
@@ -259,25 +313,59 @@ export default function HomePage() {
         setSearch={setSearch}
         handleSearch={handleSearch}
         liveResults={liveResults}
+        liveLoading={liveLoading}
         isTyping={isTyping}
         searchRef={searchRef}
+        setLiveResults={setLiveResults}   
+        onOpenFilters={() => setIsFilterOpen(true)}
       />
+
+
+      <FilterModal
+        isOpen={isFilterOpen}
+        onClose={() => setIsFilterOpen(false)}
+        initialFilters={filters}
+        onApply={(newFilters) => setFilters(newFilters)}
+      />
+
+      {user && recommended.length > 0 && (
+        <RecommendedForYou books={recommended} />
+      )}
 
       <div className="max-w-7xl mx-auto px-6 mt-6">
         {loading && <p>Loading...</p>}
         {error && <p className="text-red-500">{error}</p>}
-        {!loading && !error && <SearchList results={currentResults} />}
-      </div>
 
-      <Pagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        setCurrentPage={setCurrentPage}
-        ellipsisOpen={ellipsisOpen}
-        setEllipsisOpen={setEllipsisOpen}
-        jumpPage={jumpPage}
-        setJumpPage={setJumpPage}
-      />
+        {/* Only show results AFTER the user clicked Search */}
+        {!loading && !error && hasSearched && (
+          currentResults.length > 0 ? (
+            <SearchList results={currentResults} />
+          ) : (
+            <div className="text-center text-gray-600 py-10">
+              <p className="text-lg font-medium">No match found.</p>
+
+              <button
+                onClick={() => console.log("Open request modal")}
+                className="mt-3 px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-semibold rounded-lg"
+              >
+                Click to request
+              </button>
+            </div>
+          )
+        )}
+      </div>
+      
+      <div className="pb-20">
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          setCurrentPage={setCurrentPage}
+          ellipsisOpen={ellipsisOpen}
+          setEllipsisOpen={setEllipsisOpen}
+          jumpPage={jumpPage}
+          setJumpPage={setJumpPage}
+        />
+      </div>
     </div>
   );
 }

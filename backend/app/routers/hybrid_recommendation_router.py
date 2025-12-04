@@ -33,7 +33,7 @@ def get_engine():
 @router.get("/{isbn}")
 def hybrid_recommendations(
     isbn: str,
-    top_k: int = 10,
+    top_k: int = 12,
     curr = Depends(get_current_user)
 ):
     start = datetime.now()

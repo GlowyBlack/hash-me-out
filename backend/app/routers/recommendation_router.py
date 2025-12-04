@@ -3,12 +3,20 @@ from fastapi import APIRouter, HTTPException, status
 from app.recommender.similarity_engine import SimilarityEngine
 from app.repositories.book_repository import BookRepository
 from app.logger import logger
-from app.utils.book_identity import normalize_text, is_same_work, normalize_title_for_work
+from app.utils.book_identity import (
+    normalize_text,
+    normalize_title_for_work,
+    is_same_work,
+)
 
-router = APIRouter(prefix = "/recommendation", tags = ["Recommendation"])
+router = APIRouter(
+    prefix = "/recommendation",
+    tags = ["Recommendation"]
+)
 
 book_repo = BookRepository()
-engine = None   
+engine = None
+
 
 def get_engine():
     global engine
@@ -26,14 +34,16 @@ def get_engine():
     ),
     response_description = "A list of recommended books with similarity scores."
 )
-@router.get("/{isbn}")
-def similar_books(isbn: str, top_k: int = 10):
+def similar_books(isbn: str, top_k: int = 12):
     start = datetime.now()
     logger.info(f"API CALL      | /recommendation/{isbn} | top_k={top_k}")
 
     input_book = book_repo.get_book_by_isbn(isbn)
     if not input_book:
-        raise HTTPException(status_code = status.HTTP_404_NOT_FOUND, detail = "Input ISBN not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Input ISBN not found"
+        )
 
     eng = get_engine()
     recs = eng.recommend_for_book(isbn, top_k=top_k)
@@ -41,11 +51,13 @@ def similar_books(isbn: str, top_k: int = 10):
     if not recs:
         logger.warning(f"API NOTFOUND  | /recommendation/{isbn} | no similar books")
         raise HTTPException(
-            status_code = status.HTTP_404_NOT_FOUND,
-            detail = "ISBN not found or no recommendations available"
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="ISBN not found or no recommendations available"
         )
 
-    seen_titles = set()
+    # Work-level dedup (remove multiple ISBNs of same book)
+    seen_works = set()
+
     results = []
 
     for rec in recs:
@@ -54,21 +66,26 @@ def similar_books(isbn: str, top_k: int = 10):
             logger.warning(f"SKIP          | missing metadata | isbn={rec['isbn']}")
             continue
 
+        # Skip same underlying work as the input
         if is_same_work(input_book, book):
-            logger.info(f"SKIP WORK     | same book/work | isbn={book['ISBN']}")
-            continue
-        
-        key = (
-            normalize_title_for_work(book["Book-Title"]),
-            normalize_text(book["Book-Author"]),
-        )
-
-        if key in seen_titles:
-            logger.info(f"DEDUP         | {book['Book-Title']} by {book['Book-Author']}")
+            logger.info(f"SKIP SAMEWORK | isbn={book['ISBN']}")
             continue
 
-        seen_titles.add(key)
+        # ---- Work-level dedup (title + author last name) ----
+        title_key = normalize_title_for_work(book["Book-Title"])
 
+        author_norm = normalize_text(book["Book-Author"])
+        last_name = author_norm.split()[-1] if author_norm else ""
+
+        work_key = (title_key, last_name)
+
+        if work_key in seen_works:
+            logger.info(f"DEDUP WORK    | {book['Book-Title']} by {book['Book-Author']}")
+            continue
+
+        seen_works.add(work_key)
+
+        # ---- Append result ----
         results.append({
             "isbn": book["ISBN"],
             "title": book["Book-Title"],
