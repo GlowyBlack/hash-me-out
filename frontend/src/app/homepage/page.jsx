@@ -12,23 +12,16 @@ import Pagination from "../../components/SearchResults/Pagination";
 export default function HomePage() {
   const router = useRouter();
 
-  // ============================
-  // USER / AUTH STATE
-  // ============================
   const [user, setUser] = useState(null);
   const [formType, setFormType] = useState(null);
+  const [authChecked, setAuthChecked] = useState(false);
+  const [suspensionInfo, setSuspensionInfo] = useState(null);
 
-  // ============================
-  // SEARCH STATE
-  // ============================
   const [search, setSearch] = useState("");
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // ============================
-  // PAGINATION
-  // ============================
   const [currentPage, setCurrentPage] = useState(1);
   const resultsPerPage = 5;
 
@@ -37,37 +30,56 @@ export default function HomePage() {
   const currentResults = results.slice(indexOfFirst, indexOfLast);
   const totalPages = Math.ceil(results.length / resultsPerPage);
 
-  // ============================
-  // LIVE SEARCH STATE
-  // ============================
   const [liveResults, setLiveResults] = useState([]);
   const [isTyping, setIsTyping] = useState(false);
 
-  // ============================
-  // ELLIPSIS PAGE JUMP STATE
-  // ============================
   const [ellipsisOpen, setEllipsisOpen] = useState(null);
   const [jumpPage, setJumpPage] = useState("");
 
-  // ============================
-  // REF for click-outside closing
-  // ============================
   const searchRef = useRef(null);
 
-  // ----------------------------
-  // Decode token & load user
-  // ----------------------------
   useEffect(() => {
     const token = localStorage.getItem("access_token");
-    if (token) {
-      const decoded = JSON.parse(atob(token.split(".")[1]));
-      setUser(decoded);
+    if (!token) {
+      setAuthChecked(true);
+      return;
     }
+
+    async function fetchMe() {
+      try {
+        const res = await fetch("http://localhost:8000/auth/me", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!res.ok) {
+          localStorage.removeItem("access_token");
+          setUser(null);
+          setSuspensionInfo(null);
+        } else {
+          const data = await res.json();
+          setUser(data);
+
+          if (data.is_suspended) {
+            setSuspensionInfo({
+              suspended_until: data.suspended_until,
+              reason: data.suspension_reason,
+            });
+          } else {
+            setSuspensionInfo(null);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load user:", err);
+      } finally {
+        setAuthChecked(true);
+      }
+    }
+
+    fetchMe();
   }, []);
 
-  // ----------------------------
-  // Close live search on click outside
-  // ----------------------------
   useEffect(() => {
     function handleClickOutside(e) {
       if (searchRef.current && !searchRef.current.contains(e.target)) {
@@ -76,15 +88,13 @@ export default function HomePage() {
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    return () =>
+      document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // ----------------------------
-  // Full search handler (non-live)
-  // ----------------------------
   const handleSearch = async (e) => {
     e.preventDefault();
-    setLiveResults([]);  // hide dropdown
+    setLiveResults([]);
     setIsTyping(false);
 
     setLoading(true);
@@ -92,7 +102,9 @@ export default function HomePage() {
     setResults([]);
 
     try {
-      const res = await fetch(`http://localhost:8000/books/search?query=${search}`);
+      const res = await fetch(
+        `http://localhost:8000/books/search?query=${search}`
+      );
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail);
       setResults(data);
@@ -103,9 +115,6 @@ export default function HomePage() {
     setLoading(false);
   };
 
-  // ----------------------------
-  // LIVE SEARCH: debounced
-  // ----------------------------
   useEffect(() => {
     if (!search.trim()) {
       setLiveResults([]);
@@ -130,42 +139,92 @@ export default function HomePage() {
     return () => clearTimeout(timeout);
   }, [search]);
 
-  // ----------------------------
-  // Logout handler
-  // ----------------------------
   const handleLogout = () => {
     localStorage.removeItem("access_token");
     setUser(null);
+    setSuspensionInfo(null);
     router.push("/");
   };
 
-  // ----------------------------
-  // Profile route
-  // ----------------------------
   const goToProfile = () => {
     router.push("/profile");
   };
 
-  // ----------------------------
-  // When login/register succeeds
-  // ----------------------------
-  const handleLoginSuccess = () => {
+  const handleLoginSuccess = async () => {
     setFormType(null);
 
     const token = localStorage.getItem("access_token");
-    if (token) {
-      const decoded = JSON.parse(atob(token.split(".")[1]));
-      setUser(decoded);
+    if (!token) return;
+
+    try {
+      const res = await fetch("http://localhost:8000/auth/me", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setUser(data);
+        if (data.is_suspended) {
+          setSuspensionInfo({
+            suspended_until: data.suspended_until,
+            reason: data.suspension_reason,
+          });
+        } else {
+          setSuspensionInfo(null);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to fetch current user after login:", err);
     }
   };
 
-  // =============================
-  // RETURN UI (now much cleaner)
-  // =============================
+  const untilText =
+    suspensionInfo && suspensionInfo.suspended_until
+      ? new Date(suspensionInfo.suspended_until).toLocaleString()
+      : "further notice";
+
+  if (!authChecked) {
+    return <div className="min-h-screen bg-gray-50" />;
+  }
+
+
+  if (suspensionInfo) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        <Header
+          user={user}
+          setFormType={setFormType}
+          handleLogout={handleLogout}
+          goToProfile={goToProfile}
+        />
+
+        <div className="flex-1 flex items-center justify-center px-4">
+          <div className="max-w-xl w-full bg-white shadow-md rounded-lg p-8 text-center">
+            <h1 className="text-3xl font-bold mb-4 text-red-600">
+              Your account is suspended
+            </h1>
+            <p className="mb-2">
+              You are suspended until{" "}
+              <span className="font-semibold">{untilText}</span>.
+            </p>
+            {suspensionInfo.reason && (
+              <p className="text-gray-700">
+                <span className="font-semibold">Reason:</span>{" "}
+                {suspensionInfo.reason}
+              </p>
+            )}
+            <p className="mt-4 text-sm text-gray-500">
+              If you believe this is a mistake, please contact an
+              administrator.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="relative min-h-screen bg-gray-50">
-
-      {/* HEADER */}
       <Header
         user={user}
         setFormType={setFormType}
@@ -173,24 +232,24 @@ export default function HomePage() {
         goToProfile={goToProfile}
       />
 
-      {/* AUTH POPUP */}
       <AuthPopup
         formType={formType}
         setFormType={setFormType}
         handleLoginSuccess={handleLoginSuccess}
       />
 
-      {/* WELCOME TEXT */}
       <main className="max-w-7xl mx-auto px-6 py-28 text-center">
         <h1 className="text-4xl font-bold mb-6 text-gray-900">
-          {user ? `Welcome back, ${user.username}!` : "Welcome to Our Library!"}
+          {user
+            ? `Welcome back, ${user.username}!`
+            : "Welcome to Our Library!"}
         </h1>
         <p className="text-lg text-gray-700">
-          Browse books, search by title or author, and register to make requests.
+          Browse books, search by title or author, and register to make
+          requests.
         </p>
       </main>
 
-      {/* SEARCH BAR + LIVE SEARCH */}
       <SearchBar
         search={search}
         setSearch={setSearch}
@@ -200,12 +259,12 @@ export default function HomePage() {
         searchRef={searchRef}
       />
 
-      {/* RESULTS LIST */}
       <div className="max-w-7xl mx-auto px-6 mt-6">
-        <SearchList results={currentResults} />
+        {loading && <p>Loading...</p>}
+        {error && <p className="text-red-500">{error}</p>}
+        {!loading && !error && <SearchList results={currentResults} />}
       </div>
 
-      {/* PAGINATION */}
       <Pagination
         currentPage={currentPage}
         totalPages={totalPages}
@@ -215,7 +274,6 @@ export default function HomePage() {
         jumpPage={jumpPage}
         setJumpPage={setJumpPage}
       />
-
     </div>
   );
 }

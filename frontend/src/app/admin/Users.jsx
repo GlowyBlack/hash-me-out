@@ -9,7 +9,6 @@ export default function Users() {
   const [isTyping, setIsTyping] = useState(false);
   const searchRef = useRef(null);
 
-  // Close dropdown on click outside
   useEffect(() => {
     function handleClickOutside(e) {
       if (searchRef.current && !searchRef.current.contains(e.target)) {
@@ -21,7 +20,6 @@ export default function Users() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Live search (debounced)
   useEffect(() => {
     if (!search.trim()) {
       setResults([]);
@@ -34,7 +32,9 @@ export default function Users() {
     const timeout = setTimeout(async () => {
       try {
         const res = await fetch(
-          `http://localhost:8000/auth/search?username=${encodeURIComponent(search)}`,
+          `http://localhost:8000/auth/search?username=${encodeURIComponent(
+            search
+          )}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -51,52 +51,61 @@ export default function Users() {
     return () => clearTimeout(timeout);
   }, [search]);
 
-  // Suspend user
   async function suspendUser(userId) {
     const duration = prompt("Enter suspension duration in minutes:", "60");
     if (!duration) return;
+
+    const reason =
+      prompt("Enter suspension reason (optional):", "")?.trim() || "";
 
     const token = localStorage.getItem("access_token");
 
     try {
       const res = await fetch(
-        `http://localhost:8000/auth/suspend/${userId}?duration_minutes=${duration}`,
+        `http://localhost:8000/auth/suspend/${userId}?duration_minutes=${encodeURIComponent(
+          duration
+        )}&reason=${encodeURIComponent(reason)}`,
         {
           method: "POST",
           headers: { Authorization: `Bearer ${token}` },
         }
       );
 
+      const data = await res.json();
+
       if (!res.ok) {
-        const errorData = await res.json();
-        alert("Failed to suspend user: " + (errorData.detail || res.statusText));
+        const detail =
+          typeof data.detail === "string"
+            ? data.detail
+            : JSON.stringify(data.detail);
+        alert("Failed to suspend user: " + detail);
         return;
       }
 
-      const data = await res.json();
-
-      // Update selectedUser directly with the API response
-      setSelectedUser(prev => ({
+      setSelectedUser((prev) => ({
         ...prev,
         is_suspended: true,
         suspended_until: data.suspended_until,
+        suspension_reason: reason || null,
       }));
 
-      // Update results list too
-      setResults(prev =>
-        prev.map(u =>
+      setResults((prev) =>
+        prev.map((u) =>
           u.id === userId
-            ? { ...u, is_suspended: true, suspended_until: data.suspended_until }
+            ? {
+                ...u,
+                is_suspended: true,
+                suspended_until: data.suspended_until,
+                suspension_reason: reason || null,
+              }
             : u
         )
       );
-
     } catch (err) {
       console.error(err);
     }
   }
 
-  // Unsuspend user
   async function unsuspendUser(userId) {
     const token = localStorage.getItem("access_token");
 
@@ -109,28 +118,36 @@ export default function Users() {
         }
       );
 
+      const data = await res.json();
+
       if (!res.ok) {
-        const errorData = await res.json();
-        alert("Failed to unsuspend user: " + (errorData.detail || res.statusText));
+        const detail =
+          typeof data.detail === "string"
+            ? data.detail
+            : JSON.stringify(data.detail);
+        alert("Failed to unsuspend user: " + detail);
         return;
       }
 
-      // Update selected user
-      setSelectedUser(prev => ({
+      setSelectedUser((prev) => ({
         ...prev,
         is_suspended: false,
         suspended_until: null,
+        suspension_reason: null,
       }));
 
-      // Update results list
-      setResults(prev =>
-        prev.map(u =>
+      setResults((prev) =>
+        prev.map((u) =>
           u.id === userId
-            ? { ...u, is_suspended: false, suspended_until: null }
+            ? {
+                ...u,
+                is_suspended: false,
+                suspended_until: null,
+                suspension_reason: null,
+              }
             : u
         )
       );
-
     } catch (err) {
       console.error(err);
     }
@@ -148,7 +165,9 @@ export default function Users() {
         className="w-full px-4 py-2 mb-4 border border-gray-300 rounded-lg bg-gray-50"
       />
 
-      {isTyping && <p className="text-sm text-gray-500 mb-2">Searching...</p>}
+      {isTyping && (
+        <p className="text-sm text-gray-500 mb-2">Searching...</p>
+      )}
 
       <div className="bg-white p-4 rounded-lg shadow-md">
         {results.length === 0 ? (
@@ -171,7 +190,6 @@ export default function Users() {
 
       {selectedUser && (
         <div className="relative mt-6 bg-gray-50 p-20 rounded-lg shadow-md">
-          {/* Close */}
           <button
             onClick={() => setSelectedUser(null)}
             className="absolute top-2 right-5 text-gray-500 hover:text-gray-800 font-bold text-3xl"
@@ -180,15 +198,39 @@ export default function Users() {
           </button>
 
           <h2 className="text-4xl font-bold mb-4">User Details</h2>
-          <p className="text-xl"><strong>ID:</strong> {selectedUser.id}</p>
-          <p className="text-xl"><strong>Username:</strong> {selectedUser.username}</p>
-          <p className="text-xl"><strong>Email:</strong> {selectedUser.email}</p>
-          <p className="text-xl"><strong>Admin:</strong> {selectedUser.is_admin ? "Yes" : "No"}</p>
-          <p className="text-xl"><strong>Suspended:</strong> {selectedUser.is_suspended ? "Yes" : "No"}</p>
-          <p className="text-xl"><strong>Suspended Until:</strong> {selectedUser.suspended_until ? new Date(selectedUser.suspended_until).toLocaleString() : "N/A"}</p>
-          <p className="text-xl"><strong>Warnings:</strong> {selectedUser.warnings || "N/A"}</p>
 
-          {/* Action buttons */}
+          <p className="text-xl">
+            <strong>ID:</strong> {selectedUser.id}
+          </p>
+          <p className="text-xl">
+            <strong>Username:</strong> {selectedUser.username}
+          </p>
+          <p className="text-xl">
+            <strong>Email:</strong> {selectedUser.email}
+          </p>
+          <p className="text-xl">
+            <strong>Admin:</strong> {selectedUser.is_admin ? "Yes" : "No"}
+          </p>
+          <p className="text-xl">
+            <strong>Suspended:</strong>{" "}
+            {selectedUser.is_suspended ? "Yes" : "No"}
+          </p>
+          <p className="text-xl">
+            <strong>Suspended Until:</strong>{" "}
+            {selectedUser.suspended_until
+              ? new Date(selectedUser.suspended_until).toLocaleString()
+              : "N/A"}
+          </p>
+
+          <p className="text-xl">
+            <strong>Suspension Reason:</strong>{" "}
+            {selectedUser.suspension_reason || "N/A"}
+          </p>
+
+          <p className="text-xl">
+            <strong>Warnings:</strong> {selectedUser.warnings || "N/A"}
+          </p>
+
           {!selectedUser.is_suspended ? (
             <button
               onClick={() => suspendUser(selectedUser.id)}

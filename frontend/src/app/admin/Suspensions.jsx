@@ -32,22 +32,26 @@ export default function Suspensions() {
     const token = localStorage.getItem("access_token");
 
     try {
-      const res = await fetch(`http://localhost:8000/auth/unsuspend/${id}`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const res = await fetch(
+        `http://localhost:8000/auth/unsuspend/${id}`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       if (!res.ok) {
         const errorData = await res.json();
-        alert("Could not unsuspend user: " + (errorData.detail || res.statusText));
+        alert(
+          "Could not unsuspend user: " +
+            (errorData.detail || res.statusText)
+        );
         return;
       }
 
-      // Update UI immediately instead of only refetching
-      setUsers(users.filter((u) => u.id !== id));
-
+      setUsers((prev) => prev.filter((u) => u.id !== id));
     } catch (err) {
       console.error(err);
     }
@@ -78,7 +82,8 @@ export default function Suspensions() {
                   <p className="text-gray-700">{u.email}</p>
 
                   <p className="mt-2 text-sm">
-                    <strong>Suspended:</strong> {u.is_suspended ? "Yes" : "No"}
+                    <strong>Suspended:</strong>{" "}
+                    {u.is_suspended ? "Yes" : "No"}
                   </p>
 
                   <p className="mt-2 text-sm">
@@ -88,7 +93,12 @@ export default function Suspensions() {
                       : "N/A"}
                   </p>
 
-                  <p className="text-sm">
+                  <p className="mt-1 text-sm">
+                    <strong>Suspension Reason:</strong>{" "}
+                    {u.suspension_reason || "N/A"}
+                  </p>
+
+                  <p className="mt-1 text-sm">
                     <strong>Warnings:</strong> {u.warnings}
                   </p>
                 </div>

@@ -2,6 +2,7 @@ import csv
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional, Dict
+
 from app.repositories.csv_repository import CSVRepository
 
 USER_CSV = Path(__file__).resolve().parents[1] / "data" / "Users.csv"
@@ -14,6 +15,7 @@ FIELDNAMES = [
     "is_admin",
     "is_suspended",
     "suspended_until",
+    "suspension_reason",
     "warnings",
 ]
 
@@ -41,18 +43,20 @@ class CSVUserService:
     def _check_suspension_expired(self, user: dict) -> dict:
         suspended_until = user.get("suspended_until", "")
         if not suspended_until:
-            return user 
+            return user
 
         suspended_until_dt = datetime.fromisoformat(suspended_until)
         if datetime.now() >= suspended_until_dt:
-            user["is_suspended"] =  False
+            user["is_suspended"] = False
             user["suspended_until"] = ""
+            user["suspension_reason"] = ""
 
             rows = self.repo.read_all(self.path)
             for r in rows:
                 if int(r["id"]) == user["id"]:
                     r["is_suspended"] = "false"
                     r["suspended_until"] = ""
+                    r["suspension_reason"] = ""
                     break
 
             self._write_all(rows)
@@ -64,7 +68,11 @@ class CSVUserService:
 
         for r in rows:
             if int(r["id"]) == int(user_id):
-                return str(r.get("is_admin", "False")).strip().lower() in {"true", "1", "yes"}
+                return str(r.get("is_admin", "False")).strip().lower() in {
+                    "true",
+                    "1",
+                    "yes",
+                }
 
         return False
 
@@ -77,20 +85,30 @@ class CSVUserService:
                 row["is_admin"] = row["is_admin"].lower() == "true"
                 row["is_suspended"] = row["is_suspended"].lower() == "true"
                 row["warnings"] = int(row.get("warnings", "0") or 0)
+                row["suspension_reason"] = row.get("suspension_reason") or None
 
                 row = self._check_suspension_expired(row)
-
                 return row
 
         return None
-    
+
     def get_by_id(self, user_id: int) -> Optional[Dict]:
+        """Return a single user by numeric id, or None if not found."""
         for row in self.repo.read_all(self.path):
             if int(row["id"]) == int(user_id):
                 row["id"] = int(row["id"])
-                row["is_admin"] = row["is_admin"].lower() == "true"
-                row["is_suspended"] = row["is_suspended"].lower() == "true"
+                row["is_admin"] = str(row.get("is_admin", "false")).lower() in {
+                    "true",
+                    "1",
+                    "yes",
+                }
+                row["is_suspended"] = str(row.get("is_suspended", "false")).lower() in {
+                    "true",
+                    "1",
+                    "yes",
+                }
                 row["warnings"] = int(row.get("warnings", "0") or 0)
+                row["suspension_reason"] = row.get("suspension_reason") or None
 
                 row = self._check_suspension_expired(row)
                 return row
@@ -124,6 +142,7 @@ class CSVUserService:
             "is_admin": "true" if is_admin else "false",
             "is_suspended": "false",
             "suspended_until": "",
+            "suspension_reason": "",
             "warnings": "0",
         }
 
@@ -138,6 +157,7 @@ class CSVUserService:
             "is_admin": is_admin,
             "is_suspended": False,
             "suspended_until": "",
+            "suspension_reason": None,
             "warnings": 0,
         }
 
@@ -148,14 +168,11 @@ class CSVUserService:
         email: str | None = None,
         is_admin: bool | None = None,
     ) -> Dict:
-
         users = self.repo.read_all(self.path)
         updated_user = None
 
         for u in users:
             if int(u["id"]) == int(user_id):
-
-                # Only update username if it's not None AND not empty/whitespace
                 if username is not None:
                     username_clean = username.strip()
                     if username_clean:
@@ -168,7 +185,6 @@ class CSVUserService:
                                 raise ValueError("Username is taken")
                         u["username"] = username_clean
 
-                # Only update email if it's not None AND not empty/whitespace
                 if email is not None:
                     email_clean = email.strip()
                     if email_clean:
@@ -194,19 +210,29 @@ class CSVUserService:
 
         updated_user["id"] = int(updated_user["id"])
         updated_user["is_admin"] = (
-            str(updated_user.get("is_admin", "false")).lower()
-            in {"true", "1", "yes"}
+            str(updated_user.get("is_admin", "false")).lower() in {"true", "1", "yes"}
         )
         updated_user["is_suspended"] = (
-            str(updated_user.get("is_suspended", "false")).lower()
-            in {"true", "1", "yes"}
+            str(updated_user.get("is_suspended", "false")).lower() in {
+                "true",
+                "1",
+                "yes",
+            }
         )
         updated_user["warnings"] = int(updated_user.get("warnings", "0") or 0)
+        updated_user["suspension_reason"] = (
+            updated_user.get("suspension_reason") or None
+        )
 
         return updated_user
 
-
-    def suspend_user(self, admin_id: int, target_id: int, duration_minutes: int):
+    def suspend_user(
+        self,
+        admin_id: int,
+        target_id: int,
+        duration_minutes: int,
+        reason: str | None = None,
+    ) -> Dict:
         if not self._is_admin(admin_id):
             raise PermissionError("Admin privileges required")
 
@@ -220,6 +246,7 @@ class CSVUserService:
             if int(u["id"]) == int(target_id):
                 u["is_suspended"] = "true"
                 u["suspended_until"] = suspended_until_str
+                u["suspension_reason"] = reason or ""
                 target = u
                 break
 
@@ -227,7 +254,6 @@ class CSVUserService:
             raise ValueError("User not found")
 
         self._write_all(rows)
-
         return target
 
     def unsuspend_user(self, admin_id: int, target_id: int) -> Dict:
@@ -240,7 +266,8 @@ class CSVUserService:
         for u in users:
             if int(u["id"]) == int(target_id):
                 u["is_suspended"] = "false"
-                u["suspended_until"] = ""    
+                u["suspended_until"] = ""
+                u["suspension_reason"] = ""
                 unsuspended_user = u
                 break
 
@@ -248,12 +275,7 @@ class CSVUserService:
             raise ValueError("user_not_found")
 
         self._write_all(users)
-
         return unsuspended_user
-    
-    # -----------------------------------------------------------------------
-    # Warning and Suspension Management
-    # -----------------------------------------------------------------------
 
     def increment_warning(self, user_id: int) -> dict:
         users = self.repo.read_all(self.path)
@@ -290,7 +312,6 @@ class CSVUserService:
         return target
 
     def auto_suspend_for_profanity(self, target_id: int, duration_minutes: int) -> dict:
-        """Automatic suspension used when user triggers the profanity rule."""
         users = self.repo.read_all(self.path)
         target = None
 
@@ -301,7 +322,8 @@ class CSVUserService:
             if int(u["id"]) == int(target_id):
                 u["is_suspended"] = "true"
                 u["suspended_until"] = suspended_until_str
-                u["warnings"] = "0"  
+                u["suspension_reason"] = "Automatic suspension due to profanity"
+                u["warnings"] = "0"
                 target = u
                 break
 
@@ -310,26 +332,3 @@ class CSVUserService:
 
         self._write_all(users)
         return target
-
-    def get_by_id(self, user_id: int) -> Optional[Dict]:
-        """Return a single user by numeric id, or None if not found."""
-        for row in self.repo.read_all(self.path):
-            if int(row["id"]) == int(user_id):
-                row["id"] = int(row["id"])
-                row["is_admin"] = str(row.get("is_admin", "false")).lower() in {
-                    "true",
-                    "1",
-                    "yes",
-                }
-                row["is_suspended"] = str(row.get("is_suspended", "false")).lower() in {
-                    "true",
-                    "1",
-                    "yes",
-                }
-                row["warnings"] = int(row.get("warnings", "0") or 0)
-
-                # still respect suspension expiry logic
-                row = self._check_suspension_expired(row)
-
-                return row
-        return None
