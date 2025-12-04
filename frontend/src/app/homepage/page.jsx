@@ -36,9 +36,6 @@ export default function HomePage() {
     year_max: null,
   });
 
-  // NEW: track if a search has actually been done
-  const [hasSearched, setHasSearched] = useState(false);
-
   const [currentPage, setCurrentPage] = useState(1);
   const resultsPerPage = 5;
 
