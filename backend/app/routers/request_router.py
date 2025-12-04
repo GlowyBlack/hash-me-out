@@ -9,7 +9,7 @@ from app.deps import get_current_user
 
 router = APIRouter(prefix="/requests", tags=["Requests"])
 
-request_service = RequestService()
+service = RequestService()
 book_service = BookService()
 
 
@@ -21,7 +21,7 @@ book_service = BookService()
 )
 def create_request(request: RequestCreate, curr=Depends(get_current_user)):
     try:
-        return request_service.create_request(
+        return service.create_request(
             user_id=curr["id"],
             data=request,
         )
@@ -40,7 +40,7 @@ def create_request(request: RequestCreate, curr=Depends(get_current_user)):
 def get_all_requests(curr=Depends(get_current_user)):
     if not curr.get("is_admin"):
         raise HTTPException(status_code=403, detail="Admin privileges required")
-    return request_service.get_all_requests()
+    return service.get_all_requests()
 
 
 @router.delete(
@@ -53,7 +53,7 @@ def delete_request(request_id: int, curr=Depends(get_current_user)):
     if not curr.get("is_admin"):
         raise HTTPException(status_code=403, detail="Admin privileges required")
 
-    if not request_service.delete_request(request_id):
+    if not service.delete_request(request_id):
         raise HTTPException(
             status_code=404,
             detail="Request not found",
@@ -74,7 +74,7 @@ def get_request_stats(
     if not user["is_admin"]:
         raise HTTPException(status_code=403, detail="Admin privileges required")
 
-    return request_service.get_total_requested_sorted(order)
+    return service.get_total_requested_sorted(order)
 
 
 @router.post(
@@ -86,12 +86,10 @@ def accept_request(request_id: int, curr=Depends(get_current_user)):
     if not curr.get("is_admin"):
         raise HTTPException(status_code=403, detail="Admin privileges required")
 
-    # 1. Look up the request in Requests.csv
-    req = request_service.get_request_by_id(request_id)
+    req = service.get_request_by_id(request_id)
     if not req:
         raise HTTPException(status_code=404, detail="Request not found")
 
-    # Try both possible keys: "title" (new) or "book_title" (old)
     title = req.get("title") or req.get("book_title")
     if not title:
         raise HTTPException(
@@ -99,26 +97,22 @@ def accept_request(request_id: int, curr=Depends(get_current_user)):
             detail="Request is missing a title/book_title field.",
         )
 
-    # 2. Build a BookCreate object from the request.
-    # We only have title/author/isbn, so other fields are placeholders.
     book_data = BookCreate(
         isbn=req["isbn"],
         book_title=title,
         author=req["author"],
-        year_of_publication=None,  # or a default like 0 / 1900
+        year_of_publication=None,
         publisher=None,
         image_url_s=None,
         image_url_m=None,
         image_url_l=None,
     )
 
-    # 3. Create the book. If it already exists, surface a nice error.
     try:
         book = book_service.create_book(book_data)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    # 4. Delete the request now that it’s been handled
-    request_service.delete_request(request_id)
+    service.delete_request(request_id)
 
     return book

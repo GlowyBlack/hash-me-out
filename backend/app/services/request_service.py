@@ -12,11 +12,9 @@ class RequestService:
         self.path = Path(__file__).resolve().parents[1] / "data" / "Requests.csv"
         self.totalpath = Path(__file__).resolve().parents[1] / "data" / "Total_Requested.csv"
 
-        # CSV headers
         self.fields = ["RequestID", "UserID", "Book Title", "Author", "ISBN"]
         self.total_fields = ["ISBN", "Total Requested"]
 
-    # ---------- INTERNAL HELPERS ---------- #
 
     def __generate_next_id(self) -> int:
         """Generate the next RequestID number."""
@@ -61,8 +59,6 @@ class RequestService:
 
         self.repo.write_all(self.totalpath, self.total_fields, rows)
 
-    # ---------- PUBLIC METHODS ---------- #
-
     def get_all_requests(self) -> List[RequestRead]:
         """Retrieve all requests from Requests.csv as RequestRead objects."""
         rows = self.repo.read_all(self.path)
@@ -90,18 +86,15 @@ class RequestService:
         request = Request(
             request_id=new_id,
             user_id=user_id,
-            book_title=data.title,   # <-- map schema.title -> model.book_title
+            book_title=data.title,  
             author=data.author,
             isbn=data.isbn,
         )
 
-        # Persist to main Requests.csv
         self.repo.append_row(self.path, self.fields, request.to_csv_dict())
 
-        # Update per-ISBN totals
         self.__update_total_requested(data.isbn)
 
-        # Return as API schema
         return RequestRead(**request.to_api_dict())
 
     def delete_request(self, request_id: int) -> bool:
@@ -118,13 +111,11 @@ class RequestService:
         if isbn_to_decrement is None:
             return False
 
-        # Remove the chosen request
         updated_rows = [r for r in rows if int(r["RequestID"]) != request_id]
 
         if len(updated_rows) == original_count:
             return False
 
-        # Re-index RequestID to stay contiguous
         for i, row in enumerate(updated_rows, start=1):
             row["RequestID"] = str(i)
 

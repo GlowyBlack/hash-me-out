@@ -4,7 +4,7 @@ from datetime import datetime
 from app.utils.validators import validate_isbn
 
 class RequestCreate(BaseModel):
-    title: str = Field(..., min_length=1)   # rename from book_title
+    title: str = Field(..., min_length=1)   
     author: str = Field(..., min_length=1)
     isbn: str
     notes: Optional[str] = None
