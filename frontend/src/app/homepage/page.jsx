@@ -1,5 +1,4 @@
 "use client";
-import { dedupeBooks } from "@/utils/dedupeBooks";
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
@@ -23,14 +22,16 @@ export default function HomePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // NEW: track if a search has actually been done
+  const [hasSearched, setHasSearched] = useState(false);
+
   const [currentPage, setCurrentPage] = useState(1);
   const resultsPerPage = 5;
-  const uniqueResults = dedupeBooks(results);
-  const totalPages = Math.ceil(uniqueResults.length / resultsPerPage);
-  
+
   const indexOfLast = currentPage * resultsPerPage;
   const indexOfFirst = indexOfLast - resultsPerPage;
-  const currentResults = uniqueResults.slice(indexOfFirst, indexOfLast);
+  const currentResults = results.slice(indexOfFirst, indexOfLast);
+  const totalPages = Math.ceil(results.length / resultsPerPage);
 
   const [liveResults, setLiveResults] = useState([]);
   const [isTyping, setIsTyping] = useState(false);
@@ -102,6 +103,7 @@ export default function HomePage() {
     setLoading(true);
     setError("");
     setResults([]);
+    setHasSearched(false); // reset before the request
 
     try {
       const res = await fetch(
@@ -115,6 +117,7 @@ export default function HomePage() {
       setError(err.message);
     }
     setLoading(false);
+    setHasSearched(true); // search is now done
   };
 
   useEffect(() => {
@@ -131,9 +134,7 @@ export default function HomePage() {
           `http://localhost:8000/books/live-search?query=${search}`
         );
         const data = await res.json();
-        const unique = dedupeBooks(data);
-
-        setLiveResults(unique);
+        setLiveResults(data);
       } catch (err) {
         console.log(err);
       }
@@ -190,7 +191,6 @@ export default function HomePage() {
   if (!authChecked) {
     return <div className="min-h-screen bg-gray-50" />;
   }
-
 
   if (suspensionInfo) {
     return (
@@ -263,11 +263,25 @@ export default function HomePage() {
         searchRef={searchRef}
       />
 
-      <div className="max-w-7xl mx-auto px-6 mt-6">
-        {loading && <p>Loading...</p>}
-        {error && <p className="text-red-500">{error}</p>}
-        {!loading && !error && <SearchList results={currentResults} />}
-      </div>
+      <div className="max-w-7xl mx-auto px-6 mt-6 min-h-[2rem] flex justify-center">
+  {loading && (
+    <p className="text-gray-500 text-sm mt-1">Searching...</p>
+  )}
+  {!loading && error && (
+    <p className="text-red-500 text-sm mt-1">{error}</p>
+  )}
+</div>
+
+{!loading && !error && (
+  <div className="max-w-7xl mx-auto px-6 mt-2">
+    <SearchList
+      results={currentResults}
+      hasSearched={hasSearched}
+      query={search}
+    />
+  </div>
+)}
+
 
       <Pagination
         currentPage={currentPage}
