@@ -26,7 +26,7 @@ def clean_readinglist_csv(tmp_path):
 def test_readinglistcreate_invalid_name_empty():
     with pytest.raises(ValidationError) as exc_info:
         ReadingListCreate(name=" ")
-    assert "Readinglist Name must be at least 1 letter" in str(exc_info.value)
+    assert "Reading list name cannot be empty or whitespace." in str(exc_info.value)
 
 def test_create_list_success():
     data = ReadingListCreate(name="My List")
