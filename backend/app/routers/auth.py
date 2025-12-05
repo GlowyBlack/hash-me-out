@@ -1,11 +1,17 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel, EmailStr
-from typing import List
+from typing import List, Optional
 from datetime import datetime
 from app.services.user_service import CSVUserService
+from app.repositories.csv_repository import CSVRepository
+
+from app.services.readinglist_service import ReadingListService
+from app.repositories.book_repository import BookRepository
 from app.deps import get_user_service, pwd_context, create_access_token, get_current_user
-from app.schemas.user import UserCreate, UserOut, Token, UserUpdate
+from app.schemas.user import UserCreate, UserOut, Token, UserUpdate, PublicUserOut
+
+
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
@@ -322,3 +328,67 @@ def list_suspended(
             )
 
     return suspended
+
+@router.get(
+    "/search-users",
+    summary="Search for registered users",
+    description="Search users and show their public reading lists.",
+    response_model=List[PublicUserOut],
+)
+def search_registered_users(
+    username: str = Query(...),
+    curr = Depends(get_current_user),
+    user_svc: CSVUserService = Depends(get_user_service),
+    readinglist_service: ReadingListService = Depends(lambda: ReadingListService(
+        repo=CSVRepository(),
+        book_repo=BookRepository()
+    )),
+):
+    if not curr:
+        raise HTTPException(
+            401, "You must be logged in to search users."
+        )
+
+    username_norm = username.strip().lower()
+
+    # 1. Load users
+    users = user_svc.repo.read_all(user_svc.path)
+
+    # 2. Load reading lists from actual readinglist.csv
+    readinglists = readinglist_service.repo.read_all("backend/app/data/readinglists.csv")
+
+    # 3. Group lists by user
+    lists_by_user = {}
+    for rl in readinglists:
+        user_id = rl["UserID"]
+        if user_id not in lists_by_user:
+            lists_by_user[user_id] = []
+        lists_by_user[user_id].append(rl)
+
+    results = []
+
+    for user in users:
+        if username_norm in user["username"].lower():
+
+            uid = str(user["id"])
+            user_lists = lists_by_user.get(uid, [])
+
+            # Filter for public lists AND expand books
+            structured_lists = []
+            for item in user_lists:
+                if str(item.get("IsPublic", "true")).lower() == "true":
+                    structured_lists.append({
+                        "name": item.get("Name", "My List"),
+                        "books": item.get("ISBNs", "").split("|")
+                    })
+
+            results.append(
+                PublicUserOut(
+                    id=int(user["id"]),
+                    username=user["username"],
+                    reading_list=structured_lists
+                )
+            )
+
+    return results
+
