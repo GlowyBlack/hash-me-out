@@ -178,7 +178,7 @@ export default function AdminBooksPage() {
   return (
     <>
       <div className="flex justify-between items-center mx-4">
-        <h1 className="text-2xl font-bold mb-4">Manage Books</h1>
+        <h1 className="text-2xl font-bold mb-4 text-gray-900">Manage Books</h1>
 
         {/* ADD BOOK BUTTON */}
         <button
@@ -198,7 +198,7 @@ export default function AdminBooksPage() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search by title, author, etc."
-          className="flex-1 border rounded px-3 py-2"
+          className="flex-1 border rounded px-3 py-2 text-gray-600"
         />
         <button
           type="submit"
@@ -247,7 +247,7 @@ export default function AdminBooksPage() {
 
       {/* ========================== ADD BOOK MODAL ========================== */}
       {addModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 text-gray-900">
           <div className="bg-white p-6 rounded-lg w-full max-w-md space-y-4 shadow-lg">
             <h2 className="text-xl font-semibold">Add New Book</h2>
 
