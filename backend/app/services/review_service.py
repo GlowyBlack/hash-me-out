@@ -77,7 +77,7 @@ class ReviewService:
         """Detects if text contains profanity using PurgoMalum."""
         try:
             encoded = quote_plus(text)
-            url = f"{self.PURGOMALUM_URL}?text = {encoded}"
+            url = f"{self.PURGOMALUM_URL}?text={encoded}"
             resp = requests.get(url, timeout=3)
 
             if resp.status_code == 200:
