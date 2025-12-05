@@ -149,7 +149,7 @@ def test_get_user_public_readinglists():
 
 def test_get_user_public_empty():
     res = service.get_user_public_readinglists(user_id=1)
-    assert res == {"message": "User has no public reading lists"}
+    assert res == []
 
 
 def test_export_csv_success(monkeypatch):

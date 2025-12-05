@@ -8,7 +8,7 @@ import Header from "../../components/Header";
 export default function UserSearch() {
   const router = useRouter();
 
-  const [user, setUser] = useState(null); // define user state here
+  const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const [tokenChecked, setTokenChecked] = useState(false);
 
@@ -37,9 +37,8 @@ export default function UserSearch() {
         });
         setUser(res.data);
       } catch (err) {
-        console.error(err);
         localStorage.removeItem("access_token");
-        setUser(null); // now this works because setUser exists here
+        setUser(null);
       }
     }
 
@@ -77,10 +76,35 @@ export default function UserSearch() {
         }
       );
 
-      setResults(res.data);
+      const users = Array.isArray(res.data) ? res.data : [res.data];
+
+      const enhanced = await Promise.all(
+        users.map(async (u) => {
+          const userId = u.id;
+
+          if (!userId) {
+            return { ...u, publicLists: [] };
+          }
+
+          try {
+            const listsRes = await axios.get(
+              `${API_BASE}/readinglist/public/${userId}`
+            );
+            const publicLists = Array.isArray(listsRes.data)
+              ? listsRes.data
+              : [];
+
+            return { ...u, publicLists };
+          } catch {
+            return { ...u, publicLists: [] };
+          }
+        })
+      );
+
+      setResults(enhanced);
     } catch (err) {
-      console.error(err);
       setError(err.response?.data?.detail || "Error fetching users");
+      setResults([]);
     }
 
     setLoading(false);
@@ -90,11 +114,7 @@ export default function UserSearch() {
 
   return (
     <div className="min-h-screen bg-[#F7F9FC]">
-      <Header
-        user={user}
-        handleLogout={handleLogout}
-        goToProfile={goToProfile}
-      />
+      <Header user={user} handleLogout={handleLogout} goToProfile={goToProfile} />
 
       <div className="pt-40 px-6 max-w-4xl mx-auto">
         <h1 className="text-3xl font-bold mb-6">Connect with Other Users</h1>
@@ -122,30 +142,43 @@ export default function UserSearch() {
         {error && <p className="text-red-600">{error}</p>}
 
         <div className="space-y-4">
-          {results.map((u) => (
-            <div
-              key={u.id}
-              className="p-4 bg-white shadow-sm rounded-md border"
-            >
-              <h2 className="text-lg font-semibold">{u.username}</h2>
-              {u.reading_list?.length > 0 ? (
-              <div className="mt-2">
-                {u.reading_list.map((list, i) => (
-                  <div key={i} className="mb-3">
-                    <h3 className="font-semibold">{list.name}</h3>
-                    <ul className="list-disc list-inside text-gray-700">
-                      {list.books.map((isbn, j) => (
-                        <li key={j}>{isbn}</li>
-                      ))}
-                    </ul>
+          {results.map((u) => {
+            const hasPublicLists =
+              Array.isArray(u.publicLists) && u.publicLists.length > 0;
+
+            return (
+              <div
+                key={u.id}
+                className="p-4 bg-white shadow-sm rounded-md border"
+              >
+                <h2 className="text-lg font-semibold">{u.username}</h2>
+
+                {hasPublicLists ? (
+                  <div className="mt-2 space-y-2">
+                    {u.publicLists.map((list) => (
+                      <button
+                        key={list.list_id}
+                        onClick={() =>
+                          router.push(
+                            `/readinglist/public/${list.list_id}?owner=${u.id}`
+                          )
+                        }
+                        className="w-full text-left p-3 rounded-md border hover:bg-slate-50 transition"
+                      >
+                        <h3 className="font-semibold">{list.name}</h3>
+                        <p className="text-gray-700">
+                          {list.total_books}{" "}
+                          {list.total_books === 1 ? "book" : "books"}
+                        </p>
+                      </button>
+                    ))}
                   </div>
-                ))}
+                ) : (
+                  <p className="text-gray-500 mt-1">No public reading list</p>
+                )}
               </div>
-            ) : (
-              <p className="text-gray-500 mt-1">No public reading list</p>
-            )}
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>
