@@ -13,6 +13,14 @@ export default function AdminBooksPage() {
   const [deleteModal, setDeleteModal] = useState(false);
   const [currentBook, setCurrentBook] = useState(null);
 
+  // ADD BOOK MODAL STATE
+  const [addModal, setAddModal] = useState(false);
+  const [newBook, setNewBook] = useState({
+    isbn: "",
+    book_title: "",
+    author: "",
+  });
+
   // ===========================
   // SEARCH BOOKS
   // ===========================
@@ -33,6 +41,43 @@ export default function AdminBooksPage() {
       setError(err.message);
     }
     setLoading(false);
+  };
+
+  // ===========================
+  // ADD BOOK
+  // ===========================
+  const submitAddBook = async () => {
+    try {
+      const token = localStorage.getItem("access_token");
+      if (!token) {
+        alert("You must be logged in as admin to add books.");
+        return;
+      }
+
+      const res = await fetch("http://localhost:8000/books/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(newBook),
+      });
+
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        alert("Error adding book: " + JSON.stringify(data));
+        return;
+      }
+
+      alert("Book added successfully!");
+      setAddModal(false);
+
+      // Refresh search results
+      handleSearch(new Event("submit"));
+    } catch (err) {
+      alert("Could not add book");
+    }
   };
 
   // ===========================
@@ -132,9 +177,17 @@ export default function AdminBooksPage() {
   // ===========================
   return (
     <>
-      <h1 className="text-2xl font-bold mb-4 ml-4">
-        Manage Books
-      </h1>
+      <div className="flex justify-between items-center mx-4">
+        <h1 className="text-2xl font-bold mb-4">Manage Books</h1>
+
+        {/* ADD BOOK BUTTON */}
+        <button
+          onClick={() => setAddModal(true)}
+          className="px-4 py-2 bg-yellow-400 text-black rounded-lg hover:bg-yellow-500"
+        >
+          + Add Book
+        </button>
+      </div>
 
       {/* SEARCH */}
       <form
@@ -192,6 +245,58 @@ export default function AdminBooksPage() {
         ))}
       </div>
 
+      {/* ========================== ADD BOOK MODAL ========================== */}
+      {addModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg w-full max-w-md space-y-4 shadow-lg">
+            <h2 className="text-xl font-semibold">Add New Book</h2>
+
+            <input
+              placeholder="ISBN"
+              value={newBook.isbn}
+              onChange={(e) =>
+                setNewBook({ ...newBook, isbn: e.target.value })
+              }
+              className="border rounded px-3 py-2 w-full"
+            />
+
+            <input
+              placeholder="Title"
+              value={newBook.book_title}
+              onChange={(e) =>
+                setNewBook({ ...newBook, book_title: e.target.value })
+              }
+              className="border rounded px-3 py-2 w-full"
+            />
+
+            <input
+              placeholder="Author"
+              value={newBook.author}
+              onChange={(e) =>
+                setNewBook({ ...newBook, author: e.target.value })
+              }
+              className="border rounded px-3 py-2 w-full"
+            />
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                className="px-3 py-2 border rounded"
+                onClick={() => setAddModal(false)}
+              >
+                Cancel
+              </button>
+
+              <button
+                className="px-3 py-2 bg-yellow-400  text-black rounded"
+                onClick={submitAddBook}
+              >
+                Add
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* EDIT MODAL */}
       {editModal && currentBook && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
@@ -219,11 +324,11 @@ export default function AdminBooksPage() {
               className="border rounded px-3 py-2 w-full"
             />
             <div className="flex justify-end gap-2 pt-2">
-              <button className="px-3 py-2 border rounded" onClick={closeEditModal}>
+              <button className="px-3 py-2 border font-semibold rounded" onClick={closeEditModal}>
                 Cancel
               </button>
               <button
-                className="px-3 py-2 bg-blue-600 text-white rounded"
+                className="px-3 py-2 bg-yellow-400  font-semibold text-white rounded"
                 onClick={submitEdit}
               >
                 Save
