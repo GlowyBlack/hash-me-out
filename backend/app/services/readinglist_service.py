@@ -179,30 +179,34 @@ class ReadingListService:
 
         return False
 
-    def get_user_public_readinglists(self, user_id: int) -> Optional[ReadingListSummary]:
-        """Returns all of a user's reading lists that are marked public."""
+    def get_user_public_readinglists(self, user_id: int):
         rows = self.repo.read_all(self.path)
         result = []
 
         for r in rows:
-            if (
-                r["UserID"] == str(user_id) and 
-                r.get("IsPublic", "false") == "true"
-            ):
-                rl = ReadingList.from_dict(r)
-                result.append(
-                    ReadingListSummary(
-                        list_id = rl.list_id,
-                        name = rl.name,
-                        total_books = len(rl.books),
-                        is_public = rl.is_public
-                    )
-                )
+            if r["UserID"] == str(user_id):
 
-        if not result:
-            return {"message": "User has no public reading lists"}
+                raw_val = r.get("IsPublic", False)
+
+                is_public = False
+                if isinstance(raw_val, bool):
+                    is_public = raw_val
+                elif isinstance(raw_val, str):
+                    is_public = raw_val.strip().lower() in ("true", "1", "yes", "public")
+
+                if is_public:
+                    rl = ReadingList.from_dict(r)
+                    result.append(
+                        ReadingListSummary(
+                            list_id=rl.list_id,
+                            name=rl.name,
+                            total_books=len(rl.books),
+                            is_public=rl.is_public
+                        )
+                    )
 
         return result
+
 
     def get_list_detail(self, list_id: int, user_id: int) -> Optional[ReadingListDetail]:
         """Returns full details for a specific reading list."""
