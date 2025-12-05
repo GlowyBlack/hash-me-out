@@ -120,21 +120,66 @@ class RequestService:
             row["RequestID"] = str(i)
 
         self.repo.write_all(self.path, self.fields, updated_rows)
+
         self.__decrease_count(isbn_to_decrement)
 
         return True
 
+    
+    def delete_requests_by_isbn(self, isbn: str) -> int:
+        """
+        Delete ALL requests that have the given ISBN.
+        Reindex RequestID and update the totals CSV accordingly.
+        Returns how many rows were deleted.
+        """
+        rows = self.repo.read_all(self.path)
+
+        remaining_rows = []
+        deleted_count = 0
+
+        for r in rows:
+            if r.get("ISBN") == isbn:
+                deleted_count += 1
+            else:
+                remaining_rows.append(r)
+
+        # If nothing matched, just return 0 (router can still respond 200 with deleted_count=0)
+        if deleted_count == 0:
+            return 0
+
+        # Reindex RequestID from 1..n
+        for i, row in enumerate(remaining_rows, start=1):
+            row["RequestID"] = str(i)
+
+        # Write back to Requests.csv
+        self.repo.write_all(self.path, self.fields, remaining_rows)
+
+        # Decrease the total-request count for this ISBN by however many we deleted
+        for _ in range(deleted_count):
+            self.__decrease_count(isbn)
+
+        return deleted_count
+
     def get_total_requested_sorted(
         self, order: Literal["asc", "desc"] = "desc"
     ) -> List[Dict]:
-        """
-        Return all ISBNs with their total request counts,
-        sorted by number of requests.
-        """
         rows = self.repo.read_all(self.totalpath)
+        request_rows = self.repo.read_all(self.path)
+
+        isbn_to_request_id: dict[str, int] = {}
+        for r in request_rows:
+            isbn = r.get("ISBN")
+            if not isbn:
+                continue
+            req_id = int(r["RequestID"])
+            if isbn not in isbn_to_request_id:
+                isbn_to_request_id[isbn] = req_id
 
         for r in rows:
             r["Total Requested"] = int(r["Total Requested"])
+            isbn = r.get("ISBN")
+            if isbn in isbn_to_request_id:
+                r["RequestID"] = isbn_to_request_id[isbn]
 
         reverse = order == "desc"
         rows.sort(key=lambda r: r["Total Requested"], reverse=reverse)
