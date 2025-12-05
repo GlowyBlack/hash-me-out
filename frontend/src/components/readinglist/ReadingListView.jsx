@@ -41,7 +41,11 @@ const Kebab = () => (
   </svg>
 );
 
-export default function ReadingListView({ listId }) {
+export default function ReadingListView({
+  listId,
+  readOnly = false,
+  ownerId = null,
+}) {
   const router = useRouter();
 
   const [user, setUser] = useState(null);
@@ -49,7 +53,7 @@ export default function ReadingListView({ listId }) {
   const [loading, setLoading] = useState(true);
   const [toggling, setToggling] = useState(false);
   const [formType, setFormType] = useState("login");
-  const [openMenuIsbn, setOpenMenuIsbn] = useState(null); // which book's menu is open
+  const [openMenuIsbn, setOpenMenuIsbn] = useState(null);
 
   const token =
     typeof window !== "undefined"
@@ -89,10 +93,11 @@ export default function ReadingListView({ listId }) {
 
     async function loadList() {
       try {
+        const owner = ownerId ?? user.id;
         const res = await axios.get(
           `http://127.0.0.1:8000/readinglist/${listId}`,
           {
-            params: { user_id: user.id },
+            params: { user_id: owner },
             headers: authHeaders,
           }
         );
@@ -107,10 +112,10 @@ export default function ReadingListView({ listId }) {
 
     loadList();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, [user, ownerId]);
 
   async function handleToggleVisibility() {
-    if (!list) return;
+    if (!list || readOnly) return;
     setToggling(true);
 
     try {
@@ -144,8 +149,8 @@ export default function ReadingListView({ listId }) {
   }
 
   async function handleRemoveBook(e, book) {
-    e.stopPropagation(); // don't trigger the row click
-    if (!book?.isbn) return;
+    e.stopPropagation();
+    if (!book?.isbn || readOnly) return;
 
     try {
       await axios.delete(
@@ -226,20 +231,21 @@ export default function ReadingListView({ listId }) {
             </h1>
           </div>
 
-          <button
-            onClick={handleToggleVisibility}
-            disabled={toggling}
-            className={`px-5 py-2 rounded-full text-sm font-semibold shadow-sm border transition ${
-              list.is_public
-                ? "bg-white border-[#FFD52E] text-[#856000]"
-                : "bg-[#FFD52E] border-[#FFD52E] text-[#14213D]"
-            } ${toggling ? "opacity-70 cursor-wait" : ""}`}
-          >
-            {list.is_public ? "Public" : "Private"}
-          </button>
+          {!readOnly && (
+            <button
+              onClick={handleToggleVisibility}
+              disabled={toggling}
+              className={`px-5 py-2 rounded-full text-sm font-semibold shadow-sm border transition ${
+                list.is_public
+                  ? "bg-white border-[#FFD52E] text-[#856000]"
+                  : "bg-[#FFD52E] border-[#FFD52E] text-[#14213D]"
+              } ${toggling ? "opacity-70 cursor-wait" : ""}`}
+            >
+              {list.is_public ? "Public" : "Private"}
+            </button>
+          )}
         </div>
 
-        {/* Books */}
         <section className="bg-white rounded-3xl border border-[#E4ECFF] shadow-[0_18px_40px_rgba(15,35,52,0.08)] overflow-hidden">
           {books.length === 0 ? (
             <div className="px-8 py-10 text-center">
@@ -281,37 +287,38 @@ export default function ReadingListView({ listId }) {
                   </div>
 
                   <div className="flex items-center gap-3">
-                    {/* rating moved slightly left, before kebab */}
                     <span className="inline-flex items-center justify-center px-3 py-1 rounded-full bg-[#FFD52E] text-[#14213D] text-xs font-semibold">
                       {rating != null ? `${rating}/10` : "No rating"}
                     </span>
 
-                    <div className="relative">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setOpenMenuIsbn((prev) =>
-                            prev === isbnKey ? null : isbnKey
-                          );
-                        }}
-                        className="p-1 rounded-full hover:bg-[#FFF2B8] transition"
-                      >
-                        <Kebab />
-                      </button>
+                    {!readOnly && (
+                      <div className="relative">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOpenMenuIsbn((prev) =>
+                              prev === isbnKey ? null : isbnKey
+                            );
+                          }}
+                          className="p-1 rounded-full hover:bg-[#FFF2B8] transition"
+                        >
+                          <Kebab />
+                        </button>
 
-                      {openMenuIsbn === isbnKey && (
-                        <div className="absolute right-0 mt-1 w-40 bg-white rounded-xl shadow-lg border border-[#E4ECFF] z-10">
-                          <button
-                            type="button"
-                            onClick={(e) => handleRemoveBook(e, book)}
-                            className="w-full text-left px-4 py-2 text-xs text-[#D12C2C] hover:bg-[#FFF5F5] rounded-xl"
-                          >
-                            Remove
-                          </button>
-                        </div>
-                      )}
-                    </div>
+                        {openMenuIsbn === isbnKey && (
+                          <div className="absolute right-0 mt-1 w-40 bg-white rounded-xl shadow-lg border border-[#E4ECFF] z-10">
+                            <button
+                              type="button"
+                              onClick={(e) => handleRemoveBook(e, book)}
+                              className="w-full text-left px-4 py-2 text-xs text-[#D12C2C] hover:bg-[#FFF5F5] rounded-xl"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               );
