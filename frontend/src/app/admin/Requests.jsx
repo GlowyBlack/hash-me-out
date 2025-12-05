@@ -3,163 +3,152 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 
-export default function RequestsPage() {
-  const [requests, setRequests] = useState([]);
+const API_BASE = "http://127.0.0.1:8000";
+
+export default function RequestStatsPage() {
+  const [stats, setStats] = useState([]);
+  const [order, setOrder] = useState("desc");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const token =
+    typeof window !== "undefined"
+      ? localStorage.getItem("access_token")
+      : null;
 
-  const getAuthConfig = () => {
-    if (typeof window === "undefined") return {};
-    const token = localStorage.getItem("access_token");
-    if (!token) return {};
-    return {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    };
-  };
+  const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-  const load = async () => {
+  const fetchStats = async () => {
+    if (!token) {
+      setError("You must be logged in as an admin.");
+      return;
+    }
+    setLoading(true);
+    setError("");
     try {
-      setLoading(true);
-      setError("");
-
-      const config = getAuthConfig();
-      if (!config.headers) {
-        setError("You must be logged in as an admin to view requests.");
-        setRequests([]);
-        return;
-      }
-
-      const res = await axios.get(
-        "http://localhost:8000/requests",
-        config
-      );
-
-      console.log("Requests from API:", res.data);
-
-      
-      const normalized = res.data.map((r) => ({
-        ...r,
-        request_id: r.request_id ?? r.id, 
-      }));
-
-      setRequests(normalized);
+      const res = await axios.get(`${API_BASE}/requests/stats`, {
+        params: { order },
+        headers,
+      });
+      console.log("stats response:", res.data);
+      setStats(res.data);
     } catch (err) {
-      console.error("Error loading requests:", err);
-      setError("Failed to load requests.");
-      setRequests([]);
+      const msg =
+        err.response?.data?.detail || "Failed to load request statistics.";
+      setError(msg);
     } finally {
       setLoading(false);
     }
   };
 
-  // --- Accept Request ---
-  const accept = async (request_id) => {
-    try {
-      if (!request_id) {
-        alert("Missing request_id — cannot accept.");
-        return;
-      }
-
-      const config = getAuthConfig();
-
-      await axios.post(
-        `http://localhost:8000/requests/${request_id}/accept`,
-        {},
-        config
-      );
-
-      await load();
-    } catch (err) {
-      console.error("Error accepting request:", err);
-      alert(err.response?.data?.detail || "Error accepting request.");
-    }
-  };
-
-  const remove = async (request_id) => {
-    try {
-      if (!request_id) {
-        alert("Missing request_id — cannot delete.");
-        return;
-      }
-
-      const config = getAuthConfig();
-
-      await axios.delete(
-        `http://localhost:8000/requests/${request_id}`,
-        config
-      );
-
-      await load();
-    } catch (err) {
-      console.error("Error deleting request:", err);
-      alert(err.response?.data?.detail || "Error deleting request.");
-    }
-  };
-
   useEffect(() => {
-    load();
-  }, []);
+    fetchStats();
+  }, [order]);
+
+  const handleAccept = async (row) => {
+    const requestId = row.RequestID ?? row.request_id;
+    console.log("ACCEPT clicked for row:", row, "requestId:", requestId);
+
+    try {
+      await axios.post(
+        `${API_BASE}/requests/${requestId}/accept`,
+        {},
+        { headers }
+      );
+      await fetchStats();
+    } catch (err) {
+      alert(
+        err.response?.data?.detail ||
+          "Failed to accept requests for this ISBN."
+      );
+    }
+  };
+
+  const handleDecline = async (row) => {
+    const requestId = row.RequestID ?? row.request_id;
+    console.log("DECLINE clicked for row:", row, "requestId:", requestId);
+
+    try {
+      await axios.post(
+        `${API_BASE}/requests/${requestId}/decline`,
+        {},
+        { headers }
+      );
+      await fetchStats();
+    } catch (err) {
+      alert(
+        err.response?.data?.detail ||
+          "Failed to decline requests for this ISBN."
+      );
+    }
+  };
+
+  const toggleOrder = () => {
+    setOrder((prev) => (prev === "asc" ? "desc" : "asc"));
+  };
 
   return (
-    <div className="p-6 space-y-4 text-gray-900">
-      <h1 className="text-2xl font-bold mb-4">Book Requests</h1>
+    <div className="min-h-screen bg-[#F7F9FC] px-8 py-10">
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="text-3xl font-bold text-[#14213D]">Book Requests</h1>
+        <button
+          onClick={toggleOrder}
+          className="px-4 py-2 rounded-xl bg-[#FFD52E] text-[#14213D] font-semibold shadow-sm"
+        >
+          Sort: {order === "asc" ? "Ascending" : "Descending"}
+        </button>
+      </div>
 
-      {loading && <p>Loading requests...</p>}
-      {error && <p className="text-red-500">{error}</p>}
-
-      {!loading && !error && requests.length === 0 && (
-        <p className="text-gray-600">No pending requests.</p>
+      {error && (
+        <p className="mb-4 text-sm text-red-600">
+          {error}
+        </p>
       )}
 
-      {!loading && !error && requests.length > 0 && (
-        <table className="min-w-full border text-sm bg-white rounded-md overflow-hidden">
-          <thead className="bg-gray-100">
-            <tr>
-              <th className="border px-3 py-2 text-left">Title</th>
-              <th className="border px-3 py-2 text-left">Author</th>
-              <th className="border px-3 py-2 text-left">ISBN</th>
-              <th className="border px-3 py-2 text-left">Notes</th>
-              <th className="border px-3 py-2 text-left">Actions</th>
-            </tr>
-          </thead>
+      {loading ? (
+        <p className="text-sm text-[#526187]">Loading...</p>
+      ) : (
+        <div className="space-y-3">
+          {stats.length === 0 ? (
+            <p className="text-sm text-[#526187]">No requests found.</p>
+          ) : (
+            stats.map((row, idx) => {
+              const isbn = row.ISBN || row.isbn;
+              const total = row["Total Requested"] ?? row.total_requested;
 
-          <tbody>
-            {requests.map((r) => (
-              <tr key={r.request_id}>
-                <td className="border px-3 py-2">
-                  {r.book_title || r.title}
-                </td>
+              return (
+                <div
+                  key={idx}
+                  className="bg-white rounded-2xl border border-[#E4ECFF] shadow-sm px-5 py-4 flex items-center justify-between"
+                >
+                  <div>
+                    <p className="text-sm font-semibold text-[#14213D]">
+                      ISBN: {isbn}
+                    </p>
+                    <p className="text-xs text-[#74819A] mt-1">
+                      Total requested: {total}
+                    </p>
+                  </div>
 
-                <td className="border px-3 py-2">{r.author}</td>
-
-                <td className="border px-3 py-2">{r.isbn}</td>
-
-                <td className="border px-3 py-2">
-                  {r.notes || <span className="text-gray-400">—</span>}
-                </td>
-
-                <td className="border px-3 py-2 space-x-2">
-                  <button
-                    onClick={() => accept(r.request_id)}
-                    className="bg-green-600 text-white px-3 py-1 rounded"
-                  >
-                    Accept
-                  </button>
-
-                  <button
-                    onClick={() => remove(r.request_id)}
-                    className="bg-red-600 text-white px-3 py-1 rounded"
-                  >
-                    Delete
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleAccept(row)}
+                      className="px-3 py-1.5 rounded-lg bg-emerald-500 text-white text-xs font-semibold"
+                    >
+                      Accept
+                    </button>
+                    <button
+                      onClick={() => handleDecline(row)}
+                      className="px-3 py-1.5 rounded-lg bg-red-500 text-white text-xs font-semibold"
+                    >
+                      Decline
+                    </button>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
       )}
     </div>
   );
