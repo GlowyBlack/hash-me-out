@@ -53,6 +53,13 @@ export default function Header({ user, setFormType, handleLogout, goToProfile })
               >
                 Profile
               </div>
+              {/* CONNECT BUTTON */}
+              <button
+                onClick={() => router.push("/connect")}
+                className="rounded-full border border-[#ffb803] bg-[#ffb803] text-slate-900 text-sm font-semibold px-4 py-3 shadow-sm hover:bg-[#f5a800] hover:border-[#f5a800] transition"
+              >
+                Connect
+              </button>
 
               <button
                 onClick={handleLogout}

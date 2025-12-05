@@ -131,8 +131,8 @@ export default function AdminBooksPage() {
   // PAGE UI
   // ===========================
   return (
-    <div className="min-h-screen bg-gray-50 pt-24 pb-10 px-6">
-      <h1 className="text-2xl font-bold mb-4">
+    <>
+      <h1 className="text-2xl font-bold mb-4 ml-4">
         Manage Books
       </h1>
 
@@ -255,6 +255,6 @@ export default function AdminBooksPage() {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

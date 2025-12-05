@@ -151,7 +151,30 @@ export default function ProfilePage() {
     }
   }
 
-  async function handleSaveProfile() {
+  async function handleDownloadList(listId, listName) {
+    if (!token) return;
+
+    try {
+      const res = await axios.get(`${API_BASE}/readinglist/${listId}/download`, {
+        headers: authHeaders,
+        responseType: "blob", // important for downloading files
+      });
+
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement("a");
+      const safeName = listName.replace(/\s+/g, "_").replace(/\//g, "_");
+      link.href = url;
+      link.setAttribute("download", `${safeName}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      console.error("[Profile] handleDownloadList error:", err.response?.status, err.response?.data);
+      alert(err.response?.data?.detail || "Error downloading reading list");
+    }
+  }
+  
+async function handleSaveProfile() {
     try {
       const payload = {};
       if (editedUsername.trim() && editedUsername !== user.username) {
@@ -428,21 +451,28 @@ export default function ProfilePage() {
                     </button>
 
                     {openMenuId === id && (
-                      <div className="absolute right-3 top-11 z-10 w-40 bg-white border border-[#E4ECFF] rounded-xl shadow-md text-sm">
-                        <button
-                          className="w-full text-left px-3 py-2 hover:bg-[#F3F6FF]"
-                          onClick={() => handleToggleVisibility(id)}
-                        >
-                          Toggle visibility
-                        </button>
-                        <button
-                          className="w-full text-left px-3 py-2 hover:bg-[#FFE6E6] text-red-600"
-                          onClick={() => handleDeleteList(id)}
-                        >
-                          Delete list
-                        </button>
-                      </div>
-                    )}
+                    <div className="absolute right-3 top-11 z-10 w-44 bg-white border border-[#E4ECFF] rounded-xl shadow-md text-sm">
+                      <button
+                        className="w-full text-left px-3 py-2 hover:bg-[#F3F6FF]"
+                        onClick={() => handleToggleVisibility(id)}
+                      >
+                        Toggle visibility
+                      </button>
+                      <button
+                        className="w-full text-left px-3 py-2 hover:bg-[#E4ECFF]"
+                        onClick={() => handleDownloadList(id, list.name)}
+                      >
+                        Download list
+                      </button>
+                      <button
+                        className="w-full text-left px-3 py-2 hover:bg-[#FFE6E6] text-red-600"
+                        onClick={() => handleDeleteList(id)}
+                      >
+                        Delete list
+                      </button>
+                    </div>
+                  )}
+
                   </div>
                 );
               })}
