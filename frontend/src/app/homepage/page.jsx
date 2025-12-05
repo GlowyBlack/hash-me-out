@@ -335,20 +335,11 @@ export default function HomePage() {
 
         {/* Only show results AFTER the user clicked Search */}
         {!loading && !error && hasSearched && (
-          currentResults.length > 0 ? (
-            <SearchList results={currentResults} />
-          ) : (
-            <div className="text-center text-gray-600 py-10">
-              <p className="text-lg font-medium">No match found.</p>
-
-              <button
-                onClick={() => console.log("Open request modal")}
-                className="mt-3 px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-semibold rounded-lg"
-              >
-                Click to request
-              </button>
-            </div>
-          )
+          <SearchList
+            results={currentResults}
+            hasSearched={hasSearched}
+            query={search}
+          />
         )}
       </div>
       
