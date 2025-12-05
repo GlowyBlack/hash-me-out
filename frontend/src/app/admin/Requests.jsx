@@ -8,7 +8,7 @@ export default function RequestsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // --- Auth Header ---
+
   const getAuthConfig = () => {
     if (typeof window === "undefined") return {};
     const token = localStorage.getItem("access_token");
@@ -20,7 +20,6 @@ export default function RequestsPage() {
     };
   };
 
-  // --- Load Requests ---
   const load = async () => {
     try {
       setLoading(true);
@@ -40,10 +39,10 @@ export default function RequestsPage() {
 
       console.log("Requests from API:", res.data);
 
-      // Normalize keys
+      
       const normalized = res.data.map((r) => ({
         ...r,
-        request_id: r.request_id ?? r.id, // support both formats
+        request_id: r.request_id ?? r.id, 
       }));
 
       setRequests(normalized);
@@ -79,7 +78,6 @@ export default function RequestsPage() {
     }
   };
 
-  // --- Delete Request ---
   const remove = async (request_id) => {
     try {
       if (!request_id) {
@@ -106,7 +104,7 @@ export default function RequestsPage() {
   }, []);
 
   return (
-    <div className="p-6 space-y-4">
+    <div className="p-6 space-y-4 text-gray-900">
       <h1 className="text-2xl font-bold mb-4">Book Requests</h1>
 
       {loading && <p>Loading requests...</p>}
@@ -131,7 +129,6 @@ export default function RequestsPage() {
           <tbody>
             {requests.map((r) => (
               <tr key={r.request_id}>
-                {/* Title (supports both backend formats) */}
                 <td className="border px-3 py-2">
                   {r.book_title || r.title}
                 </td>

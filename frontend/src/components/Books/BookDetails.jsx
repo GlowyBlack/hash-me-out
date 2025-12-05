@@ -40,6 +40,8 @@ export default function BookDetailPage({
   const [isEditing, setIsEditing] = useState(true);
   const [saving, setSaving] = useState(false);
   const [myReviewId, setMyReviewId] = useState(null);
+  const [avgRatingState, setAvgRatingState] = useState(avgRating);
+
 
   // ===============================
   // PAGINATION
@@ -61,18 +63,31 @@ export default function BookDetailPage({
   // Load user's existing review
   // ===============================
   useEffect(() => {
-    if (!user || reviews.length === 0) return;
+    if (!user || !reviews || reviews.length === 0) return;
 
-    const mine = reviews.find((r) => r.user_id === user.id);
-    if (mine) {
-      setMyReviewId(mine.review_id);
-      setUserComment(mine.comment);
-      setIsEditing(false);
+    const userId = Number(user.sub);  // FIXED
+
+    console.log("USER ID (number):", userId);
+
+    const mine = reviews.find((r) => Number(r.user_id) === userId);
+
+    console.log("FOUND MINE:", mine);
+
+    if (!mine) return;
+
+    setMyReviewId(mine.review_id);
+    setUserComment(mine.comment ?? "");
+
+    if (mine.rating !== null && mine.rating !== undefined) {
+      setUserRating(mine.rating);
     }
+
+    setIsEditing(false);
   }, [user, reviews]);
 
+
   // ===============================
-  // SAVE REVIEW + RATING
+  // SAVE REVIEW
   // ===============================
   async function handleSave() {
     if (!user) {
@@ -94,17 +109,6 @@ export default function BookDetailPage({
     try {
       setSaving(true);
 
-      // ---- 1) SAVE RATING ----
-      if (userRating !== null) {
-        await fetch(`${API_BASE}/ratings/books/${book.isbn}`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ rating: userRating }),
-        });
-      }
 
       // ---- 2) SAVE REVIEW ----
       let reviewRes;
@@ -161,6 +165,8 @@ export default function BookDetailPage({
 
       setIsEditing(false);
       setCurrentReviewPage(1);
+      await refreshBookData();
+
 
     } catch (e) {
       console.error("Save error:", e);
@@ -169,6 +175,57 @@ export default function BookDetailPage({
       setSaving(false);
     }
   }
+
+  async function handleSaveRating() {
+    if (!user) {
+      onRequireAuth();
+      return;
+    }
+
+    const token = localStorage.getItem("access_token");
+
+    try {
+      const res = await fetch(`${API_BASE}/ratings/books/${book.isbn}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ rating: userRating }),
+      });
+
+      if (!res.ok) {
+        console.error("Rating save failed");
+        return;
+      }
+
+      await refreshBookData();
+
+    } catch (e) {
+      console.error("Save rating error:", e);
+    }
+  }
+
+  async function refreshBookData() {
+    try {
+      // 1) Refresh reviews
+      const revRes = await fetch(`${API_BASE}/reviews/${book.isbn}`);
+      const revData = await revRes.json();
+      setReviews(Array.isArray(revData) ? revData : []);
+
+      // 2) Refresh avg rating
+      const avgRes = await fetch(`${API_BASE}/ratings/books/${book.isbn}/average`);
+      if (avgRes.ok) {
+        const avg = await avgRes.json();
+        setAvgRatingState(avg);   // <-- THIS is the fix
+      }
+
+    } catch (err) {
+      console.error("Failed to refresh page data:", err);
+    }
+  }
+
+
 
   return (
     <div className="px-6 md:px-4 py-10 max-w-7xl mx-auto">
@@ -214,12 +271,14 @@ export default function BookDetailPage({
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-semibold">Your Rating</h2>
               <span className="bg-amber-100 px-3 py-1 rounded-full text-xs">
-                Avg: {initialAvgRating.toFixed(1)} / 10
+                Avg: {avgRatingState?.avg_rating?.toFixed(1) ?? "0.0"} / 10
               </span>
             </div>
 
-            <div className="flex items-center gap-4 ">
+            {/* Rating Slider Row */}
+            <div className="flex items-center gap-4">
               <span>0</span>
+
               <input
                 type="range"
                 min="0"
@@ -228,12 +287,23 @@ export default function BookDetailPage({
                 onChange={(e) => setUserRating(Number(e.target.value))}
                 className="flex-1 accent-yellow-500"
               />
-              <span>10</span>
+
               <span className="w-16 text-right font-semibold">
                 {userRating ?? "—"}
               </span>
             </div>
+
+            {/* Save Rating button aligned bottom-right */}
+            <div className="flex justify-end mt-3">
+              <button
+                onClick={handleSaveRating}
+                className="bg-yellow-400 hover:bg-yellow-500 px-4 py-1 text-sm font-semibold rounded-full"
+              >
+                Save Rating
+              </button>
+            </div>
           </div>
+
 
           {/* Review Editor */}
           <div className="bg-white border rounded-2xl shadow p-5 text-gray-900">

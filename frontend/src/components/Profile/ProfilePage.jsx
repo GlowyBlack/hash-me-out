@@ -58,53 +58,76 @@ export default function ProfilePage() {
   const [page, setPage] = useState(0);
   const PAGE_SIZE = 5;
 
-  const token =
-    typeof window !== "undefined"
-      ? localStorage.getItem("access_token")
-      : null;
+  // NEW: keep token in state and load it once on mount
+  const [token, setToken] = useState(null);
+  const [tokenChecked, setTokenChecked] = useState(false);
 
-  const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
+  const API_BASE = "http://localhost:8000";
 
   const handleLogout = () => {
     localStorage.removeItem("access_token");
-    router.push("/homepage");
+    setUser(null);
+    router.push("/");
   };
 
+  // Load token from localStorage on mount
   useEffect(() => {
+    if (typeof window === "undefined") return;
+    const stored = localStorage.getItem("access_token");
+    console.log("[Profile] Loaded token from localStorage:", stored ? "(present)" : "(none)");
+    setToken(stored);
+    setTokenChecked(true);
+  }, []);
+
+  // Build auth headers whenever token changes
+  const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
+
+  // Load current user
+  useEffect(() => {
+    // Wait until we’ve checked localStorage
+    if (!tokenChecked) return;
+
+    // If no token at all, bounce to landing
     if (!token) {
-      router.push("/login");
+      console.log("[Profile] No token found → redirecting to /");
+      router.push("/");
       return;
     }
 
     async function loadUser() {
       try {
-        const res = await axios.get("http://127.0.0.1:8000/auth/me", {
+        console.log("[Profile] Calling /auth/me with Authorization: Bearer <token>");
+        const res = await axios.get(`${API_BASE}/auth/me`, {
           headers: authHeaders,
         });
+        console.log("[Profile] /auth/me status:", res.status, "data:", res.data);
         setUser(res.data);
         setEditedUsername(res.data.username);
         setEditedEmail(res.data.email);
-      } catch {
-        router.push("/login");
+      } catch (err) {
+        console.error("[Profile] /auth/me failed:", err.response?.status, err.response?.data);
+        localStorage.removeItem("access_token");
+        setUser(null);
+        router.push("/");
       }
     }
 
     loadUser();
-  }, [token, router]);
+  }, [tokenChecked, token, router]); // re-run if token changes
 
+  // Load reading lists once user + token are ready
   useEffect(() => {
-    if (!user || !token) {
-      return;
-    }
+    if (!user || !token) return;
 
     async function loadLists() {
       try {
-        const res = await axios.get("http://127.0.0.1:8000/readinglist/", {
+        console.log("[Profile] Loading reading lists");
+        const res = await axios.get(`${API_BASE}/readinglist/`, {
           headers: authHeaders,
         });
         setLists(res.data);
       } catch (err) {
-        console.log(err);
+        console.log("[Profile] Failed to load reading lists:", err.response?.status, err.response?.data);
       }
     }
 
@@ -117,17 +140,41 @@ export default function ProfilePage() {
   }, [lists.length]);
 
   async function reloadLists() {
+    if (!token) return;
     try {
-      const res = await axios.get("http://127.0.0.1:8000/readinglist/", {
+      const res = await axios.get(`${API_BASE}/readinglist/`, {
         headers: authHeaders,
       });
       setLists(res.data);
     } catch (err) {
-      console.log(err);
+      console.log("[Profile] reloadLists error:", err.response?.status, err.response?.data);
     }
   }
 
-  async function handleSaveProfile() {
+  async function handleDownloadList(listId, listName) {
+    if (!token) return;
+
+    try {
+      const res = await axios.get(`${API_BASE}/readinglist/${listId}/download`, {
+        headers: authHeaders,
+        responseType: "blob", // important for downloading files
+      });
+
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement("a");
+      const safeName = listName.replace(/\s+/g, "_").replace(/\//g, "_");
+      link.href = url;
+      link.setAttribute("download", `${safeName}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      console.error("[Profile] handleDownloadList error:", err.response?.status, err.response?.data);
+      alert(err.response?.data?.detail || "Error downloading reading list");
+    }
+  }
+  
+async function handleSaveProfile() {
     try {
       const payload = {};
       if (editedUsername.trim() && editedUsername !== user.username) {
@@ -142,7 +189,7 @@ export default function ProfilePage() {
         return;
       }
 
-      const res = await axios.put("http://127.0.0.1:8000/auth/me", payload, {
+      const res = await axios.put(`${API_BASE}/auth/me`, payload, {
         headers: {
           ...authHeaders,
           "Content-Type": "application/json",
@@ -152,11 +199,10 @@ export default function ProfilePage() {
       setUser(res.data);
       setIsEditing(false);
     } catch (err) {
-      console.log(err);
+      console.log("[Profile] handleSaveProfile error:", err.response?.status, err.response?.data);
       alert(err.response?.data?.detail || "Error updating profile");
     }
   }
-
 
   async function handleCreateList() {
     if (!newListName.trim()) {
@@ -165,7 +211,7 @@ export default function ProfilePage() {
 
     try {
       await axios.post(
-        "http://127.0.0.1:8000/readinglist/",
+        `${API_BASE}/readinglist/`,
         { name: newListName.trim() },
         { headers: authHeaders },
       );
@@ -174,7 +220,7 @@ export default function ProfilePage() {
       setCreating(false);
       await reloadLists();
     } catch (err) {
-      console.log(err);
+      console.log("[Profile] handleCreateList error:", err.response?.status, err.response?.data);
       alert(err.response?.data?.detail || "Error adding reading list");
     }
   }
@@ -186,13 +232,13 @@ export default function ProfilePage() {
     }
 
     try {
-      await axios.delete(`http://127.0.0.1:8000/readinglist/${listId}`, {
+      await axios.delete(`${API_BASE}/readinglist/${listId}`, {
         headers: authHeaders,
       });
       setOpenMenuId(null);
       await reloadLists();
     } catch (err) {
-      console.log(err);
+      console.log("[Profile] handleDeleteList error:", err.response?.status, err.response?.data);
       alert(err.response?.data?.detail || "Error deleting reading list");
     }
   }
@@ -200,7 +246,7 @@ export default function ProfilePage() {
   async function handleToggleVisibility(listId) {
     try {
       const res = await axios.put(
-        `http://127.0.0.1:8000/readinglist/${listId}/visibility`,
+        `${API_BASE}/readinglist/${listId}/visibility`,
         {},
         { headers: authHeaders },
       );
@@ -217,18 +263,24 @@ export default function ProfilePage() {
         await reloadLists();
       }
     } catch (err) {
-      console.log(err);
+      console.log("[Profile] handleToggleVisibility error:", err.response?.status, err.response?.data);
       alert(err.response?.data?.detail || "Error updating visibility");
     }
   }
 
+  // While we haven’t checked token yet, render nothing (avoid flicker)
+  if (!tokenChecked) {
+    return null;
+  }
+
+  // If tokenChecked is true but user still not loaded (because /auth/me failed),
+  // the effect above will already have redirected; we can just render nothing here.
   if (!user) {
     return null;
   }
 
   const displayName =
     user.username?.charAt(0).toUpperCase() + user.username?.slice(1);
-
 
   const totalPages = Math.max(1, Math.ceil(lists.length / PAGE_SIZE));
   const startIndex = page * PAGE_SIZE;
@@ -246,12 +298,11 @@ export default function ProfilePage() {
         showProfileButton={false}
       />
 
-
       <main className="max-w-6xl mx-auto px-6 pb-16">
         <h1 className="text-3xl font-extrabold mb-8 py-6">Hi, {displayName}</h1>
 
         <div className="flex flex-col lg:flex-row gap-10 items-start">
-          {/*profile card */}
+          {/* profile card */}
           <div className="flex-1 max-w-sm">
             <section className="bg-white rounded-3xl p-8 shadow-[0_18px_40px_rgba(15,35,52,0.08)] border border-[#E4ECFF] flex flex-col items-center">
               <UserIcon />
@@ -368,58 +419,64 @@ export default function ProfilePage() {
             )}
 
             <div className="flex flex-col gap-3 mb-6">
-  {visibleLists.map((list, i) => {
-    const id = list.id ?? list.list_id ?? i;
+              {visibleLists.map((list, i) => {
+                const id = list.id ?? list.list_id ?? i;
 
-    return (
-      <div
-        key={id}
-        onClick={() => router.push(`/readinglist/${id}`)}
-        className="w-full flex items-center justify-between px-4 py-3 rounded-xl border border-[#E4ECFF] bg-[#F9FBFF] relative cursor-pointer hover:bg-[#F5F7FF]"
-      >
-        <div className="flex flex-col">
-          <span className="text-sm font-medium text-[#14213D]">
-            {list.name}
-          </span>
-          <span className="text-xs text-[#74819A]">
-            {list.total_books} book
-            {list.total_books === 1 ? "" : "s"} ·{" "}
-            {list.is_public ? "Public" : "Private"}
-          </span>
-        </div>
+                return (
+                  <div
+                    key={id}
+                    onClick={() => router.push(`/readinglist/${id}`)}
+                    className="w-full flex items-center justify-between px-4 py-3 rounded-xl border border-[#E4ECFF] bg-[#F9FBFF] relative cursor-pointer hover:bg-[#F5F7FF]"
+                  >
+                    <div className="flex flex-col">
+                      <span className="text-sm font-medium text-[#14213D]">
+                        {list.name}
+                      </span>
+                      <span className="text-xs text-[#74819A]">
+                        {list.total_books} book
+                        {list.total_books === 1 ? "" : "s"} ·{" "}
+                        {list.is_public ? "Public" : "Private"}
+                      </span>
+                    </div>
 
-        <button
-          type="button"
-          className="p-1 rounded-full hover:bg-[#E4ECFF]"
-          onClick={(e) => {
-            e.stopPropagation(); 
-            setOpenMenuId((prev) => (prev === id ? null : id));
-          }}
-        >
-          <Kebab />
-        </button>
+                    <button
+                      type="button"
+                      className="p-1 rounded-full hover:bg-[#E4ECFF]"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setOpenMenuId((prev) => (prev === id ? null : id));
+                      }}
+                    >
+                      <Kebab />
+                    </button>
 
-        {openMenuId === id && (
-          <div className="absolute right-3 top-11 z-10 w-40 bg-white border border-[#E4ECFF] rounded-xl shadow-md text-sm">
-            <button
-              className="w-full text-left px-3 py-2 hover:bg-[#F3F6FF]"
-              onClick={() => handleToggleVisibility(id)}
-            >
-              Toggle visibility
-            </button>
-            <button
-              className="w-full text-left px-3 py-2 hover:bg-[#FFE6E6] text-red-600"
-              onClick={() => handleDeleteList(id)}
-            >
-              Delete list
-            </button>
-          </div>
-        )}
-      </div>
-    );
-  })}
-</div>
+                    {openMenuId === id && (
+                    <div className="absolute right-3 top-11 z-10 w-44 bg-white border border-[#E4ECFF] rounded-xl shadow-md text-sm">
+                      <button
+                        className="w-full text-left px-3 py-2 hover:bg-[#F3F6FF]"
+                        onClick={() => handleToggleVisibility(id)}
+                      >
+                        Toggle visibility
+                      </button>
+                      <button
+                        className="w-full text-left px-3 py-2 hover:bg-[#E4ECFF]"
+                        onClick={() => handleDownloadList(id, list.name)}
+                      >
+                        Download list
+                      </button>
+                      <button
+                        className="w-full text-left px-3 py-2 hover:bg-[#FFE6E6] text-red-600"
+                        onClick={() => handleDeleteList(id)}
+                      >
+                        Delete list
+                      </button>
+                    </div>
+                  )}
 
+                  </div>
+                );
+              })}
+            </div>
 
             {lists.length > PAGE_SIZE && (
               <div className="flex items-center justify-end gap-4">

@@ -131,7 +131,6 @@ export default function AddToReadingListButton({ book, user, onRequireAuth }) {
 
   return (
     <>
-      {/* Small unobtrusive plus button over the cover */}
       <button
         type="button"
         onClick={handleClick}
@@ -141,7 +140,6 @@ export default function AddToReadingListButton({ book, user, onRequireAuth }) {
         +
       </button>
 
-      {/* Simple modal / popover */}
       {open && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/30">
           <div className="w-full max-w-sm rounded-2xl bg-white shadow-xl p-5">

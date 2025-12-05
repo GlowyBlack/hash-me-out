@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 from pydantic import BaseModel, EmailStr, field_validator
 from app.utils.validators import validate_email
 
@@ -42,3 +42,9 @@ class UserUpdate(BaseModel):
     username: Optional[str] = None
     email: Optional[EmailStr] = None
     password: Optional[str] = None
+
+
+class PublicUserOut(BaseModel):
+    id: int
+    username: str
+    reading_list: Optional[List[str]] = []
