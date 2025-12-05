@@ -117,7 +117,7 @@ export default function UserSearch() {
       <Header user={user} handleLogout={handleLogout} goToProfile={goToProfile} />
 
       <div className="pt-40 px-6 max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6">Connect with Other Users</h1>
+        <h1 className="text-3xl font-bold mb-6 text-gray-900">Connect with Other Users</h1>
         <p className="mb-4 text-gray-700">
           Search for registered users and see their public reading lists.
         </p>
@@ -128,11 +128,11 @@ export default function UserSearch() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search by username"
-            className="flex-1 border rounded px-3 py-2"
+            className="flex-1 border rounded px-3 py-2 text-gray-600"
           />
           <button
             type="submit"
-            className="px-4 py-2 bg-yellow-400 text-gray-900 font-bold rounded-xl hover:bg-yellow-500 transition"
+            className="px-4 py-2 bg-yellow-400 text-gray-700 font-bold rounded-xl hover:bg-yellow-500 transition"
           >
             Search
           </button>
