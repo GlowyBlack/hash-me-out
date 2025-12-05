@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 # Book Review & Recommendation Platform
 
 A full-stack web application built with FastAPI (backend) and Next.js (frontend).  
@@ -181,3 +182,5 @@ pytest
 
 
 
+=======
+>>>>>>> Stashed changes

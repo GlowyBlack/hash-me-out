@@ -2,8 +2,8 @@ id,username,email,password_hash,is_admin,is_suspended,suspended_until,suspension
 1,Al,user@example.com,$2b$12$eMYRQrVbm08PdR0RouNUEeWyElPGntNZNFlv1bCVLvNbpmZqXXzNS,true,false,,,0
 2,glowyblack,user1@example.com,$2b$12$EhTTDGsJc9NZ9il.W3YV9e8GdpHG5O4gviJdNNHkQ0.dS78/9wXp2,false,false,,,0
 3,paris,user2@example.com,$2b$12$n3XxM6rAS8/KJo3sRKY2HOmmqFsHxBx7iczZ.mHyECkz9y7GIpgg.,false,false,,,0
-4,nat,nat@gmail.com,$2b$12$bsRecwkYmcrROzt6F9vVX.vz/LX7YaFhZMfvh3cWwUZAKkC7FPA22,false,false,,,0
-5,Fawaaz,fawaaz@gmail.com,$2b$12$dKBXgSZcyRUlxEuzTZCGquur8de0/t/hGaNmONuGK8.MXyGO.q8Vm,false,true,2025-12-05T00:08:06.310388,Was being obnoxious,0
+4,nat1,nat@gmail.com,$2b$12$bsRecwkYmcrROzt6F9vVX.vz/LX7YaFhZMfvh3cWwUZAKkC7FPA22,false,true,2025-12-12T00:30:46.434851,Automatic suspension due to profanity,0
+5,Fawaaz,fawaaz@gmail.com,$2b$12$dKBXgSZcyRUlxEuzTZCGquur8de0/t/hGaNmONuGK8.MXyGO.q8Vm,false,false,,,0
 6,test,test@gmail.com,$2b$12$.4b4U3UJ/0F7PA6uoKfPGumRcTuDprbtPXJ.Xmwy5wDY.5Cxz2rW2,false,false,,,0
 7,laura,laura@laura.com,$2b$12$jeBietk8E3vRA/0iYDQGx.4KT7pvM9/oYXmCSfnP79Ljp5CnixGaK,false,false,,,0
 8,bob,bob@bobbert.com,$2b$12$ual/vWB2a4u0uhRuLzlmYewjAk2orSiggmTNjoJR50IVzkrKW4SSe,false,false,,,0

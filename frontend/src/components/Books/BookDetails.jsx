@@ -41,6 +41,8 @@ export default function BookDetailPage({
   const [saving, setSaving] = useState(false);
   const [myReviewId, setMyReviewId] = useState(null);
   const [avgRatingState, setAvgRatingState] = useState(avgRating);
+  const [warningMessage, setWarningMessage] = useState("");
+
 
 
   // ===============================
@@ -136,12 +138,53 @@ export default function BookDetailPage({
       }
 
       // ---- 3) Update UI ----
-      let savedReview = null;
-      try {
-        savedReview = await reviewRes.json();
-      } catch {
-        // if no JSON body (e.g., 204), refetch
+      if (!reviewRes.ok) {
+        let json = null;
+
+        try {
+          json = await reviewRes.json();
+        } catch {
+          setWarningMessage("Something went wrong while saving your review.");
+          setSaving(false);
+          return;
+        }
+
+        const code = json?.detail?.code;
+        const remaining = json?.detail?.remaining_attempts;
+        const message = json?.detail?.message;
+
+        // PROFANITY SUSPENSION
+        if (code === "profanity_suspension") {
+          setWarningMessage("❌ You have been suspended for 1 week due to repeated profanity.");
+          setSaving(false);
+          return;
+        }
+
+        // PROFANITY WARNING
+        if (code === "profanity_detected") {
+          setWarningMessage(`⚠️ Profanity detected. Warnings left: ${remaining}`);
+          setSaving(false);
+          return;
+        }
+
+        // ALREADY REVIEWED
+        if (code === "already_reviewed") {
+          setWarningMessage("❗ You have already submitted a review for this book.");
+          setSaving(false);
+          return;
+        }
+
+        // ANY OTHER ERROR
+        setWarningMessage(message || "An error occurred while saving your review.");
+        setSaving(false);
+        return;
       }
+
+      // SUCCESS
+      setWarningMessage("");
+      let savedReview = await reviewRes.json();
+
+
 
       if (savedReview) {
         if (myReviewId) {
@@ -326,6 +369,9 @@ export default function BookDetailPage({
               onChange={(e) => setUserComment(e.target.value)}
               maxLength={750}
             />
+            {warningMessage && (
+              <p className="text-red-500 text-xs mt-1">{warningMessage}</p>
+            )}
 
             <div className="flex justify-between mt-2 text-xs">
               <span>{userComment.length}/750</span>
