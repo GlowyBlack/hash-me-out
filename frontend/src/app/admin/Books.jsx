@@ -199,7 +199,6 @@ export default function AdminBooksPage() {
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search by title, author, etc."
           className="flex-1 border rounded px-3 py-2 text-gray-600"
-          className="flex-1 border rounded px-3 py-2 text-gray-600"
         />
         <button
           type="submit"
