@@ -74,31 +74,31 @@ export default function Suspensions() {
           {users.map((u) => (
             <div
               key={u.id}
-              className="border rounded-lg p-4 shadow-sm bg-gray-50 min-h-[120px]"
+              className="border rounded-lg p-4 shadow-sm bg-gray-50 min-h-[120px] "
             >
               <div className="flex justify-between items-center">
                 <div>
-                  <p className="text-xl font-semibold">{u.username}</p>
+                  <p className="text-xl font-semibold text-gray-900">{u.username}</p>
                   <p className="text-gray-800">{u.email}</p>
 
-                  <p className="mt-2 text-sm">
+                  <p className="mt-2 text-sm text-gray-600">
                     <strong>Suspended:</strong>{" "}
                     {u.is_suspended ? "Yes" : "No"}
                   </p>
 
-                  <p className="mt-2 text-sm">
+                  <p className="mt-2 text-sm text-gray-600">
                     <strong>Suspended Until:</strong>{" "}
                     {u.suspended_until
                       ? new Date(u.suspended_until).toLocaleString()
                       : "N/A"}
                   </p>
 
-                  <p className="mt-1 text-sm">
+                  <p className="mt-1 text-sm text-gray-600">
                     <strong>Suspension Reason:</strong>{" "}
                     {u.suspension_reason || "N/A"}
                   </p>
 
-                  <p className="mt-1 text-sm">
+                  <p className="mt-1 text-sm text-gray-600">
                     <strong>Warnings:</strong> {u.warnings}
                   </p>
                 </div>
