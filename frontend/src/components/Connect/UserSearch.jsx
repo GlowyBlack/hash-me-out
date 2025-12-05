@@ -19,12 +19,14 @@ export default function UserSearch() {
 
   const API_BASE = "http://localhost:8000";
 
+  // Load token from localStorage on mount
   useEffect(() => {
     const stored = localStorage.getItem("access_token");
     setToken(stored);
     setTokenChecked(true);
   }, []);
 
+  // Fetch current user if token exists
   useEffect(() => {
     if (!tokenChecked || !token) return;
 
