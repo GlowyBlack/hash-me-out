@@ -199,6 +199,7 @@ export default function AdminBooksPage() {
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search by title, author, etc."
           className="flex-1 border rounded px-3 py-2 text-gray-600"
+          className="flex-1 border rounded px-3 py-2 text-gray-600"
         />
         <button
           type="submit"
@@ -299,7 +300,7 @@ export default function AdminBooksPage() {
 
       {/* EDIT MODAL */}
       {editModal && currentBook && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 text-gray-900">
           <div className="bg-white p-6 rounded-lg w-full max-w-md space-y-4 shadow-lg">
             <h2 className="text-xl font-semibold">Edit Book</h2>
             <input
