@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function SearchList({ results, hasSearched, query }) {
+  const router = useRouter()
   const [showModal, setShowModal] = useState(false);
 
   const [title, setTitle] = useState("");
@@ -49,12 +51,12 @@ export default function SearchList({ results, hasSearched, query }) {
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
-  title,
-  book_title: title,  // for old schema if it exists
-  author,
-  isbn,
-  notes,
-}),
+      title,
+      book_title: title,  // for old schema if it exists
+      author,
+      isbn,
+      notes,
+  }),
 
     });
 
@@ -131,6 +133,7 @@ export default function SearchList({ results, hasSearched, query }) {
             <div
               key={book.isbn}
               className="p-3 bg-white shadow-sm rounded-md border hover:shadow-md transition text-sm"
+              onClick={() => router.push(`/books/${book.isbn}`)}
             >
               <h2 className="text-lg font-bold text-gray-900">
                 {book.book_title}
@@ -144,7 +147,7 @@ export default function SearchList({ results, hasSearched, query }) {
 
       {/* 4) Modal popup */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 text-gray-900">
           <div className="bg-white p-6 rounded-lg w-full max-w-md space-y-4 shadow-lg">
             <h2 className="text-xl font-semibold">
               Request a new book for "{query}"
